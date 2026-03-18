@@ -26,6 +26,7 @@ class LogistikPanelProvider extends PanelProvider
         return $panel
             ->id('logistik')
             ->path('logistik')
+            ->brandName("Logistik Panel")
             ->colors([
                 'primary' => Color::Amber,
             ])

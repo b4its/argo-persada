@@ -26,6 +26,7 @@ class MarketingPanelProvider extends PanelProvider
         return $panel
             ->id('marketing')
             ->path('marketing')
+            ->brandName("Marketing Panel")
             ->colors([
                 'primary' => Color::Amber,
             ])

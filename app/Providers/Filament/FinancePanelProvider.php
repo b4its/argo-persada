@@ -26,6 +26,7 @@ class FinancePanelProvider extends PanelProvider
         return $panel
             ->id('finance')
             ->path('finance')
+            ->brandName("Finance Panel")
             ->colors([
                 'primary' => Color::Amber,
             ])
