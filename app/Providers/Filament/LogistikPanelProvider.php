@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -17,6 +18,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class LogistikPanelProvider extends PanelProvider
@@ -27,6 +29,18 @@ class LogistikPanelProvider extends PanelProvider
             ->id('logistik')
             ->path('logistik')
             ->brandName("Logistik Panel")
+            ->login()
+            ->userMenuItems([
+                'profile' => MenuItem::make()
+                    ->label('Edit Profile')
+                    ->icon('heroicon-o-user-circle')
+                    ->url('#edit-profile'),
+            ])
+            ->renderHook(
+                'panels::body.end',
+                fn (): string => Blade::render('@livewire(\App\Livewire\EditProfileModal::class)')
+            )
+            ->globalSearch(false)
             ->colors([
                 'primary' => Color::Neutral,
             ])

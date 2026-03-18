@@ -11,6 +11,27 @@ class AkunForm
         return $schema
             ->components([
                 //
+                TextInput::make('name')
+                    ->label('Nama')
+                    ->required(),
+                TextInput::make('email')
+                    ->label('Email')
+                    ->email()
+                    ->required(),
+                Select::make('role')
+                    ->label('Role')
+                    ->options([
+                        'admin' => 'Admin',
+                        'marketing' => 'Marketing',
+                        'finance' => 'Finance',
+                        'logistik' => 'Logistik',
+                    ])
+                    ->required(),
+
+                TextInput::make('password')
+                    ->label('Password')
+                    ->password()
+                    ->required(),
             ]);
     }
 }

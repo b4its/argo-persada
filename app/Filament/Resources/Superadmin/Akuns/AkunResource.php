@@ -7,7 +7,7 @@ use App\Filament\Resources\Superadmin\Akuns\Pages\EditAkun;
 use App\Filament\Resources\Superadmin\Akuns\Pages\ListAkuns;
 use App\Filament\Resources\Superadmin\Akuns\Schemas\AkunForm;
 use App\Filament\Resources\Superadmin\Akuns\Tables\AkunsTable;
-use App\Models\Akun;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class AkunResource extends Resource
 {
-    protected static ?string $model = Akun::class;
+    protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
@@ -39,12 +39,22 @@ class AkunResource extends Resource
         ];
     }
 
+    public static function getNavigationLabel(): string
+    {
+        return 'Akun';
+    }
+
+    public static function getNavigationIcon(): string
+    {
+        return 'heroicon-o-user-group'; // bisa diganti icon lain
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListAkuns::route('/'),
-            'create' => CreateAkun::route('/create'),
-            'edit' => EditAkun::route('/{record}/edit'),
+            // 'create' => CreateAkun::route('/create'),
+            // 'edit' => EditAkun::route('/{record}/edit'),
         ];
     }
 }

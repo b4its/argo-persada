@@ -8,6 +8,7 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListAkuns extends ListRecords
 {
+    protected static ?string $title = 'Akun';
     protected static string $resource = AkunResource::class;
 
     protected function getHeaderActions(): array

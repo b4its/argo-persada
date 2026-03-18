@@ -7,7 +7,7 @@ use App\Filament\Resources\Marketing\MarketingPemesanans\Pages\EditMarketingPeme
 use App\Filament\Resources\Marketing\MarketingPemesanans\Pages\ListMarketingPemesanans;
 use App\Filament\Resources\Marketing\MarketingPemesanans\Schemas\MarketingPemesananForm;
 use App\Filament\Resources\Marketing\MarketingPemesanans\Tables\MarketingPemesanansTable;
-use App\Models\MarketingPemesanan;
+use App\Models\Pesanan;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class MarketingPemesananResource extends Resource
 {
-    protected static ?string $model = MarketingPemesanan::class;
+    protected static ?string $model = Pesanan::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
@@ -43,8 +43,8 @@ class MarketingPemesananResource extends Resource
     {
         return [
             'index' => ListMarketingPemesanans::route('/'),
-            'create' => CreateMarketingPemesanan::route('/create'),
-            'edit' => EditMarketingPemesanan::route('/{record}/edit'),
+            // 'create' => CreateMarketingPemesanan::route('/create'),
+            // 'edit' => EditMarketingPemesanan::route('/{record}/edit'),
         ];
     }
 }
