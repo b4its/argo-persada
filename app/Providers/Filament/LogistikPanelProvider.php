@@ -28,7 +28,7 @@ class LogistikPanelProvider extends PanelProvider
             ->path('logistik')
             ->brandName("Logistik Panel")
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Neutral,
             ])
             ->discoverResources(in: app_path('Filament/Resources/Logistik'), for: 'App\Filament\Resources\Logistik')
             ->discoverPages(in: app_path('Filament/Pages/Logistik'), for: 'App\Filament\Pages\Logistik')

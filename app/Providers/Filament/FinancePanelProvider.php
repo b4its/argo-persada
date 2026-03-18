@@ -28,7 +28,7 @@ class FinancePanelProvider extends PanelProvider
             ->path('finance')
             ->brandName("Finance Panel")
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Green,
             ])
             ->discoverResources(in: app_path('Filament/Resources/Finance'), for: 'App\Filament\Resources\Finance')
             ->discoverPages(in: app_path('Filament/Pages/Finance'), for: 'App\Filament\Pages\Finance')

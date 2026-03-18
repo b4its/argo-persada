@@ -27,9 +27,10 @@ class SuperadminPanelProvider extends PanelProvider
             ->default()
             ->id('superadmin')
             ->path('superadmin')
+            ->brandName("Superadmin Panel")
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Fuchsia,
             ])
             ->discoverResources(in: app_path('Filament/Resources/Superadmin'), for: 'App\Filament\Resources\Superadmin')
             ->discoverPages(in: app_path('Filament/Pages/Superadmin'), for: 'App\Filament\Pages\Superadmin')

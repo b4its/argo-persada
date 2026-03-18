@@ -28,7 +28,7 @@ class MarketingPanelProvider extends PanelProvider
             ->path('marketing')
             ->brandName("Marketing Panel")
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Blue,
             ])
             ->discoverResources(in: app_path('Filament/Resources/Marketing'), for: 'App\Filament\Resources\Marketing')
             ->discoverPages(in: app_path('Filament/Pages/Marketing'), for: 'App\Filament\Pages\Marketing')
