@@ -18,6 +18,7 @@ use Filament\Schemas\Schema;
 
 class ListMarketingPemesanans extends ListRecords
 {
+    protected static ?string $title = 'Daftar Pemesanan';
     protected static string $resource = MarketingPemesananResource::class;
 
     protected function getHeaderActions(): array
