@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('task_activity', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('created_user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('updated_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('task_id')->constrained('task')->onDelete('cascade');
             $table->text('note')->nullable(); 
             $table->string('requisition_number', 45)->nullable();

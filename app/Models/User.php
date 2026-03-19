@@ -51,9 +51,14 @@ class User extends Authenticatable
         return $this->hasMany(LogActivities::class);
     }
 
-    public function taskActivities(): HasMany
+    public function createdTaskActivities(): HasMany
     {
-        return $this->hasMany(TaskActivity::class);
+        return $this->hasMany(TaskActivity::class, 'created_user_id');
+    }
+
+    public function updatedTaskActivities(): HasMany
+    {
+        return $this->hasMany(TaskActivity::class, 'updated_user_id');
     }
 
     public function queueKeranjang(): HasMany

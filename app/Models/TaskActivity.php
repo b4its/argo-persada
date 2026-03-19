@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'task_id', 'note', 'requisition_number', 'delivery_order_number', 'invoice_number', 'pesanan_status'])]
+#[Fillable(['created_user_id', 'updated_user_id', 'task_id', 'note', 'requisition_number', 'delivery_order_number', 'invoice_number', 'pesanan_status'])]
 class TaskActivity extends Model
 {
     protected $table = 'task_activity';
@@ -18,9 +18,14 @@ class TaskActivity extends Model
         ];
     }
 
-    public function user(): BelongsTo
+    public function createdUser(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'created_user_id');
+    }
+
+    public function updatedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_user_id');
     }
 
     public function task(): BelongsTo
