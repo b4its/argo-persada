@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pesanan', function (Blueprint $table) {
+        Schema::create('queue_delete', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('pesanan_id')->constrained('pesanan')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('keranjang_id')->constrained('keranjang')->onDelete('cascade');
-            $table->string('code', 45)->unique()->nullable();
-            $table->string('group_name')->nullable();
-            $table->string('company_name')->nullable();
-            $table->text('address')->nullable();
+            $table->string('title')->nullable();
+            $table->string('table_name')->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pesanan');
+        Schema::dropIfExists('queue_delete');
     }
 };

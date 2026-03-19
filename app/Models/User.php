@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -60,5 +59,15 @@ class User extends Authenticatable
     public function queueKeranjang(): HasMany
     {
         return $this->hasMany(QueueKeranjang::class);
+    }
+
+    public function queueDeletesAsOwner(): HasMany
+    {
+        return $this->hasMany(QueueDelete::class, 'owner_id');
+    }
+
+    public function queueDeletesAsUser(): HasMany
+    {
+        return $this->hasMany(QueueDelete::class, 'user_id');
     }
 }
