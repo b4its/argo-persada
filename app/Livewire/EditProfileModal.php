@@ -19,10 +19,13 @@ class EditProfileModal extends Component implements HasForms
 
     public function mount(): void
     {
-        $this->form->fill([
-            'name' => Auth::user()->name,
-            'email' => Auth::user()->email,
-        ]);
+        // PERBAIKAN: Cek apakah user sudah login sebelum mengisi form
+        if (Auth::check()) {
+            $this->form->fill([
+                'name' => Auth::user()->name,
+                'email' => Auth::user()->email,
+            ]);
+        }
     }
 
     // WAJIB DI FILAMENT 5.x: Argumen dan Return type menggunakan Schema
@@ -35,7 +38,8 @@ class EditProfileModal extends Component implements HasForms
                 TextInput::make('email')
                     ->email()
                     ->required()
-                    ->unique(table: 'users', ignorable: auth()->user()),
+                    // Auth::user() aman di sini, karena kalau null Filament akan mengabaikannya
+                    ->unique(table: 'users', ignorable: Auth::user()), 
                 TextInput::make('password')
                     ->password()
                     ->dehydrateStateUsing(fn ($state) => Hash::make($state))
@@ -47,8 +51,13 @@ class EditProfileModal extends Component implements HasForms
 
     public function save(): void
     {
+        // PERBAIKAN: Jangan proses save jika tidak ada user (mencegah aksi ilegal)
+        if (!Auth::check()) {
+            return;
+        }
+
         $data = $this->form->getState();
-        auth()->user()->update($data);
+        Auth::user()->update($data);
 
         Notification::make()
             ->title('Profile updated!')
@@ -60,6 +69,13 @@ class EditProfileModal extends Component implements HasForms
 
     public function render()
     {
+        // PERBAIKAN: Jika belum login, render div kosong agar modal sama sekali tidak muncul di HTML
+        if (!Auth::check()) {
+            return <<<'HTML'
+            <div></div>
+            HTML;
+        }
+
         // Menggunakan Alpine directive inline murni tanpa blok JS eksplisit
         return <<<'HTML'
         <div x-data x-on:hashchange.window="if(location.hash === '#edit-profile') { $dispatch('open-modal', { id: 'edit-profile-modal' }); history.replaceState(null, '', location.pathname + location.search); }">
