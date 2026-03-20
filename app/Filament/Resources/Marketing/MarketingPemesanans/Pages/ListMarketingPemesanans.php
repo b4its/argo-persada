@@ -96,7 +96,7 @@ class ListMarketingPemesanans extends ListRecords
                         // LANGKAH 6: Buat Task Activity dengan unique requisition_number (huruf kapital dan angka)
                         TaskActivity::create([
                             'created_user_id' => $data['user_id'],
-                            'updated_user_id' => null,
+                            'updated_user_id' => $data['user_id'],
                             'task_id' => $task->id,
                             'note' => 'Pesanan baru berhasil dibuat dan akan diteruskan ke Finance.',
                             'pesanan_status' => 0, // 0 penanda awal

@@ -7,7 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'keranjang_id', 'code', 'group_name', 'company_name', 'address'])]
+#[Fillable([
+    'user_id', 
+    'keranjang_id', 
+    'code', 
+    'group_name', 
+    'company_name', 
+    'address',
+    'ppn',
+    'total_harga',
+    'no_requisition',
+    'no_invoice',
+    'no_delivery_order',
+    'tanggal_rilis_dana',
+    'tanggal_terbit_invoice',
+    'tanggal_jatuh_tempo',
+    'tanggal_lunas',
+    'file_invoice',
+    'file_do'
+])]
 class Pesanan extends Model
 {
     protected $table = 'pesanan';
