@@ -69,11 +69,15 @@ class ListMarketingPemesanans extends ListRecords
                             'sub_total' => $totalKeseluruhan
                         ]);
 
+                        $tax_amount = $totalKeseluruhan * 0.11;
+
                         // LANGKAH 4: Buat Pesanan utama
                         $pesanan = Pesanan::create([
                             'user_id' => $data['user_id'],
                             'keranjang_id' => $keranjang->id,
                             'code' => $data['code'],
+                            'ppn' => $tax_amount,
+                            'total_harga' => $totalKeseluruhan + $tax_amount,
                             'group_name' => $data['group_name'],
                             'company_name' => $data['company_name'],
                             'address' => $data['address'],
@@ -84,19 +88,17 @@ class ListMarketingPemesanans extends ListRecords
                             'pesanan_id' => $pesanan->id,
                             'title' => 'Verifikasi Pesanan ' . $pesanan->code,
                             'role' => 'finance',
-                            'description' => 'Pesanan baru telah dibuat oleh Marketing. Mohon lakukan verifikasi.',
+                            'description' => 'Pesanan baru telah dibuat oleh Marketing. Mohon untuk melakukan perilisan dana.',
                             'due_date' => now()->addDays(7), // Estimasi batas waktu task, bisa disesuaikan
                             'status' => 0, // 0 sebagai penanda status awal (pending/baru)
                         ]);
 
                         // LANGKAH 6: Buat Task Activity dengan unique requisition_number (huruf kapital dan angka)
                         TaskActivity::create([
-                            'user_id' => $data['user_id'],
+                            'created_user_id' => $data['user_id'],
+                            'updated_user_id' => null,
                             'task_id' => $task->id,
-                            'note' => 'Pesanan baru berhasil dibuat dan diteruskan ke Finance.',
-                            'requisition_number' => 'REQ-' . strtoupper(Str::random(8)),
-                            'delivery_order_number' => null,
-                            'invoice_number' => null,
+                            'note' => 'Pesanan baru berhasil dibuat dan akan diteruskan ke Finance.',
                             'pesanan_status' => 0, // 0 penanda awal
                         ]);
 
