@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('role')->nullable();
             $table->text('description')->nullable();
-            $table->dateTime('due_date')->nullable();
+            $table->dateTime('due_date')->nullable()->comment('marketing: requisition, 2: finance: invoice, 3: logistik: delivery order');
             $table->tinyInteger('status')->default(0)->comment('0: pending, 1: in progress, 2: completed');
             $table->timestamps();
         });
