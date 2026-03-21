@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('keranjang', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('sub_total', 10, 2)->default(0); 
+            $table->decimal('sub_total', 25, 2)->default(0); 
             $table->timestamps();
         });
     }

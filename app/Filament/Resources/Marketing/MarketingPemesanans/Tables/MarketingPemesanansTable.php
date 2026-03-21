@@ -3,12 +3,18 @@
 namespace App\Filament\Resources\Marketing\MarketingPemesanans\Tables;
 
 use App\Models\Pesanan;
+use App\Models\Task; // Pastikan Model Task di-import
+use App\Models\TaskActivity; // Pastikan Model TaskActivity di-import
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Actions\Action; // Import Action Filament
+use Filament\Notifications\Notification; // Import Notification
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString; 
+use Illuminate\Support\Str;// Untuk memformat text di modal
 
 class MarketingPemesanansTable
 {
@@ -17,7 +23,13 @@ class MarketingPemesanansTable
         return $table
             ->query(
                 Pesanan::query()
-                    ->selectRaw('pesanan.*, ROW_NUMBER() OVER (ORDER BY created_at desc) as row_num')
+                    // Tambahkan with() agar query lebih cepat (mencegah N+1)
+                    ->with(['tasks' => function ($query) {
+                        $query->where('role', 'marketing');
+                    }])
+                    ->whereHas('tasks', function ($query) {
+                        $query->where('role', 'marketing');
+                    })
                     ->orderBy('created_at', 'desc')
             )
             ->columns([
@@ -29,50 +41,45 @@ class MarketingPemesanansTable
                     ->label('No Pemesanan')
                     ->sortable()
                     ->searchable(),
+
+                TextColumn::make('no_requisition')
+                    ->label('No Requisition')
+                    ->placeholder('---:---')
+                    ->default('---:---')
+                    ->searchable(),
                     
                 TextColumn::make('keranjang.sub_total')
                     ->label('Total Barang')
                     ->numeric()
-                    ->money('IDR', locale: 'id') // Opsional: Format ke Rupiah
+                    ->money('IDR', locale: 'id')
                     ->sortable(),
                     
-                // PERBAIKAN: Mengambil data aman dari relasi bertingkat (HasMany -> HasMany)
-                TextColumn::make('status_pemesanan')
+                // PERBAIKAN: Ganti nama identifier agar tidak membaca seluruh array dari relasi
+                TextColumn::make('status_marketing') 
                     ->label('Status Pemesanan')
                     ->badge()
                     ->getStateUsing(function (Pesanan $record): int {
-                        // Ambil Task terakhir, lalu TaskActivity terakhir
-                        $task = $record->tasks()->latest()->first();
-                        if ($task) {
-                            $activity = $task->taskActivities()->latest()->first();
-                            if ($activity) {
-                                return (int) $activity->pesanan_status;
-                            }
-                        }
-                        return 0; // Default jika tidak ada data
+                        // Ambil secara spesifik task yang memiliki role marketing saja
+                        $task = $record->tasks->where('role', 'marketing')->first();
+                        
+                        return $task ? (int) $task->status : 0;
                     })
                     ->formatStateUsing(fn (int $state): string => match ($state) {
                         0 => 'Dibuat',
-                        1 => 'Pending',
-                        2 => 'Perlu Rilis Dana',
-                        3 => 'Perlu Penagihan',
-                        4 => 'Selesai',
+                        1 => 'In Progress',
+                        2 => 'Selesai',
                         default => 'Unknown',
                     })
                     ->color(fn (int $state): string => match ($state) {
                         0 => 'gray',
                         1 => 'warning',
-                        2 => 'info',
-                        3 => 'danger',
-                        4 => 'success',
+                        2 => 'success',
                         default => 'gray',
                     })
                     ->icon(fn (int $state): string => match ($state) {
                         0 => 'heroicon-m-plus-circle',
                         1 => 'heroicon-m-clock',
-                        2 => 'heroicon-m-banknotes',
-                        3 => 'heroicon-m-exclamation-triangle',
-                        4 => 'heroicon-m-check-badge',
+                        2 => 'heroicon-m-check-badge',
                         default => 'heroicon-m-question-mark-circle',
                     }),
             ])
@@ -81,16 +88,12 @@ class MarketingPemesanansTable
             ])
             ->recordActions([
                 ViewAction::make()
-                    // Menggunakan ulang form schema yang Anda buat agar tampilannya rapi
                     ->form(
                         \App\Filament\Resources\Marketing\MarketingPemesanans\Schemas\MarketingPemesananForm::configure(Schema::make())->getComponents()
                     )
-                    // KUNCI: Mengisi ulang data Repeater (list_barang) dari tabel QueueKeranjang
                     ->mutateRecordDataUsing(function (array $data, Pesanan $record): array {
-                        // Load relasi agar data tersedia
                         $record->load(['keranjang.queueKeranjang']);
 
-                        // Mapping data ke bentuk array agar bisa dibaca oleh komponen Repeater
                         if ($record->keranjang && $record->keranjang->queueKeranjang) {
                             $data['list_barang'] = $record->keranjang->queueKeranjang->map(function ($item) {
                                 return [
@@ -105,11 +108,164 @@ class MarketingPemesanansTable
                             })->toArray();
                         }
 
-                        // Mengisi tanggal pemesanan dengan waktu data dibuat (karena di DB tanggal_pemesanan tidak disimpan khusus)
                         $data['tanggal_pemesanan'] = $record->created_at;
 
                         return $data;
                     }),
+
+                // ACTION BARU: Cetak Surat Requisition
+                Action::make('cetak_surat_requisition')
+                    ->label('Cetak Surat Requisition')
+                    ->icon('heroicon-o-printer')
+                    ->color('success')
+                    ->requiresConfirmation() // Memunculkan pop-up/modal
+                    ->modalHeading('Cetak Surat Requisition')
+                    ->modalDescription(fn (Pesanan $record) => new HtmlString(
+                        "No Pemesanan:<br><strong>{$record->code}</strong><br><br>Apakah ingin cetak surat requisition ini?"
+                    ))
+                    ->modalSubmitActionLabel('Iya') // Kanan
+                    ->modalCancelActionLabel('Tidak') // Kiri
+                    ->mountUsing(function (Action $action, Pesanan $record) {
+                        $currentUserId = auth()->id();
+
+                        // 1. CEK APAKAH SUDAH SELESAI (Pencegahan Spam Modal Muncul)
+                        $completedTask = Task::where('pesanan_id', $record->id)
+                            ->where('role', 'marketing')
+                            ->where('status', 2) // 2 = completed
+                            ->first();
+
+                        if ($completedTask) {
+                            $completedActivity = TaskActivity::where('task_id', $completedTask->id)
+                                ->where('pesanan_status', 4) // 4 = selesai
+                                ->first(); 
+
+                            if ($completedActivity) {
+                                $namaUser = $completedActivity->updatedUser ? $completedActivity->updatedUser->name : 'Seseorang';
+
+                                Notification::make()
+                                    ->warning()
+                                    ->title('Aksi Dibatalkan')
+                                    ->body("Tugas ini sudah diselesaikan oleh {$namaUser}.")
+                                    ->send();
+                                
+                                $action->cancel(); // Batalkan kemunculan modal
+                                return; 
+                            }
+                        }
+
+                        // 2. CEK APAKAH SUDAH PERNAH DIBUAT UNTUK STATUS IN PROGRESS
+                        // Cek langsung ke TaskActivity yang menempel di Task terkait
+                        $isAlreadyInProgress = TaskActivity::whereHas('task', function ($query) use ($record) {
+                                $query->where('pesanan_id', $record->id)
+                                    ->where('role', 'marketing');
+                            })
+                            ->where('pesanan_status', 1) // 1 = In Progress
+                            ->exists();
+
+                        // 3. PROSES BELAKANG LAYAR (Hanya insert activity jika BELUM ADA)
+                        if (!$isAlreadyInProgress) {
+                            // AMBIL TASK YANG SUDAH ADA (TIDAK CREATE TASK BARU)
+                            $currentTask = Task::where('pesanan_id', $record->id)
+                                ->where('role', 'marketing')
+                                ->latest()
+                                ->first();
+
+                            // Hanya proses jika Task utamanya memang sudah ada sebelumnya
+                            if ($currentTask) {
+                                $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
+                                        $query->where('pesanan_id', $record->id);
+                                    })
+                                    ->orderBy('created_at', 'asc')
+                                    ->value('created_user_id') ?? $currentUserId;
+
+                                Task::updateOrCreate(
+                                    ['id' => $currentTask->id],
+                                    [
+                                        'status' => 1, // Update status menjadi In Progress
+                                        'updated_at' => now(),
+                                    ]
+                                );
+
+                                // HANYA Insert Task Activity Baru ke Task yang sudah ada
+                                TaskActivity::create([
+                                    'created_user_id' => $originalCreatorId,
+                                    'updated_user_id' => $currentUserId,
+                                    'task_id' => $currentTask->id, // Pakai ID dari task yang existing
+                                    'note' => 'Mempersiapkan Cetak Surat Requisition untuk pesanan ' . $record->code,
+                                    'pesanan_status' => 1, // 1 = In Progress
+                                ]);
+                            }
+                        }
+                    })
+                    ->action(function (Pesanan $record) {
+                        $currentUserId = auth()->id();
+
+                        // Cari pembuat awal (created_user_id)
+                        $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
+                                $query->where('pesanan_id', $record->id);
+                            })
+                            ->orderBy('created_at', 'asc')
+                            ->value('created_user_id') ?? $currentUserId;
+
+                        $originTask = Task::where('pesanan_id', $record->id)
+                            ->where('role', 'marketing')
+                            ->latest()
+                            ->first();
+                        $noRequisition = Str::upper(Str::random(6)); // Generate No Requisition unik
+                        // Update No Requisition
+                        Pesanan::updateOrCreate(
+                            ['id' => $record->id],
+                            [
+                                'no_requisition' => $noRequisition,
+                                'updated_at' => now()
+                            ] 
+                        );
+
+                        $currentTask = Task::where('pesanan_id', $record->id)
+                            ->where('role', 'marketing')
+                            ->latest()
+                            ->first();
+
+                        if ($currentTask) {
+                            $currentTask->update([
+                                'status' => 2,
+                            ]);
+                        }
+
+                        // 3. Insert Data Task Baru (Hanya dibuat setelah proses Complete / klik "Iya")
+                        $newTask = Task::create([
+                            'pesanan_id' => $record->id,
+                            'title' => 'Verifikasi Pesanan pada pesanan ' . $record->code . ', dengan No Requisition ' . ($noRequisition ?? '---:---'),
+                            'role' => 'finance',
+                            'description' => 'akan diteruskan ke Finance untuk proses perilisan dana.',
+                            'due_date' => now(),
+                            'status' => 2, // 2 = Completed
+                        ]);
+
+                        // 4. Insert Data Task Activity Baru
+                        TaskActivity::create([
+                            'created_user_id' => $originalCreatorId, 
+                            'updated_user_id' => $currentUserId, 
+                            'task_id' => $originTask->id, // Pakai ID dari task yang existing
+                            'note' => 'Melakukan pencetakan surat requisition',
+                            'pesanan_status' => 4, // 4 = Selesai
+                        ]);
+
+                        TaskActivity::create([
+                            'created_user_id' => $originalCreatorId, 
+                            'updated_user_id' => $currentUserId, 
+                            'task_id' => $newTask->id,
+                            'note' => 'Mempersiapkan pesanan untuk diteruskan ke Finance untuk proses perilisan dana.',
+                            'pesanan_status' => 1, // 4 = Selesai
+                        ]);
+
+                        // 5. Beri Notifikasi Sukses
+                        Notification::make()
+                            ->success()
+                            ->title('Berhasil')
+                            ->body('Surat requisition berhasil dicetak dan data tugas diperbarui.')
+                            ->send();
+                    })
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

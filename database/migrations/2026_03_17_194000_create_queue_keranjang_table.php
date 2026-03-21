@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('item_name')->nullable();
             $table->integer('quantity')->nullable();
             $table->string('satuan')->nullable();
-            $table->decimal('modal', 10, 2)->nullable();
-            $table->decimal('po', 10, 2)->nullable();
-            $table->decimal('sub_total', 10, 2)->nullable();
+            $table->decimal('modal', 25, 2)->nullable();
+            $table->decimal('po', 25, 2)->nullable();
+            $table->decimal('sub_total', 25, 2)->nullable();
             $table->timestamps();
         });
     }

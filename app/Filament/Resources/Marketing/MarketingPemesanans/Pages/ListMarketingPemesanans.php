@@ -84,11 +84,28 @@ class ListMarketingPemesanans extends ListRecords
                         ]);
 
                         // LANGKAH 5: Buat Task yang dikhususkan untuk Finance
+                        // $task = Task::create([
+                        //     'pesanan_id' => $pesanan->id,
+                        //     'title' => 'Verifikasi Pesanan ' . $pesanan->code,
+                        //     'role' => 'finance',
+                        //     'description' => 'Pesanan baru telah dibuat oleh Marketing. Mohon untuk melakukan perilisan dana.',
+                        //     'due_date' => now()->addDays(7), // Estimasi batas waktu task, bisa disesuaikan
+                        //     'status' => 0, // 0 sebagai penanda status awal (pending/baru)
+                        // ]);
+
+                        // // LANGKAH 6: Buat Task Activity dengan unique requisition_number (huruf kapital dan angka)
+                        // TaskActivity::create([
+                        //     'created_user_id' => $data['user_id'],
+                        //     'updated_user_id' => $data['user_id'],
+                        //     'task_id' => $task->id,
+                        //     'note' => 'Pesanan baru berhasil dibuat dan akan diteruskan ke Finance.',
+                        //     'pesanan_status' => 0, // 0 penanda awal
+                        // ]);
                         $task = Task::create([
                             'pesanan_id' => $pesanan->id,
-                            'title' => 'Verifikasi Pesanan ' . $pesanan->code,
-                            'role' => 'finance',
-                            'description' => 'Pesanan baru telah dibuat oleh Marketing. Mohon untuk melakukan perilisan dana.',
+                            'title' => 'Melakukan cetak surat requisition untuk pesanan ' . $pesanan->code,
+                            'role' => 'marketing',
+                            'description' => 'Mohon untuk melakukan cetak surat requisition pada pesanan ' . $pesanan->code,
                             'due_date' => now()->addDays(7), // Estimasi batas waktu task, bisa disesuaikan
                             'status' => 0, // 0 sebagai penanda status awal (pending/baru)
                         ]);
@@ -98,7 +115,7 @@ class ListMarketingPemesanans extends ListRecords
                             'created_user_id' => $data['user_id'],
                             'updated_user_id' => $data['user_id'],
                             'task_id' => $task->id,
-                            'note' => 'Pesanan baru berhasil dibuat dan akan diteruskan ke Finance.',
+                            'note' => 'Pesanan baru berhasil dibuat dan akan diteruskan untuk melakukan cetak surat requisition.',
                             'pesanan_status' => 0, // 0 penanda awal
                         ]);
 

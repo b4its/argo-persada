@@ -49,4 +49,5 @@ class Pesanan extends Model
     {
         return $this->hasMany(QueueDelete::class);
     }
+    
 }
