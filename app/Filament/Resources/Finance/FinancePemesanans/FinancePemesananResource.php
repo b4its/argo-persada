@@ -21,6 +21,7 @@ class FinancePemesananResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'pesanan';
+    protected static ?string $slug = 'pesanan'; 
 
     public static function form(Schema $schema): Schema
     {
