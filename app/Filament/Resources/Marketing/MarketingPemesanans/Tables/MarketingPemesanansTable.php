@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Marketing\MarketingPemesanans\Tables;
 
+use App\Models\LogActivities;
 use App\Models\Pesanan;
 use App\Models\Task; // Pastikan Model Task di-import
 use App\Models\TaskActivity; // Pastikan Model TaskActivity di-import
@@ -178,7 +179,7 @@ class MarketingPemesanansTable
                                     ->orderBy('created_at', 'asc')
                                     ->value('created_user_id') ?? $currentUserId;
 
-                                Task::updateOrCreate(
+                                $updatedTask = Task::updateOrCreate(
                                     ['id' => $currentTask->id],
                                     [
                                         'status' => 1, // Update status menjadi In Progress
@@ -194,6 +195,17 @@ class MarketingPemesanansTable
                                     'note' => 'Mempersiapkan Cetak Surat Requisition untuk pesanan ' . $record->code,
                                     'pesanan_status' => 1, // 1 = In Progress
                                 ]);
+
+                                LogActivities::create([
+                                    'user_id' => $currentUserId,
+                                    'action' => 'Update Task - In Progress to Cetak Surat Requisition',
+                                    'description' => 'Marketing melakukan proses untuk cetak surat requisition pada pesanan ' . $record->code,
+                                    'oldData' => json_encode($currentTask->toArray()),
+                                    'newData' => json_encode($updatedTask->toArray()),
+                                    'ip_address' => request()->ip(),
+                                    'user_agent' => request()->userAgent(),
+                                ]);
+
                             }
                         }
                     })
@@ -221,6 +233,12 @@ class MarketingPemesanansTable
                             ] 
                         );
 
+                        $latestTask = Task::where('pesanan_id', $record->id)
+                            ->where('role', 'marketing')
+                            ->latest()
+                            ->first();
+                        
+
                         $currentTask = Task::where('pesanan_id', $record->id)
                             ->where('role', 'marketing')
                             ->latest()
@@ -232,14 +250,24 @@ class MarketingPemesanansTable
                             ]);
                         }
 
+                        LogActivities::create([
+                            'user_id' => $currentUserId,
+                            'action' => 'Update Task - Cetak Surat Requisition',
+                            'description' => 'Marketing melakukan cetak surat requisition pada pesanan ' . $record->code,
+                            'oldData' => json_encode($latestTask->toArray()),
+                            'newData' => json_encode($currentTask->toArray()),
+                            'ip_address' => request()->ip(),
+                            'user_agent' => request()->userAgent(),
+                        ]);
+
                         // 3. Insert Data Task Baru (Hanya dibuat setelah proses Complete / klik "Iya")
                         $newTask = Task::create([
                             'pesanan_id' => $record->id,
-                            'title' => 'Verifikasi Pesanan pada pesanan ' . $record->code . ', dengan No Requisition ' . ($noRequisition ?? '---:---'),
+                            'title' => 'Finance diharapkan untuk melakukan perilisan dana pada pesanan ' . $record->code . ', dengan No Requisition ' . ($noRequisition ?? '---:---'),
                             'role' => 'finance',
                             'description' => 'akan diteruskan ke Finance untuk proses perilisan dana.',
                             'due_date' => now(),
-                            'status' => 2, // 2 = Completed
+                            'status' => 0, // 0 = Created
                         ]);
 
                         // 4. Insert Data Task Activity Baru
@@ -255,8 +283,18 @@ class MarketingPemesanansTable
                             'created_user_id' => $originalCreatorId, 
                             'updated_user_id' => $currentUserId, 
                             'task_id' => $newTask->id,
-                            'note' => 'Mempersiapkan pesanan untuk diteruskan ke Finance untuk proses perilisan dana.',
-                            'pesanan_status' => 1, // 4 = Selesai
+                            'note' => 'Mempersiapkan pesanan kemudian diteruskan ke Finance untuk melakukan perilisan dana.',
+                            'pesanan_status' => 2, // 2 = perlu rilis dana
+                        ]);
+
+                        LogActivities::create([
+                            'user_id' => $currentUserId,
+                            'action' => 'Create Task - Verifikasi Pesanan ke Finance',
+                            'description' => 'Marketing melakukan verifikasi pesanan untuk melakukan perilisan dana ke finance pada pesanan ' . $record->code,
+                            'oldData' => json_encode($currentTask->toArray()),
+                            'newData' => json_encode($newTask->toArray()),
+                            'ip_address' => request()->ip(),
+                            'user_agent' => request()->userAgent(),
                         ]);
 
                         // 5. Beri Notifikasi Sukses

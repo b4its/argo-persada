@@ -32,6 +32,16 @@ class FinancePemesananResource extends Resource
         return FinancePemesanansTable::configure($table);
     }
 
+    public static function getNavigationLabel(): string
+    {
+        return 'Pemesanan';
+    }
+
+    public static function getNavigationIcon(): string
+    {
+        return 'heroicon-o-rectangle-stack'; // bisa diganti icon lain
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -43,8 +53,8 @@ class FinancePemesananResource extends Resource
     {
         return [
             'index' => ListFinancePemesanans::route('/'),
-            'create' => CreateFinancePemesanan::route('/create'),
-            'edit' => EditFinancePemesanan::route('/{record}/edit'),
+            // 'create' => CreateFinancePemesanan::route('/create'),
+            // 'edit' => EditFinancePemesanan::route('/{record}/edit'),
         ];
     }
 }

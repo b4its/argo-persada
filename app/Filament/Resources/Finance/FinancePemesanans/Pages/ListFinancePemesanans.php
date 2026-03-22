@@ -8,6 +8,7 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListFinancePemesanans extends ListRecords
 {
+    protected static ?string $title = 'Daftar Pemesanan';
     protected static string $resource = FinancePemesananResource::class;
 
     protected function getHeaderActions(): array

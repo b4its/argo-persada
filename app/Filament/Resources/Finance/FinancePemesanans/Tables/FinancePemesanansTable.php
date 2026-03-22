@@ -44,26 +44,71 @@ class FinancePemesanansTable
                     ->sortable(),
 
                 // 4. Status (Badge) - Diambil dari relasi Task terbaru
-                TextColumn::make('status')
-                    ->label('Status')
+                TextColumn::make('task_status') 
+                    ->label('Task Status')
                     ->badge()
-                    ->getStateUsing(function (Pesanan $record) {
-                        // Ambil task finance terakhir untuk pesanan ini
-                        $task = $record->tasks()->where('role', 'finance')->latest()->first();
+                    ->getStateUsing(function (Pesanan $record): int {
+                        // Ambil secara spesifik task yang memiliki role finance saja
+                        $task = $record->tasks->where('role', 'finance')->first();
                         
-                        // Logika penentuan status berdasarkan data task/gambar
-                        // Kamu bisa sesuaikan ini dengan nilai field `status` (tinyint) di DB kamu
-                        if ($task && str_contains(strtolower($task->description), 'perilisan dana')) {
-                            return 'Perlu Rilis Dana';
-                        }
-                        
-                        return 'Perlu Penagihan'; // Fallback default
+                        return $task ? (int) $task->status : 0;
                     })
-                    ->color(fn (string $state): string => match ($state) {
-                        'Perlu Rilis Dana' => 'warning',
-                        'Perlu Penagihan' => 'warning', // Di gambar warnanya sama-sama orange/warning
+                    ->formatStateUsing(fn (int $state): string => match ($state) {
+                        0 => 'Dibuat',
+                        1 => 'In Progress',
+                        2 => 'Selesai',
+                        default => 'Unknown',
+                    })
+                    ->color(fn (int $state): string => match ($state) {
+                        0 => 'gray',
+                        1 => 'warning',
+                        2 => 'success',
                         default => 'gray',
+                    })
+                    ->icon(fn (int $state): string => match ($state) {
+                        0 => 'heroicon-m-plus-circle',
+                        1 => 'heroicon-m-clock',
+                        2 => 'heroicon-m-check-badge',
+                        default => 'heroicon-m-question-mark-circle',
                     }),
+            // $table->tinyInteger('pesanan_status')->default(0)->comment('0: dibuat, 1: pending, 2: perlu rilis dana, 3: perlu penagihan, 4: selesai');
+
+                    TextColumn::make('status_marketing') 
+                        ->label('Pesan Status')
+                        ->badge()
+                        ->getStateUsing(function (Pesanan $record): int {
+                            // Ambil secara spesifik task yang memiliki role finance saja
+                            $task = $record->tasks->where('role', 'finance')->first();
+                            
+                            return $task ? (int) $task->taskActivities->last()->pesanan_status : 0;
+                        })
+                        ->formatStateUsing(fn (int $state): string => match ($state) {
+                            0 => 'Dibuat',
+                            1 => 'Pending',
+                            2 => 'Perlu Rilis Dana',
+                            3 => 'Perlu Penagihan',
+                            4 => 'Selesai',
+                            default => 'Unknown',
+                        })
+                        ->color(fn (int $state): string => match ($state) {
+                            0 => 'gray',
+                            1 => 'info',
+                            2 => 'warning',
+                            3 => 'danger',
+                            4 => 'success',
+                            default => 'gray',
+                        })
+                        ->icon(fn (int $state): string => match ($state) {
+                            0 => 'heroicon-m-plus-circle',       // Dibuat
+                            1 => 'heroicon-m-clock',             // Pending
+                            2 => 'heroicon-m-banknotes',         // Perlu Rilis Dana (uang/dana)
+                            3 => 'heroicon-m-document-text',     // Perlu Penagihan (dokumen tagihan/invoice)
+                            4 => 'heroicon-m-check-circle',      // Selesai
+                            default => 'heroicon-m-question-mark-circle',
+                        }),
+
+
+                
 
                 // 5. No. Invoice
                 TextColumn::make('no_invoice')
