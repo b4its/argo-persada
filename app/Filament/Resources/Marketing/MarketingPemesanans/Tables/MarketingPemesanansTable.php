@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Marketing\MarketingPemesanans\Tables;
 
+use App\Filament\Tables\Actions\DetailPesananViewAction;
 use App\Models\LogActivities;
 use App\Models\Pesanan;
 use App\Models\Task; // Pastikan Model Task di-import
@@ -16,6 +17,15 @@ use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString; 
 use Illuminate\Support\Str;// Untuk memformat text di modal
+
+
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Repeater;
+use Illuminate\Database\Eloquent\Model;
+
+
 
 class MarketingPemesanansTable
 {
@@ -88,31 +98,8 @@ class MarketingPemesanansTable
                 // Tambahkan filter di sini jika diperlukan
             ])
             ->recordActions([
-                ViewAction::make()
-                    ->form(
-                        \App\Filament\Resources\Marketing\MarketingPemesanans\Schemas\MarketingPemesananForm::configure(Schema::make())->getComponents()
-                    )
-                    ->mutateRecordDataUsing(function (array $data, Pesanan $record): array {
-                        $record->load(['keranjang.queueKeranjang']);
 
-                        if ($record->keranjang && $record->keranjang->queueKeranjang) {
-                            $data['list_barang'] = $record->keranjang->queueKeranjang->map(function ($item) {
-                                return [
-                                    'item_name' => $item->item_name,
-                                    'quantity' => $item->quantity,
-                                    'satuan' => $item->satuan,
-                                    'modal' => $item->modal,
-                                    'po' => $item->po,
-                                    'supplier_name' => $item->supplier_name,
-                                    'keterangan' => $item->keterangan,
-                                ];
-                            })->toArray();
-                        }
-
-                        $data['tanggal_pemesanan'] = $record->created_at;
-
-                        return $data;
-                    }),
+                DetailPesananViewAction::make(),
 
                 // ACTION BARU: Cetak Surat Requisition
                 Action::make('cetak_surat_requisition')

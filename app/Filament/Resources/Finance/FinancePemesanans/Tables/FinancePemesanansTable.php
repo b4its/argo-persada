@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Finance\FinancePemesanans\Tables;
 
+use App\Filament\Tables\Actions\DetailPesananViewAction;
 use App\Models\Pesanan;
 use App\Models\Task;
 use Filament\Actions\BulkActionGroup;
@@ -10,6 +11,13 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
+
+
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Repeater;
+use Illuminate\Database\Eloquent\Model;
 
 class FinancePemesanansTable
 {
@@ -121,36 +129,7 @@ class FinancePemesanansTable
                 // Tambahkan filter jika diperlukan nanti
             ])
             ->recordActions([
-                ViewAction::make()
-                    // Menggunakan ulang form schema yang Anda buat agar tampilannya rapi
-                    ->form(
-                        \App\Filament\Resources\Marketing\MarketingPemesanans\Schemas\MarketingPemesananForm::configure(Schema::make())->getComponents()
-                    )
-                    // KUNCI: Mengisi ulang data Repeater (list_barang) dari tabel QueueKeranjang
-                    ->mutateRecordDataUsing(function (array $data, Pesanan $record): array {
-                        // Load relasi agar data tersedia
-                        $record->load(['keranjang.queueKeranjang']);
-
-                        // Mapping data ke bentuk array agar bisa dibaca oleh komponen Repeater
-                        if ($record->keranjang && $record->keranjang->queueKeranjang) {
-                            $data['list_barang'] = $record->keranjang->queueKeranjang->map(function ($item) {
-                                return [
-                                    'item_name' => $item->item_name,
-                                    'quantity' => $item->quantity,
-                                    'satuan' => $item->satuan,
-                                    'modal' => $item->modal,
-                                    'po' => $item->po,
-                                    'supplier_name' => $item->supplier_name,
-                                    'keterangan' => $item->keterangan,
-                                ];
-                            })->toArray();
-                        }
-
-                        // Mengisi tanggal pemesanan dengan waktu data dibuat (karena di DB tanggal_pemesanan tidak disimpan khusus)
-                        $data['tanggal_pemesanan'] = $record->created_at;
-
-                        return $data;
-                    }), // Icon titik tiga (Actions) biasanya di-handle otomatis oleh Filament jika ada actions
+                DetailPesananViewAction::make(),
             
                     
                     ])
