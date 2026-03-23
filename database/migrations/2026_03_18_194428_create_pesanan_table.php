@@ -33,8 +33,10 @@ return new class extends Migration
 
             // Tanggal-Tanggal Penting 
             $table->date('tanggal_rilis_dana')->nullable(); 
+            $table->date('tanggal_terbit_surat_jalan')->nullable(); 
             $table->date('tanggal_terbit_invoice')->nullable();
             $table->date('tanggal_jatuh_tempo')->nullable();
+            $table->date('tanggal_surat_kembali')->nullable();
             $table->date('tanggal_lunas')->nullable();
 
             // File - Download Surat)

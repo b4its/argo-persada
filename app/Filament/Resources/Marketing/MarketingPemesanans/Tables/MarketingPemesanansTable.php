@@ -19,11 +19,6 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;// Untuk memformat text di modal
 
 
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Repeater;
-use Illuminate\Database\Eloquent\Model;
 
 
 
@@ -109,8 +104,9 @@ class MarketingPemesanansTable
                     ->requiresConfirmation() // Memunculkan pop-up/modal
                     ->modalHeading('Cetak Surat Requisition')
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
-                        "No Pemesanan:<br><strong>{$record->code}</strong><br><br>Apakah ingin cetak surat requisition ini?"
+                        "No Pemesanan:<br><strong>{$record->code}</strong><br><br>Apakah ingin cetak surat requisition pada pesanan ini?"
                     ))
+                    ->hidden(fn (Pesanan $record) => $record->no_requisition !== null && $record->no_requisition !== '---:---')
                     ->modalSubmitActionLabel('Iya') // Kanan
                     ->modalCancelActionLabel('Tidak') // Kiri
                     ->mountUsing(function (Action $action, Pesanan $record) {
@@ -263,7 +259,7 @@ class MarketingPemesanansTable
                             'updated_user_id' => $currentUserId, 
                             'task_id' => $originTask->id, // Pakai ID dari task yang existing
                             'note' => 'Melakukan pencetakan surat requisition',
-                            'pesanan_status' => 4, // 4 = Selesai
+                            'pesanan_status' => 8, // 8 = 8 selesai
                         ]);
 
                         TaskActivity::create([

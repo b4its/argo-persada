@@ -6,6 +6,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Repeater;
+use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
 
 class DetailPesananViewAction extends ViewAction
@@ -21,8 +22,8 @@ class DetailPesananViewAction extends ViewAction
     {
         parent::setUp();
 
-        $this->label('Detail Pesanan')
-            ->modalHeading('Detail Data Pemesanan')
+        $this->label('View Detail')
+            ->modalHeading('Detail Pemesanan')
             ->form([
                 DatePicker::make('tanggal_pemesanan')
                     ->label('Tanggal Pemesanan')
@@ -69,11 +70,33 @@ class DetailPesananViewAction extends ViewAction
                         TextInput::make('item_name')->label('Nama Barang'),
                         TextInput::make('quantity')->numeric()->label('Qty'),
                         TextInput::make('satuan')->label('Satuan'),
-                        TextInput::make('modal')->numeric()->label('Harga Modal'),
-                        TextInput::make('po')->numeric()->label('Harga PO'),
-                        TextInput::make('sub_total')->numeric()->label('Sub Total'),
-                        TextInput::make('supplier_name')->label('Supplier'),
-                        TextInput::make('keterangan')->label('Keterangan'),
+                        TextInput::make('modal')
+                            ->label('Harga Beli (Modal)*')
+                            ->prefix('Rp') 
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
+                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
+                            ->numeric()
+                            ->default(0)
+                            ->required(),
+
+                        TextInput::make('po')
+                            ->label('Harga Jual (PO)*')
+                            ->prefix('Rp') 
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
+                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
+                            ->numeric()
+                            ->default(0)
+                            ->required(),
+                        TextInput::make('sub_total')
+                            ->label('Sub Total')
+                            ->prefix('Rp')
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
+                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
+                            ->numeric()
+                            ->default(0)
+                            ->required(),   
+                        TextInput::make('supplier_name')->label('Supplier')->columnSpanFull(),
+                        Textarea::make('keterangan')->label('Keterangan')->columnSpanFull(),
                     ])
                     ->columns(2)
                     ->disabled()

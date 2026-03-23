@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('updated_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('task_id')->constrained('task')->onDelete('cascade');
             $table->text('note')->nullable(); 
-            $table->tinyInteger('pesanan_status')->default(0)->comment('0: dibuat, 1: pending, 2: perlu rilis dana, 3: perlu penagihan, 4: selesai');
+            $table->tinyInteger('pesanan_status')->default(0)->comment('0: dibuat, 1: pending, 2: perlu rilis dana, 3: cetak invoice, 4: perlu penagihan, 5: ditandai lunas, 6. cetak surat jalan, 7. tandai selesai dikirm, 8: selesai');
             $table->timestamps();
         });
     }

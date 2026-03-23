@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'tanggal_rilis_dana',
     'tanggal_terbit_invoice',
     'tanggal_jatuh_tempo',
+    'tanggal_terbit_surat_jalan',
+    'tanggal_surat_kembali',
     'tanggal_lunas',
     'file_invoice',
     'file_do'

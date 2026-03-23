@@ -7,6 +7,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Support\RawJs;
 
 class MarketingPemesananForm
 {
@@ -72,12 +73,18 @@ class MarketingPemesananForm
 
                         TextInput::make('modal')
                             ->label('Harga Beli (Modal)*')
+                            ->prefix('Rp') 
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
+                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
                             ->numeric()
                             ->default(0)
                             ->required(),
 
                         TextInput::make('po')
                             ->label('Harga Jual (PO)*')
+                            ->prefix('Rp') 
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
+                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
                             ->numeric()
                             ->default(0)
                             ->required(),
