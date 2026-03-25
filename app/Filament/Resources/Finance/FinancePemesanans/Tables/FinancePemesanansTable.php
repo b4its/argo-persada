@@ -9,6 +9,7 @@ use App\Models\Task;
 use App\Models\TaskActivity; 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Actions\Action; // Pastikan menggunakan Action dari Tables
 use Filament\Notifications\Notification; 
@@ -88,7 +89,7 @@ class FinancePemesanansTable
                         0 => 'Dibuat',
                         1 => 'Pending',
                         2 => 'Perlu Rilis Dana',
-                        3 => 'Cetak Invoice',
+                        3 => 'Perlu Cetak Invoice',
                         4 => 'Perlu Penagihan',
                         5 => 'Ditandai Lunas',
                         6 => 'Cetak Surat Jalan',
@@ -288,7 +289,7 @@ class FinancePemesanansTable
                             'updated_user_id' => $currentUserId, 
                             'task_id' => $originTask->id, 
                             'note' => 'Melakukan konfirmasi rilis dana untuk pesanan ' . $record->code . ' kemudian diteruskan ke Logistik untuk melakukan Cetak Surat Jalan.',
-                            'pesanan_status' => 4, 
+                            'pesanan_status' => 1, 
                         ]);
 
                         $newTaskActivity = TaskActivity::create([
@@ -325,15 +326,23 @@ class FinancePemesanansTable
                     ->color('info')
                     // Hanya muncul jika Rilis Dana sudah dilakukan (dan logistik telah selesai, ditandai dari logistik membalikkan task ke finance)
                     // serta invoice belum dicetak
-                    ->hidden(fn (Pesanan $record): bool => $record->tanggal_rilis_dana === null || $record->no_invoice !== null)
+                    ->hidden(fn (Pesanan $record): bool => $record->tanggal_rilis_dana === null || $record->no_invoice !== null || $record->tanggal_terbit_surat_jalan === null || $record->tanggal_surat_kembali === null)
                     ->requiresConfirmation()
                     ->modalHeading('Cetak Invoice Pesanan')
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
                         "No Pemesanan:<br><strong>{$record->code}</strong><br><br>Apakah Anda yakin ingin menerbitkan Invoice untuk pesanan ini?"
                     ))
+                    ->form([
+                        \Filament\Forms\Components\DatePicker::make('tanggal_jatuh_tempo')
+                            ->label('Tenggat Waktu')
+                            ->required()
+                            ->native(false)
+                    ])
                     ->modalSubmitActionLabel('Terbitkan Invoice') 
                     ->modalCancelActionLabel('Batal')
-                    ->mountUsing(function (Action $action, Pesanan $record) {
+                    
+                    // PERBAIKAN: Gunakan beforeFormFilled alih-alih mountUsing
+                    ->beforeFormFilled(function (Action $action, Pesanan $record) {
                         $currentUserId = auth()->id();
 
                         // 1. Cek Pencegahan Spam
@@ -346,10 +355,11 @@ class FinancePemesanansTable
                             $action->cancel();
                             return;
                         }
+
                         $isAlreadyInProgress = TaskActivity::whereHas('task', function ($query) use ($record) {
                                 $query->where('pesanan_id', $record->id)
-                                      ->where('role', 'finance')
-                                      ->where('title', 'like', '%cetak invoice%');
+                                    ->where('role', 'finance')
+                                    ->where('title', 'like', '%cetak invoice%');
                             })
                             ->where('pesanan_status', 1) 
                             ->exists();
@@ -393,7 +403,9 @@ class FinancePemesanansTable
                             }
                         }
                     })
-                    ->action(function (Pesanan $record) {
+                    
+                    // Action utama (Dieksekusi saat tombol Terbitkan Invoice di-klik)
+                    ->action(function (Pesanan $record, array $data) {
                         $currentUserId = auth()->id();
 
                         $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
@@ -410,7 +422,8 @@ class FinancePemesanansTable
                         $record->update([
                             'no_invoice' => $generatedInvoiceNumber,
                             'tanggal_terbit_invoice' => now(),
-                            'tanggal_jatuh_tempo' => now()->addDays(14), 
+                            // Tanggal ini sudah aman tidak akan null lagi
+                            'tanggal_jatuh_tempo' => $data['tanggal_jatuh_tempo'], 
                         ]);
 
                         $currentTask = Task::where('pesanan_id', $record->id)

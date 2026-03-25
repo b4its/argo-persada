@@ -89,7 +89,7 @@ class LogistikPemesanansTable
                         0 => 'Dibuat',
                         1 => 'Pending',
                         2 => 'Perlu Rilis Dana',
-                        3 => 'Cetak Invoice',
+                        3 => 'Perlu Cetak Invoice',
                         4 => 'Perlu Penagihan',
                         5 => 'Ditandai Lunas',
                         6 => 'Cetak Surat Jalan',
@@ -163,10 +163,12 @@ class LogistikPemesanansTable
                         $originalCreatorId = TaskActivity::where('task_id', $currentTask->id)
                             ->orderBy('created_at', 'asc')
                             ->value('created_user_id') ?? $currentUserId;
-
+                        
+                        $delivery_number = "DE-" .date('Ymd') . '-' . strtoupper(Str::random(5));
                         // 1. Update Pesanan
                         $record->update([
-                            'tanggal_terbit_surat_jalan' => now()
+                            'tanggal_terbit_surat_jalan' => now(),
+                            'no_delivery_order' => $delivery_number
                         ]);
 
                         // 2. Update Task menjadi In Progress (1)
@@ -244,6 +246,11 @@ class LogistikPemesanansTable
                             'status' => 2,
                         ]);
 
+                        $financeTask = Task::where('pesanan_id', $record->id)
+                            ->where('role', 'finance')
+                            ->latest()
+                            ->first();
+
                         // 3. Catat Task Activity (Status 7 = Selesai Dikirim)
                         TaskActivity::create([
                             'created_user_id' => $originalCreatorId, 
@@ -251,6 +258,14 @@ class LogistikPemesanansTable
                             'task_id' => $currentTask->id, 
                             'note' => 'Barang telah berhasil dikirim dan diterima oleh pemesan.',
                             'pesanan_status' => 7, 
+                        ]);
+                        
+                        TaskActivity::create([
+                            'created_user_id' => $originalCreatorId, 
+                            'updated_user_id' => $currentUserId, 
+                            'task_id' => $financeTask->id, 
+                            'note' => 'Finance perlu cetak invoice dengan kode psanan ' . $record->code,
+                            'pesanan_status' => 3, 
                         ]);
 
                         // 4. Log Activity

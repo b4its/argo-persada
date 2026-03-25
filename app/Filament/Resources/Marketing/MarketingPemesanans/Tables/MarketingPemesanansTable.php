@@ -120,7 +120,7 @@ class MarketingPemesanansTable
 
                         if ($completedTask) {
                             $completedActivity = TaskActivity::where('task_id', $completedTask->id)
-                                ->where('pesanan_status', 4) // 4 = selesai
+                                ->where('pesanan_status', 8) // 4 = selesai
                                 ->first(); 
 
                             if ($completedActivity) {

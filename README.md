@@ -78,10 +78,14 @@ docker compose exec apache composer create-project laravel/laravel .
 ### docker permission
 ```bash
 # Masuk ke container PHP dan ubah owner folder ke user web (www-data)
+sudo chown -R $USER:$USER .
 docker exec -it argo-php-fpm chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Berikan izin baca-tulis penuh
 docker exec -it argo-php-fpm chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# bash docker
+php artisan storage:link
+chown -R www-data:www-data /var/www/html/public/
+chmod -R 775 /var/www/html/public/
 ```
 ## License
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
