@@ -813,7 +813,7 @@
     loginDropdown.classList.remove('open');loginChevron.style.transform='rotate(0)';
     showToast('Mengarahkan ke portal '+role+'...');
     if(role==='Superadmin')  window.location.href="{{ route('filament.superadmin.pages.dashboard') }}";
-    else if(role==='Admin')  window.location.href="{{ route('filament.admin.pages.dashboard') }}";
+    else if(role==='Admin')  window.location.href="{{ route('filament.admin.home') }}";
     else if(role==='Marketing') window.location.href="{{ route('filament.marketing.pages.dashboard') }}";
     else if(role==='Finance')   window.location.href="{{ route('filament.finance.pages.dashboard') }}";
     else                        window.location.href="{{ route('filament.logistik.pages.dashboard') }}";

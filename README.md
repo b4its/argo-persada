@@ -86,6 +86,9 @@ docker exec -it argo-php-fpm chmod -R 775 /var/www/html/storage /var/www/html/bo
 php artisan storage:link
 chown -R www-data:www-data /var/www/html/public/
 chmod -R 775 /var/www/html/public/
+
+# add theme in filament
+php artisan make:filament-theme
 ```
 ## License
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

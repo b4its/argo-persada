@@ -27,6 +27,7 @@ return new class extends Migration
             $table->text('address')->nullable();
 
             // Nomor Dokumen per Divisi 
+            $table->string('no_po')->nullable(); // Marketing
             $table->string('no_requisition')->nullable(); // Marketing
             $table->string('no_invoice')->nullable();     // Finance
             $table->string('no_delivery_order')->nullable(); // Logistik

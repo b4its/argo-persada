@@ -29,6 +29,7 @@ class SuperadminPanelProvider extends PanelProvider
             ->default()
             ->id('superadmin')
             ->path('superadmin')
+            ->viteTheme('resources/css/filament/superadmin/theme.css')
             ->brandName("Superadmin Panel")
             ->login()
             ->userMenuItems([

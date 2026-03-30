@@ -527,7 +527,17 @@ class FinancePemesanansTable
                             ->title('Pembayaran Selesai')
                             ->body('Pesanan telah ditandai LUNAS.')
                             ->send();
-                    })
+                    }),
+                    Action::make('cetak_invoice_finance')
+                        ->label('Cetak Invoice Finance')
+                        ->icon('heroicon-o-document-text')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Cetak Invoice Finance')
+                        ->modalDescription('Apakah anda ingin mencetak dokumen Invoice Permintaan Finance ini?')
+                        ->modalSubmitActionLabel('Ya, Cetak')
+                        ->url(fn ($record) => route('invoice.request.finance.index', $record->id))
+                        ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

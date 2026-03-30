@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'address',
     'ppn',
     'total_harga',
+    'no_po',
     'no_requisition',
     'no_invoice',
     'no_delivery_order',

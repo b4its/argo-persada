@@ -39,12 +39,22 @@ class AdminPemesananResource extends Resource
         ];
     }
 
+    public static function getNavigationLabel(): string
+    {
+        return 'Pemesanan';
+    }
+
+    public static function getNavigationIcon(): string
+    {
+        return 'heroicon-o-rectangle-stack'; // bisa diganti icon lain
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListAdminPemesanans::route('/'),
-            'create' => CreateAdminPemesanan::route('/create'),
-            'edit' => EditAdminPemesanan::route('/{record}/edit'),
+            // 'create' => CreateAdminPemesanan::route('/create'),
+            // 'edit' => EditAdminPemesanan::route('/{record}/edit'),
         ];
     }
 }

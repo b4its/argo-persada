@@ -70,11 +70,12 @@ class ListMarketingPemesanans extends ListRecords
                         ]);
 
                         $tax_amount = $totalKeseluruhan * 0.11;
-
+                        $generate_po_number = 'PO-' . date('Ymd') . '-' . strtoupper(Str::random(5));
                         // LANGKAH 4: Buat Pesanan utama
                         $pesanan = Pesanan::create([
                             'user_id' => $data['user_id'],
                             'keranjang_id' => $keranjang->id,
+                            'no_po' => $generate_po_number,
                             'code' => $data['code'],
                             'ppn' => $tax_amount,
                             'total_harga' => $totalKeseluruhan + $tax_amount,

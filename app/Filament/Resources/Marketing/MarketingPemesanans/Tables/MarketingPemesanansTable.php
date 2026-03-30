@@ -96,6 +96,7 @@ class MarketingPemesanansTable
 
                 DetailPesananViewAction::make(),
 
+
                 // ACTION BARU: Cetak Surat Requisition
                 Action::make('cetak_surat_requisition')
                     ->label('Cetak Surat Requisition')
@@ -286,7 +287,17 @@ class MarketingPemesanansTable
                             ->title('Berhasil')
                             ->body('Surat requisition berhasil dicetak dan data tugas diperbarui.')
                             ->send();
-                    })
+                    }),
+                    Action::make('cetak_surat_po')
+                        ->label('Cetak Surat Pre Order')
+                        ->icon('heroicon-o-printer')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Cetak Surat PO')
+                        ->modalDescription('Apakah anda ingin mencetak dokumen Surat PO ini?')
+                        ->modalSubmitActionLabel('Ya, Cetak')
+                        ->url(fn ($record) => route('surat_po.index', ['id' => $record->id]))
+                        ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -285,6 +285,17 @@ class LogistikPemesanansTable
                             ->body('Tugas logistik untuk pesanan ini telah selesai.')
                             ->send();
                     }),
+
+                    Action::make('cetak_surat_jalan')
+                        ->label('Cetak Surat Jalan')
+                        ->icon('heroicon-o-truck')
+                        ->color('info')
+                        ->requiresConfirmation()
+                        ->modalHeading('Cetak Surat Jalan')
+                        ->modalDescription('Apakah anda ingin mencetak dokumen Surat Jalan ini?')
+                        ->modalSubmitActionLabel('Ya, Cetak')
+                        ->url(fn ($record) => route('surat_jalan.index', $record->id))
+                        ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
