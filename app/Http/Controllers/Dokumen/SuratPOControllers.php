@@ -10,14 +10,16 @@ use Illuminate\Support\Facades\Auth;
 class SuratPOControllers extends Controller
 {
     //
-    public function index(){
-        $latestPesanan = Pesanan::latest()->limit(1)->get();
+    public function index($id){
+        $latestPesanan = Pesanan::with(['keranjang'])->findOrFail($id);
         $username = Auth::user()->username;
-        return view("dokumen.surat_jalan", 
+        return view("dokumen.surat_po", 
         [
             "latestPesanan"=> $latestPesanan,
             "username"=> $username
         
         ]);
     }
+
+
 }

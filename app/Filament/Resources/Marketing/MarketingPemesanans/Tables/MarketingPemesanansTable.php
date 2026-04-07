@@ -39,9 +39,7 @@ class MarketingPemesanansTable
                     ->orderBy('created_at', 'desc')
             )
             ->columns([
-                TextColumn::make('row_num')
-                    ->label('No')
-                    ->sortable(),
+
 
                 TextColumn::make('code')
                     ->label('No Pemesanan')

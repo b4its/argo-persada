@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dokumen\BukuBMutasi;
 use App\Http\Controllers\Dokumen\InvoicePermintaanFinanceControllers;
 use App\Http\Controllers\Dokumen\SuratJalanControllers;
 use App\Http\Controllers\Dokumen\SuratPOControllers;
@@ -21,6 +22,10 @@ Route::prefix('dokumen')->group(function () {
 
     Route::controller(InvoicePermintaanFinanceControllers::class)->group(function () {
         Route::get('/surat-invoice-permintaan-finance/{id}', 'index')->name('invoice.request.finance.index');;
+    });
+
+    Route::controller(BukuBMutasi::class)->group(function () {
+        Route::get('/buku-besar-mutasi/{id}', 'index')->name('buku_besar_mutasi.index');;
     });
 
 });

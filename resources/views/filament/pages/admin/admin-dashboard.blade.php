@@ -2,83 +2,76 @@
 
 <div class="flex flex-col gap-6">
 
-{{-- ╔══════════════════════════════╗
+        {{-- ╔══════════════════════════════╗
              ║   STAT CARDS (Modern Style)  ║
              ╚══════════════════════════════╝ --}}
-        {{-- Menggunakan inline CSS Grid agar layout menyamping 3 kolom terjamin bekerja --}}
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
             
             {{-- Total Pesanan --}}
-            <x-filament::section>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    {{-- Icon Wrapper --}}
-                    <div style="display: flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; background-color: rgba(99, 102, 241, 0.1); color: rgb(79, 70, 229);">
-                        <x-filament::icon icon="heroicon-o-shopping-bag" style="width: 1.5rem; height: 1.5rem;" />
+            <div class="relative flex flex-col rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <div class="flex items-start justify-between">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                        <x-filament::icon icon="heroicon-o-shopping-bag" class="h-6 w-6" />
                     </div>
-                    {{-- Trend Badge menggunakan Native Filament --}}
-                    <x-filament::badge color="success" size="sm" icon="heroicon-m-arrow-trending-up">
+                    {{-- Dummy Trend Badge (Sesuai referensi gambar) --}}
+                    <span class="inline-flex items-center gap-x-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/10 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20">
+                        <x-filament::icon icon="heroicon-m-arrow-trending-up" class="h-3 w-3" />
                         12.5%
-                    </x-filament::badge>
+                    </span>
                 </div>
-                
-                <div style="margin-top: 1rem;">
-                    <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280;">Total Pesanan</h3>
-                    <p style="margin-top: 0.25rem; font-size: 1.875rem; font-weight: 800;">
-                        {{ $this->stats['total_pesanan'] }}
-                    </p>
+                <div class="mt-4">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Pesanan</h3>
+                    <p class="mt-1 text-3xl font-bold tracking-tight text-gray-950 dark:text-white">{{ $this->stats['total_pesanan'] }}</p>
                 </div>
-                
                 {{-- Decorative Progress Bar --}}
-                <div style="margin-top: 1.5rem; width: 100%; height: 0.375rem; border-radius: 9999px; background-color: rgba(156, 163, 175, 0.2); overflow: hidden;">
-                    <div style="height: 100%; border-radius: 9999px; width: 65%; background-color: rgb(99, 102, 241);"></div>
+                <div class="mt-5 w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <div class="h-full rounded-full bg-indigo-500" style="width: 65%"></div>
                 </div>
-            </x-filament::section>
+            </div>
 
             {{-- Task Aktif --}}
-            <x-filament::section>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display: flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; background-color: rgba(245, 158, 11, 0.1); color: rgb(217, 119, 6);">
-                        <x-filament::icon icon="heroicon-o-clock" style="width: 1.5rem; height: 1.5rem;" />
+            <div class="relative flex flex-col rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <div class="flex items-start justify-between">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                        <x-filament::icon icon="heroicon-o-clock" class="h-6 w-6" />
                     </div>
-                    <x-filament::badge color="danger" size="sm" icon="heroicon-m-arrow-trending-down">
+                    {{-- Dummy Trend Badge --}}
+                    <span class="inline-flex items-center gap-x-1 rounded-md bg-rose-50 px-2 py-1 text-xs font-bold text-rose-600 ring-1 ring-inset ring-rose-500/10 dark:bg-rose-500/10 dark:text-rose-400 dark:ring-rose-500/20">
+                        <x-filament::icon icon="heroicon-m-arrow-trending-down" class="h-3 w-3" />
                         5.2%
-                    </x-filament::badge>
+                    </span>
                 </div>
-                
-                <div style="margin-top: 1rem;">
-                    <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280;">Task Aktif</h3>
-                    <p style="margin-top: 0.25rem; font-size: 1.875rem; font-weight: 800;">
-                        {{ $this->stats['active_tasks'] }}
-                    </p>
+                <div class="mt-4">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Task Aktif</h3>
+                    <p class="mt-1 text-3xl font-bold tracking-tight text-gray-950 dark:text-white">{{ $this->stats['active_tasks'] }}</p>
                 </div>
-                
-                <div style="margin-top: 1.5rem; width: 100%; height: 0.375rem; border-radius: 9999px; background-color: rgba(156, 163, 175, 0.2); overflow: hidden;">
-                    <div style="height: 100%; border-radius: 9999px; width: 45%; background-color: rgb(245, 158, 11);"></div>
+                {{-- Decorative Progress Bar --}}
+                <div class="mt-5 w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <div class="h-full rounded-full bg-amber-500" style="width: 45%"></div>
                 </div>
-            </x-filament::section>
+            </div>
 
             {{-- Task Selesai --}}
-            <x-filament::section>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display: flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border-radius: 0.75rem; background-color: rgba(16, 185, 129, 0.1); color: rgb(5, 150, 105);">
-                        <x-filament::icon icon="heroicon-o-check-circle" style="width: 1.5rem; height: 1.5rem;" />
+            <div class="relative flex flex-col rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <div class="flex items-start justify-between">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                        <x-filament::icon icon="heroicon-o-check-circle" class="h-6 w-6" />
                     </div>
-                    <x-filament::badge color="success" size="sm" icon="heroicon-m-arrow-trending-up">
+                    {{-- Dummy Trend Badge --}}
+                    <span class="inline-flex items-center gap-x-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/10 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20">
+                        <x-filament::icon icon="heroicon-m-arrow-trending-up" class="h-3 w-3" />
                         8.4%
-                    </x-filament::badge>
+                    </span>
                 </div>
-                
-                <div style="margin-top: 1rem;">
-                    <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280;">Task Selesai</h3>
-                    <p style="margin-top: 0.25rem; font-size: 1.875rem; font-weight: 800;">
-                        {{ $this->stats['completed_tasks'] }}
-                    </p>
+                <div class="mt-4">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Task Selesai</h3>
+                    <p class="mt-1 text-3xl font-bold tracking-tight text-gray-950 dark:text-white">{{ $this->stats['completed_tasks'] }}</p>
                 </div>
-                
-                <div style="margin-top: 1.5rem; width: 100%; height: 0.375rem; border-radius: 9999px; background-color: rgba(156, 163, 175, 0.2); overflow: hidden;">
-                    <div style="height: 100%; border-radius: 9999px; width: 80%; background-color: rgb(16, 185, 129);"></div>
+                {{-- Decorative Progress Bar --}}
+                <div class="mt-5 w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                    <div class="h-full rounded-full bg-emerald-500" style="width: 80%"></div>
                 </div>
-            </x-filament::section>
+            </div>
 
         </div>
 
@@ -102,7 +95,7 @@
                     <div class="divide-y divide-gray-200 dark:divide-white/10">
                         @foreach($this->performers as $index => $user)
                             @php $rank = $index + 1; @endphp
-                            <div class="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                            <div class="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors" style="padding:0.5em">
                                 
                                 <div class="w-8 h-8 flex flex-shrink-0 items-center justify-center rounded-full text-sm font-bold shadow-sm ring-1 ring-gray-950/10 dark:ring-white/20
                                     @if($rank === 1) bg-amber-400 text-white ring-amber-500

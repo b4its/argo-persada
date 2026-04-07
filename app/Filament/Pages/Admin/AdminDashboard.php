@@ -29,7 +29,9 @@ class AdminDashboard extends Page
     protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-chart-bar';
 protected static string | null $dashboardIcon = '';
     protected string $view = 'filament.pages.admin.admin-dashboard';
-    protected static ?string $title = 'Leaderboard & Progress Kerja';
+    protected static ?string $slug = 'dashboard';
+
+    protected static ?string $title = 'Dashboard';
 
     /**
      * #[Computed] memastikan data ini hanya di-query saat dipanggil di Blade

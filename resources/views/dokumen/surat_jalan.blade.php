@@ -299,7 +299,7 @@
             <td style="vertical-align: top;">:</td>
             <td>
                 PT. {{ $pesanan->company_name ?? 'XXXX' }}<br>
-                &nbsp;&nbsp;{{ $pesanan->address ?? 'xxxxxxx' }}<br>
+                {{ $pesanan->address ?? 'xxxxxxx' }}<br>
                 @if($pesanan->address2 ?? false)
                     &nbsp;&nbsp;{{ $pesanan->address2 }}<br>
                 @endif
@@ -414,14 +414,14 @@
                 <td></td>
                 <td>Lembar Pink</td>
                 <td>:</td>
-                <td>Customer</td>
+                <td></td>
             </tr>
             <tr>
                 <td></td>
                 <td></td>
                 <td>Lembar Kuning</td>
                 <td>:</td>
-                <td>Pengirim</td>
+                <td></td>
             </tr>
         </table>
 

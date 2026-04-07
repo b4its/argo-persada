@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Auth;
 class SuratJalanControllers extends Controller
 {
     //
-    public function index(){
-        $latestPesanan = Pesanan::latest()->limit(1)->get();
+    public function index($id){
+        $latestPesanan = Pesanan::with(['keranjang'])->findOrFail($id);
         $username = Auth::user()->name;
         return view("dokumen.surat_jalan", 
         [
@@ -20,4 +20,7 @@ class SuratJalanControllers extends Controller
         
         ]);
     }
+
+
+    
 }
