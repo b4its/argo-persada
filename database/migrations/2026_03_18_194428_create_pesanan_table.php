@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('keranjang_id')->constrained('keranjang')->onDelete('cascade');
+            $table->foreignId('company_internal_id')->nullable()->constrained('company_internal')->onDelete('cascade');
             
             // Identitas Pesanan 
             $table->string('code', 45)->unique(); // No. Pemesanan / PO

@@ -24,13 +24,17 @@ use Illuminate\Support\Facades\Blade;
 
 class AdminPanelProvider extends PanelProvider
 {
+    
     public function panel(Panel $panel): Panel
     {
+        $brandNames = 'Admin Panel';
+        $logoPath = asset('images/logo.webp');
         return $panel
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandName('Admin Panel')
+            ->brandName($brandNames)
+            ->brandLogo(fn() => view('filament.components.brand-logo', ['logoPath' => $logoPath, 'brandNames' => $brandNames]))
             ->login()
             ->userMenuItems([
                 'profile' => MenuItem::make()
@@ -41,6 +45,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::body.end',
                 fn (): string => Blade::render('@livewire(\App\Livewire\EditProfileModal::class)')
+            )
+            ->renderHook(
+                'panels::head.end', 
+                fn () => view('filament.hooks.halaman-utama-button'),
             )
             ->globalSearch(false)
             ->colors([

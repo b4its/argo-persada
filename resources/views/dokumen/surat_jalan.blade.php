@@ -245,7 +245,7 @@
                 margin: 12mm 15mm 12mm 15mm;
             }
             body {
-                padding: 0;
+                padding: 2em;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }

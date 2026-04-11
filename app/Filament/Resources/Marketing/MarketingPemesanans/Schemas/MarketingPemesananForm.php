@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Marketing\MarketingPemesanans\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -21,6 +22,14 @@ class MarketingPemesananForm
                     ->native(false)
                     ->dehydrated(false),
 
+                Select::make('company_internal_id')
+                    ->label('Perusahaan Internal*')
+                    // Gunakan nama fungsi relasi di Model Pesanan yang baru saja kita ubah
+                    ->relationship('companyInternal', 'name') 
+                    // Format tampilan option-nya (Nama Perusahaan - SINGKATAN)
+                    ->getOptionLabelFromRecordUsing(fn (\Illuminate\Database\Eloquent\Model $record) => "{$record->name} - {$record->singkatan}")
+                    ->searchable()
+                    ->required(),
                 TextInput::make('group_name')
                     ->label('Group*')
                     ->placeholder('Masukkan Nama Group...')

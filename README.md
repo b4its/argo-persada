@@ -24,6 +24,11 @@ php artisan optimize
 docker exec -it argo-php-fpm bash -c "php artisan config:clear && php artisan view:clear && php artisan cache:clear && php artisan route:clear && php artisan optimize:clear && php artisan optimize"
 ```
 
+### menyatukan semua permission pakai perm
+```bash
+make perm
+```
+
 ## Docker Setup
 
 ### untuk menjalankan nginx dan db

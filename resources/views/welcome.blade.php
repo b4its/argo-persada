@@ -373,9 +373,6 @@
         </button>
         <div class="login-dropdown" id="loginDropdown">
           <div class="dropdown-header">Pilih Role Login</div>
-          <button class="dropdown-item di-superadmin" onclick="loginAs('Superadmin')">
-            <div class="di-icon"><i class="fa-solid fa-shield-halved"></i></div><span>Superadmin</span>
-          </button>
           <button class="dropdown-item di-admin" onclick="loginAs('Admin')">
             <div class="di-icon"><i class="fa-solid fa-user-gear"></i></div><span>Admin</span>
           </button>

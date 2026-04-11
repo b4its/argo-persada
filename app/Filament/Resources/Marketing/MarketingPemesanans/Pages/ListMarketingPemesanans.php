@@ -25,12 +25,16 @@ class ListMarketingPemesanans extends ListRecords
     {
         return [
             CreateAction::make()
+                // PERBAIKAN 1: Deklarasikan model secara eksplisit agar form tahu konteks datanya
+                ->model(Pesanan::class) 
                 ->form(
                     \App\Filament\Resources\Marketing\MarketingPemesanans\Schemas\MarketingPemesananForm::configure(Schema::make())->getComponents()
                 )
                 ->mutateFormDataUsing(function (array $data): array {
+                    // PERBAIKAN 2: Pastikan data bawaan form tetap aman
                     $data['user_id'] = auth()->id();
                     $data['code'] = 'PO-' . time();
+                    
                     return $data;
                 })
                 ->using(function (array $data, string $model): Model {
@@ -71,67 +75,52 @@ class ListMarketingPemesanans extends ListRecords
 
                         $tax_amount = $totalKeseluruhan * 0.11;
                         $generate_po_number = 'PO-' . date('Ymd') . '-' . strtoupper(Str::random(5));
+                        
                         // LANGKAH 4: Buat Pesanan utama
+                        // PERBAIKAN 3: Gunakan null coalescing (?? null) agar tidak terjadi undefined key
                         $pesanan = Pesanan::create([
-                            'user_id' => $data['user_id'],
-                            'keranjang_id' => $keranjang->id,
-                            'no_po' => $generate_po_number,
-                            'code' => $data['code'],
-                            'ppn' => $tax_amount,
-                            'total_harga' => $totalKeseluruhan + $tax_amount,
-                            'group_name' => $data['group_name'],
-                            'company_name' => $data['company_name'],
-                            'address' => $data['address'],
+                            'user_id'             => $data['user_id'],
+                            'keranjang_id'        => $keranjang->id,
+                            'company_internal_id' => $data['company_internal_id'] ?? null, 
+                            'no_po'               => $generate_po_number,
+                            'code'                => $data['code'],
+                            'ppn'                 => $tax_amount,
+                            'total_harga'         => $totalKeseluruhan + $tax_amount,
+                            'group_name'          => $data['group_name'] ?? null,
+                            'company_name'        => $data['company_name'] ?? null,
+                            'address'             => $data['address'] ?? null,
                         ]);
 
-                        // LANGKAH 5: Buat Task yang dikhususkan untuk Finance
-                        // $task = Task::create([
-                        //     'pesanan_id' => $pesanan->id,
-                        //     'title' => 'Verifikasi Pesanan ' . $pesanan->code,
-                        //     'role' => 'finance',
-                        //     'description' => 'Pesanan baru telah dibuat oleh Marketing. Mohon untuk melakukan perilisan dana.',
-                        //     'due_date' => now()->addDays(7), // Estimasi batas waktu task, bisa disesuaikan
-                        //     'status' => 0, // 0 sebagai penanda status awal (pending/baru)
-                        // ]);
-
-                        // // LANGKAH 6: Buat Task Activity dengan unique requisition_number (huruf kapital dan angka)
-                        // TaskActivity::create([
-                        //     'created_user_id' => $data['user_id'],
-                        //     'updated_user_id' => $data['user_id'],
-                        //     'task_id' => $task->id,
-                        //     'note' => 'Pesanan baru berhasil dibuat dan akan diteruskan ke Finance.',
-                        //     'pesanan_status' => 0, // 0 penanda awal
-                        // ]);
+                        // LANGKAH 5: Buat Task
                         $task = Task::create([
-                            'pesanan_id' => $pesanan->id,
-                            'title' => 'Melakukan cetak surat requisition untuk pesanan ' . $pesanan->code,
-                            'role' => 'marketing',
+                            'pesanan_id'  => $pesanan->id,
+                            'title'       => 'Melakukan cetak surat requisition untuk pesanan ' . $pesanan->code,
+                            'role'        => 'marketing',
                             'description' => 'Mohon untuk melakukan cetak surat requisition pada pesanan ' . $pesanan->code,
-                            'due_date' => now()->addDays(7), // Estimasi batas waktu task, bisa disesuaikan
-                            'status' => 0, // 0 sebagai penanda status awal (pending/baru)
+                            'due_date'    => now()->addDays(7),
+                            'status'      => 0,
                         ]);
 
-                        // LANGKAH 6: Buat Task Activity dengan unique requisition_number (huruf kapital dan angka)
+                        // LANGKAH 6: Buat Task Activity
                         TaskActivity::create([
                             'created_user_id' => $data['user_id'],
                             'updated_user_id' => $data['user_id'],
-                            'task_id' => $task->id,
-                            'note' => 'Pesanan baru berhasil dibuat dan akan diteruskan untuk melakukan cetak surat requisition.',
-                            'pesanan_status' => 0, // 0 penanda awal
+                            'task_id'         => $task->id,
+                            'note'            => 'Pesanan baru berhasil dibuat dan akan diteruskan untuk melakukan cetak surat requisition.',
+                            'pesanan_status'  => 0, 
                         ]);
 
                         // LANGKAH 7: Catat Log Activities
                         LogActivities::create([
-                            'user_id' => $data['user_id'],
-                            'action' => 'Create Pesanan',
+                            'user_id'     => $data['user_id'],
+                            'action'      => 'Create Pesanan',
                             'description' => 'Marketing membuat pesanan baru dengan kode ' . $pesanan->code,
-                            'oldData' => null,
-                            'newData' => json_encode($pesanan->toArray()),
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->userAgent(),
+                            'oldData'     => null,
+                            'newData'     => json_encode($pesanan->toArray()),
+                            'ip_address'  => request()->ip(),
+                            'user_agent'  => request()->userAgent(),
                         ]);
 
-                        // Return pesanan agar proses create di Filament dinyatakan sukses
                         return $pesanan;
                     });
                 }),
