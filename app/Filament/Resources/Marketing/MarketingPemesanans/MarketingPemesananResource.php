@@ -47,7 +47,7 @@ class MarketingPemesananResource extends Resource
 
     public static function getNavigationIcon(): string
     {
-        return 'heroicon-o-rectangle-stack'; // bisa diganti icon lain
+        return 'heroicon-o-shopping-bag'; // bisa diganti icon lain
     }
 
     public static function getPages(): array

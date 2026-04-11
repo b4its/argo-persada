@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\Admin\AdminPemesanans\Pages;
 
 use App\Filament\Resources\Admin\AdminPemesanans\AdminPemesananResource;
+use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Str;
 use App\Models\Pesanan;
@@ -24,7 +27,7 @@ class ListAdminPemesanans extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
+            CreateAction::make()->label('Tambahkan Pesanan')
                 ->form(
                     \App\Filament\Resources\Marketing\MarketingPemesanans\Schemas\MarketingPemesananForm::configure(Schema::make())->getComponents()
                 )
@@ -135,6 +138,46 @@ class ListAdminPemesanans extends ListRecords
                         return $pesanan;
                     });
                 }),
+
+                Action::make('cetak_surat')
+                    ->label('Cetak Dokumen Pesanan')
+                    ->icon('heroicon-o-printer')
+                    ->color('success')
+                    ->form([
+                        Select::make('periode')
+                            ->label('Pilih Periode')
+                            ->options([
+                                'minggu' => 'Minggu Ini',
+                                'bulan' => 'Bulan Ini',
+                                'tahun' => 'Tahun Ini',
+                                'custom' => 'Pilih Tanggal',
+                            ])
+                            ->reactive()
+                            ->required(),
+
+                        DatePicker::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->visible(fn ($get) => $get('periode') === 'custom')
+                            ->required(fn ($get) => $get('periode') === 'custom'),
+
+                        DatePicker::make('end_date')
+                            ->label('Tanggal Selesai')
+                            ->visible(fn ($get) => $get('periode') === 'custom')
+                            ->required(fn ($get) => $get('periode') === 'custom'),
+                    ])
+                    ->action(function (array $data) {
+                        // Logika pengiriman data ke route
+                        // Kita gunakan redirect manual karena URL dinamis berdasarkan input form
+                        return redirect()->route('surat_pesanan.index', [
+                            'periode' => $data['periode'],
+                            'start_date' => $data['start_date'] ?? null,
+                            'end_date' => $data['end_date'] ?? null,
+                        ]);
+                    })
+                    ->modalHeading('Cetak Dokumen')
+                    ->modalDescription('Pilih periode dokumen yang ingin dicetak.')
+                    ->modalSubmitActionLabel('Ya, Cetak')
+                    // ->iconButton()
         ];
     }
 }

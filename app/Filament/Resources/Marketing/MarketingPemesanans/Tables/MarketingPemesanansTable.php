@@ -211,6 +211,7 @@ class MarketingPemesanansTable
                             ['id' => $record->id],
                             [
                                 'no_requisition' => $noRequisition,
+                                'status_perilisan_dana' => 0,
                                 'updated_at' => now()
                             ] 
                         );

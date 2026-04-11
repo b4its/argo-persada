@@ -39,6 +39,10 @@ return new class extends Migration
             $table->date('tanggal_jatuh_tempo')->nullable();
             $table->date('tanggal_surat_kembali')->nullable();
             $table->date('tanggal_lunas')->nullable();
+            $table->date('validasi_tanggal_lunas')->nullable();
+
+            $table->tinyInteger('status_pesanan')->default(0)->comment('0: dibuat, 1: pending, 2: perlu rilis dana, 3: perlu cetak invoice, 4: perlu penagihan, 5: ditandai lunas, 6. cetak surat jalan, 7. tandai selesai dikirm, 8: selesai');
+            $table->tinyInteger('status_perilisan_dana')->default(0)->comment('0: pending, 1: dibatalkan, 2: approved');
 
             // File - Download Surat)
             $table->string('file_invoice')->nullable();

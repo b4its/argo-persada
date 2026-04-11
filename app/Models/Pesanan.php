@@ -26,6 +26,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'tanggal_terbit_surat_jalan',
     'tanggal_surat_kembali',
     'tanggal_lunas',
+    'validasi_tanggal_lunas',
+    'pesanan_status',
+    'status_perilisan_dana',
     'file_invoice',
     'file_do'
 ])]

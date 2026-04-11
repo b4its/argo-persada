@@ -143,7 +143,7 @@ class FinancePemesanansTable
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
                     // Sembunyikan jika dana sudah dirilis
-                    ->hidden(fn (Pesanan $record): bool => $record->tanggal_rilis_dana !== null)
+                    ->hidden(fn (Pesanan $record): bool => $record->tanggal_rilis_dana !== null || $record->status_perilisan_dana === 0 || $record->status_perilisan_dana === 1)
                     ->requiresConfirmation() 
                     ->modalHeading('Konfirmasi Rilis Dana')
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
@@ -476,9 +476,15 @@ class FinancePemesanansTable
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
                         "Tagihan untuk Invoice <strong>{$record->no_invoice}</strong>.<br><br>Apakah uang pembayaran sudah diterima dan pesanan dianggap lunas?"
                     ))
+                    ->form([
+                        \Filament\Forms\Components\DatePicker::make('tanggal_valid_lunas')
+                            ->label('Tanggal Lunas')
+                            ->required()
+                            ->native(false)])
+                    
                     ->modalSubmitActionLabel('Ya, Lunas') 
                     ->modalCancelActionLabel('Batal')
-                    ->action(function (Pesanan $record) {
+                    ->action(function (Pesanan $record, array $data) {
                         $currentUserId = auth()->id();
 
                         $currentTask = Task::where('pesanan_id', $record->id)
@@ -497,6 +503,7 @@ class FinancePemesanansTable
                         // 1. Update Pesanan Lunas
                         $record->update([
                             'tanggal_lunas' => now(),
+                            'validasi_tanggal_lunas'=> $data['tanggal_valid_lunas'],
                         ]);
 
                         // 2. Update Task Finance jadi Selesai (2)

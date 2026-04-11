@@ -7,7 +7,7 @@ use App\Filament\Resources\Admin\AdminPemesanans\Pages\EditAdminPemesanan;
 use App\Filament\Resources\Admin\AdminPemesanans\Pages\ListAdminPemesanans;
 use App\Filament\Resources\Admin\AdminPemesanans\Schemas\AdminPemesananForm;
 use App\Filament\Resources\Admin\AdminPemesanans\Tables\AdminPemesanansTable;
-use App\Models\AdminPemesanan;
+use App\Models\Pesanan;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class AdminPemesananResource extends Resource
 {
-    protected static ?string $model = AdminPemesanan::class;
+    protected static ?string $model = Pesanan::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
@@ -47,7 +47,7 @@ class AdminPemesananResource extends Resource
 
     public static function getNavigationIcon(): string
     {
-        return 'heroicon-o-rectangle-stack'; // bisa diganti icon lain
+        return 'heroicon-o-shopping-bag'; // bisa diganti icon lain
     }
 
     public static function getPages(): array
