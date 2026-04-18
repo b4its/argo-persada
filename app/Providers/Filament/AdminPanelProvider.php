@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName($brandNames)
-            ->brandLogo(fn() => view('filament.components.brand-logo', ['logoPath' => $logoPath, 'brandNames' => $brandNames]))
+            // ->brandLogo(fn() => view('filament.components.brand-logo', ['logoPath' => $logoPath, 'brandNames' => $brandNames]))
             ->login()
             ->userMenuItems([
                 'profile' => MenuItem::make()

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Finance\FinanceKasHarians\Tables;
 
 use App\Models\KasHarian;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -36,7 +37,7 @@ class FinanceKasHariansTable
                     ->sortable(),
 
                 TextColumn::make('pesanan.no_requisition')
-                    ->label('PT')
+                    ->label('PR/PO')
                     ->searchable()
                     ->sortable(),
             ])
@@ -45,6 +46,16 @@ class FinanceKasHariansTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                Action::make('cetak_kas_harian')
+                        ->label('Cetak Kas Harian')
+                        ->icon('heroicon-o-document-text')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->modalHeading('Cetak Kas Harian')
+                        ->modalDescription('Apakah anda ingin mencetak dokumen kas harian ini?')
+                        ->modalSubmitActionLabel('Ya, Cetak')
+                        ->url(fn ($record) => route('kas_harian.index', $record->id))
+                        ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

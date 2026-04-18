@@ -82,6 +82,7 @@ class ListMarketingPemesanans extends ListRecords
                             'user_id'             => $data['user_id'],
                             'keranjang_id'        => $keranjang->id,
                             'company_internal_id' => $data['company_internal_id'] ?? null, 
+                            'saldo_id'        =>     $data['saldo_id'],
                             'no_po'               => $generate_po_number,
                             'code'                => $data['code'],
                             'ppn'                 => $tax_amount,

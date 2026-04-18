@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 class KasHarian extends Model
 {
@@ -16,27 +17,29 @@ class KasHarian extends Model
         'company_internal_id',
         'user_id',
         'pesanan_id',
+        'debet',
+        'kredit',
         'keterangan'
     ];
 
-    public function saldo(): HasMany
+    public function saldo(): BelongsTo
     {
-        return $this->hasMany(Saldo::class, 'saldo_id');
+        return $this->BelongsTo(Saldo::class, 'saldo_id');
     }
 
-    public function companyInternal(): HasMany
+    public function companyInternal(): BelongsTo
     {
-        return $this->hasMany(CompanyInternal::class, 'company_internal_id');
+        return $this->belongsTo(CompanyInternal::class, 'company_internal_id');
     }
 
-    public function user(): HasMany
+    public function user(): BelongsTo
     {
-        return $this->hasMany(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
-    
-    public function pesanan(): HasMany
+
+    public function pesanan(): BelongsTo
     {
-        return $this->hasMany(Pesanan::class, 'pesanan_id');
+        return $this->belongsTo(Pesanan::class, 'pesanan_id');
     }
 }
 

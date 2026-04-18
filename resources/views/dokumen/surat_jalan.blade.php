@@ -286,7 +286,7 @@
             <col class="col-value">
         </colgroup>
         <tr>
-            <td class="col-company">PT ANDALAN AGRO PERSADA</td>
+            <td class="col-company">{{ $latestPesanan->companyInternal->name ?? "PT ANDALAN AGRO PERSADA" }}</td>
             <td>Tanggal</td>
             <td>:</td>
             <td>{{ $pesanan->tanggal_terbit_surat_jalan

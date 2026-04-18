@@ -22,3 +22,5 @@ class Saldo extends Model
         return $this->hasMany(KasHarian::class, 'kas_harian_id');
     }
 }
+
+

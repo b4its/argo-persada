@@ -15,6 +15,7 @@ class Pesanan extends Model
         'user_id', 
         'keranjang_id', 
         'company_internal_id', 
+        'saldo_id', 
         'code', 
         'group_name', 
         'company_name', 
@@ -50,6 +51,11 @@ class Pesanan extends Model
     public function companyInternal(): BelongsTo 
     {
         return $this->belongsTo(CompanyInternal::class, 'company_internal_id');
+    }
+
+    public function saldo(): BelongsTo
+    {
+        return $this->belongsTo(Saldo::class, 'saldo_id');
     }
 
     public function tasks(): HasMany

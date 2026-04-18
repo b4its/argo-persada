@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Dokumen\BukuBMutasi;
 use App\Http\Controllers\Dokumen\InvoicePermintaanFinanceControllers;
+use App\Http\Controllers\Dokumen\KasHarianController;
 use App\Http\Controllers\Dokumen\SuratJalanControllers;
 use App\Http\Controllers\Dokumen\SuratPesanan;
 use App\Http\Controllers\Dokumen\SuratPOControllers;
@@ -31,6 +32,11 @@ Route::prefix('dokumen')->group(function () {
 
     Route::controller(BukuBMutasi::class)->group(function () {
         Route::get('/buku-besar-mutasi/{id}', 'index')->name('buku_besar_mutasi.index');;
+    });
+    
+    Route::controller(KasHarianController::class)->group(function () {
+        Route::get('/kas-harian/{id}', 'index')->name('kas_harian.index');;
+        Route::get('/kas-harian', 'index_all')->name('kas_harian_all.index');;
     });
     
 

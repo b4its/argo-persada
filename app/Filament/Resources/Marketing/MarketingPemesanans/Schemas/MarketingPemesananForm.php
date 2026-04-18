@@ -33,10 +33,8 @@ class MarketingPemesananForm
                     ->required(),
                 Select::make('saldo_id')
                     ->label('Saldo Awal')
-                    // Gunakan nama fungsi relasi di Model Pesanan yang baru saja kita ubah
-                    ->relationship('saldo', 'name') 
-                    // Format tampilan option-nya (Nama Perusahaan - SINGKATAN)
-                    ->getOptionLabelFromRecordUsing(fn (\Illuminate\Database\Eloquent\Model $record) => "{$record->name} - {$record->singkatan}")
+                    ->relationship('saldo', 'saldo_awal') 
+                    ->getOptionLabelFromRecordUsing(fn ($record) => "Rp " . number_format($record->saldo_awal, 0, ',', '.'))
                     ->searchable()
                     ->preload()
                     ->required(),

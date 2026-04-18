@@ -6,6 +6,7 @@ use App\Filament\Tables\Actions\DetailPesananViewAction;
 use App\Models\KasHarian;
 use App\Models\LogActivities;
 use App\Models\Pesanan;
+use App\Models\Saldo;
 use App\Models\Task; 
 use App\Models\TaskActivity; 
 use Filament\Actions\BulkActionGroup;
@@ -481,8 +482,8 @@ class FinancePemesanansTable
                         \Filament\Forms\Components\DatePicker::make('tanggal_valid_lunas')
                             ->label('Tanggal Lunas')
                             ->required()
-                            ->native(false)])
-                    
+                            ->native(false)
+                    ])
                     ->modalSubmitActionLabel('Ya, Lunas') 
                     ->modalCancelActionLabel('Batal')
                     ->action(function (Pesanan $record, array $data) {
@@ -492,8 +493,12 @@ class FinancePemesanansTable
                             ->where('role', 'finance')
                             ->latest()
                             ->first();
+                        
+                        $currentSaldo = Saldo::where('id', $record->saldo_id)
+                            ->latest()
+                            ->first();
 
-                        if (!$currentTask) return;
+                        if (!$currentTask || !$currentSaldo) return;
 
                         $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
                                 $query->where('pesanan_id', $record->id);
@@ -509,7 +514,7 @@ class FinancePemesanansTable
 
                         // 2. Update Task Finance jadi Selesai (2)
                         $currentTask->update(['status' => 2]); 
-                        
+
                         // 3. Catat Task Activity Final (pesanan_status = 5)
                         TaskActivity::create([
                             'created_user_id' => $originalCreatorId, 
@@ -519,9 +524,36 @@ class FinancePemesanansTable
                             'pesanan_status' => 5, // 5 = Ditandai Lunas
                         ]);
 
-                        // KasHarian::created([
+                        $currentSaldoAkhir = $currentSaldo->saldo_awal + $record->total_harga;
 
-                        // ])
+                        // --- SOLUSI PENGAMBILAN DATA QUEUE KERANJANG ---
+                        // Mengambil seluruh item dari queue_keranjang berdasarkan keranjang_id dari pesanan ini
+                        $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)->get();
+
+                        // Menggunakan Collection Map & Implode untuk format yang rapi. 
+                        // Contoh Output: "Besi Beton (2 Pcs), Semen (10 Sak)"
+                        $detailBarang = $queueItems->map(function ($item) {
+                            return "{$item->item_name} ({$item->quantity} {$item->satuan})";
+                        })->implode(', ');
+
+                        $keteranganKas = "Penjualan: " . $detailBarang;
+                        // ------------------------------------------------
+
+                        // Perbaikan: Gunakan $record, bukan $data untuk field yang berasal dari database
+                        $currentKasHarian = KasHarian::create([
+                            'saldo_id' => $record->saldo_id,
+                            'company_internal_id' => $record->company_internal_id,
+                            'user_id' => $record->user_id, // Atau $currentUserId tergantung logika bisnis Anda
+                            'pesanan_id' => $record->id,
+                            'debet' => $currentSaldoAkhir,
+                            'kredit' => 0,
+                            'keterangan' => $keteranganKas 
+                        ]);
+                        
+                        $currentSaldo->update([
+                            'kas_harian_id' => $currentKasHarian->id,
+                            'saldo_akhir' => $currentSaldoAkhir,
+                        ]);
 
                         // 4. Log Activity
                         LogActivities::create([
