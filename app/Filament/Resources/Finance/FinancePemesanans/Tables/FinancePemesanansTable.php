@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Finance\FinancePemesanans\Tables;
 
 use App\Filament\Tables\Actions\DetailPesananViewAction;
+use App\Models\KasHarian;
 use App\Models\LogActivities;
 use App\Models\Pesanan;
 use App\Models\Task; 
@@ -517,6 +518,10 @@ class FinancePemesanansTable
                             'note' => 'Pembayaran telah diterima. Pesanan dianggap LUNAS.',
                             'pesanan_status' => 5, // 5 = Ditandai Lunas
                         ]);
+
+                        // KasHarian::created([
+
+                        // ])
 
                         // 4. Log Activity
                         LogActivities::create([

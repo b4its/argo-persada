@@ -39,7 +39,7 @@ class AdminPanelProvider extends PanelProvider
             ->userMenuItems([
                 'profile' => MenuItem::make()
                     ->label('Edit Profile')
-                    ->icon('heroicon-o-user-circle')
+                    ->icon('heroicon-o-user-circle')    
                     ->url('#edit-profile'),
             ])
             ->renderHook(
@@ -47,7 +47,7 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => Blade::render('@livewire(\App\Livewire\EditProfileModal::class)')
             )
             ->renderHook(
-                'panels::head.end', 
+                'panels::auth.login.form.after',
                 fn () => view('filament.hooks.halaman-utama-button'),
             )
             ->globalSearch(false)

@@ -30,6 +30,11 @@ class DetailPesananViewAction extends ViewAction
                     ->native(false)
                     ->disabled(),
 
+                // 1. Ubah name menjadi nama field kustom (bukan dot notation)
+                TextInput::make('company_internal_name')
+                    ->label('Perusahaan Internal')
+                    ->disabled(),
+                
                 TextInput::make('group_name')
                     ->label('Group')
                     ->disabled(),
@@ -110,7 +115,11 @@ class DetailPesananViewAction extends ViewAction
                     ),
             ])
             ->mutateRecordDataUsing(function (array $data, Model $record): array {
-                $record->load(['keranjang.queueKeranjang']);
+                // 2. Tambahkan loadMissing untuk relasi companyInternal agar tidak terkena N+1 query issue
+                $record->loadMissing(['keranjang.queueKeranjang', 'companyInternal']);
+
+                // 3. Masukkan data nama perusahaan ke state form
+                $data['company_internal_name'] = $record->companyInternal?->name ?? '-';
 
                 if ($record->keranjang && $record->keranjang->queueKeranjang) {
                     $data['list_barang'] = $record->keranjang->queueKeranjang->map(function ($item) {

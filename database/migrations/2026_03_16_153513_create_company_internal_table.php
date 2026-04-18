@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('singkatan')->nullable();
             $table->string('alamat')->nullable();
             $table->string('phone_number')->nullable();
+            $table->string('email')->nullable();
             $table->text('gambar')->nullable();
             $table->timestamps();
         });

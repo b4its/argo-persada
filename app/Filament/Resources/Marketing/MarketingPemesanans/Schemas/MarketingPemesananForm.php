@@ -23,13 +23,24 @@ class MarketingPemesananForm
                     ->dehydrated(false),
 
                 Select::make('company_internal_id')
-                    ->label('Perusahaan Internal*')
+                    ->label('Perusahaan Internal')
                     // Gunakan nama fungsi relasi di Model Pesanan yang baru saja kita ubah
                     ->relationship('companyInternal', 'name') 
                     // Format tampilan option-nya (Nama Perusahaan - SINGKATAN)
                     ->getOptionLabelFromRecordUsing(fn (\Illuminate\Database\Eloquent\Model $record) => "{$record->name} - {$record->singkatan}")
                     ->searchable()
+                    ->preload()
                     ->required(),
+                Select::make('saldo_id')
+                    ->label('Saldo Awal')
+                    // Gunakan nama fungsi relasi di Model Pesanan yang baru saja kita ubah
+                    ->relationship('saldo', 'name') 
+                    // Format tampilan option-nya (Nama Perusahaan - SINGKATAN)
+                    ->getOptionLabelFromRecordUsing(fn (\Illuminate\Database\Eloquent\Model $record) => "{$record->name} - {$record->singkatan}")
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                    
                 TextInput::make('group_name')
                     ->label('Group*')
                     ->placeholder('Masukkan Nama Group...')

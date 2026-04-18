@@ -55,15 +55,9 @@ class AdminPemesanansTable
                     ->sortable(),
                     
                 // PERBAIKAN: Ganti nama identifier agar tidak membaca seluruh array dari relasi
-                TextColumn::make('status_marketing') 
+                TextColumn::make('status_pesanan') 
                     ->label('Status Pemesanan')
                     ->badge()
-                    ->getStateUsing(function (Pesanan $record): int {
-                        // Ambil secara spesifik task yang memiliki role marketing saja
-                        $task = $record->tasks->where('role', 'marketing')->first();
-                        
-                        return $task ? (int) $task->status : 0;
-                    })
                     ->formatStateUsing(fn (int $state): string => match ($state) {
                         0 => 'Dibuat',
                         1 => 'In Progress',
@@ -91,14 +85,14 @@ class AdminPemesanansTable
                 DetailPesananViewAction::make(),
 
 
-                // ACTION BARU: Cetak Surat Requisition
+                // Cetak Surat Requisition
 
                     Action::make('terima_rilis_dana')
                         ->label('Validasi Rilis Dana')
                         ->icon('heroicon-o-check-badge')
                         ->color('success')
                         // Muncul jika invoice sudah ada dan belum dilunasi
-                        ->hidden(fn (Pesanan $record): bool => in_array($record->status_perilisan_dana, [1, 2]))
+                        ->hidden(fn (Pesanan $record): bool => in_array($record->status_perilisan_dana, [2, 3]) || $record->status_perilisan_dana === 0)
                         ->requiresConfirmation()
                         ->modalHeading('Validasi Rilis Dana')
                         ->modalDescription(fn (Pesanan $record) => new HtmlString(
@@ -110,7 +104,7 @@ class AdminPemesanansTable
                         ->action(function (Pesanan $record) {
 
                         // 1. Update Pesanan
-                        $record->update(['status_perilisan_dana' => 2]);
+                        $record->update(['status_perilisan_dana' => 3, 'status_pesanan' => 1]);
 
                         Notification::make()
                             ->success()

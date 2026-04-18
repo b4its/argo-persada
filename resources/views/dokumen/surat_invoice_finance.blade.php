@@ -151,15 +151,15 @@
 
     <main>
       <header>
-        <img src="{{ asset('images/logo.webp') }}" alt="Logo PT Andalan Agro Persada" />
+        <img src="{{ asset($latestPesanan->companyInternal->gambar) }}" alt="Logo PT Andalan Agro Persada" />
         <div class="company-info">
-          <p>PT ANDALAN AGRO PERSADA</p>
-          <p>Jl. D.I Panjaitan No 25 D</p>
-          <p>Samarinda 75117</p>
-          <p>Phone : 0541 2832313 / 7777993</p>
-          <p>Email : admin@masakti.co.id</p>
+          <p>{{ $latestPesanan->companyInternal->name ?? "PT ANDALAN AGRO PERSADA" }}</p>
+          <p>{{ $latestPesanan->companyInternal->alamat ?? "Jl. D.I Panjaitan No 25 D"}}</p>
+          <p>Phone : {{ $latestPesanan->companyInternal->phone_number ?? "0541 2832313 / 7777993"}}</p>
+          <p>Email : {{ $latestPesanan->companyInternal->email ?? "admin@masakti.co.id"}}</p>
         </div>
       </header>
+
 
       <table border="1" cellpadding="4" cellspacing="0" class="invoice" style="border-color: black">
         <tr>
@@ -253,7 +253,7 @@
             </ul>
           </td>
 
-          <td colspan="4" style="height: 1px">
+          <td colspan="4">
             <div style="height: 80%; display: flex; flex-direction: column; justify-content: space-between; padding-top: 10px;">
               <div style="text-align: center;">
                 <p style="margin: 0">Hormat Kami,</p>

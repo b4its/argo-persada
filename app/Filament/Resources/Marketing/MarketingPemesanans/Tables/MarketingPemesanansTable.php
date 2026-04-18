@@ -229,7 +229,7 @@ class MarketingPemesanansTable
 
                         if ($currentTask) {
                             $currentTask->update([
-                                'status' => 2,
+                                'status' => 1,
                             ]);
                         }
 
