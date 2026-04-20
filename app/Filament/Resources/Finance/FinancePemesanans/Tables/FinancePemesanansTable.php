@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Finance\FinancePemesanans\Tables;
 
 use App\Filament\Tables\Actions\DetailPesananViewAction;
+use App\Models\AkunKeuangan;
 use App\Models\KasHarian;
 use App\Models\LogActivities;
 use App\Models\Pesanan;
@@ -18,6 +19,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString; 
 use Illuminate\Support\Str;
 
@@ -266,6 +268,30 @@ class FinancePemesanansTable
                             ]);
                         }
 
+                        $currentAkunKeuangan = AkunKeuangan::firstOrCreate(
+                            ['name' => "Barang Umum"], // Kriteria pencarian
+                            ['kode' => "PBU-0-" . $record->id]               
+                        );
+
+                        // 1. Cari saldo terakhir dari database untuk dijadikan default saldo_awal
+                        $lastTransaction = KasHarian::where('akun_keuangan_id', $currentAkunKeuangan->id)
+                            ->latest('id')
+                            ->first();
+
+                        $saldoAwalOtomatis = $lastTransaction ? $lastTransaction->saldo_akhir : 0;
+
+                        // 2. Buat record dengan saldo_awal yang sudah estafet
+                        $currentKasHarian = KasHarian::create([
+                            'company_internal_id' => $record->company_internal_id,
+                            'user_id'             => $record->user_id, 
+                            'akun_keuangan_id'    => $currentAkunKeuangan->id, 
+                            'pesanan_id'          => $record->id,
+                            'saldo_awal'          => $saldoAwalOtomatis, // Tidak kaku 0, tapi ambil saldo terakhir
+                            'debet'               => 0,
+                            'kredit'              => $record->total_harga,
+                            'keterangan'          => "Pembelian Barang Umum" 
+                        ]);
+
                         LogActivities::create([
                             'user_id' => $currentUserId,
                             'action' => 'Update Task - Konfirmasi Rilis Dana',
@@ -494,11 +520,6 @@ class FinancePemesanansTable
                             ->latest()
                             ->first();
                         
-                        $currentSaldo = Saldo::where('id', $record->saldo_id)
-                            ->latest()
-                            ->first();
-
-                        if (!$currentTask || !$currentSaldo) return;
 
                         $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
                                 $query->where('pesanan_id', $record->id);
@@ -510,6 +531,7 @@ class FinancePemesanansTable
                         $record->update([
                             'tanggal_lunas' => now(),
                             'validasi_tanggal_lunas'=> $data['tanggal_valid_lunas'],
+                            'status_pesanan'=> 2, // selesai
                         ]);
 
                         // 2. Update Task Finance jadi Selesai (2)
@@ -524,36 +546,44 @@ class FinancePemesanansTable
                             'pesanan_status' => 5, // 5 = Ditandai Lunas
                         ]);
 
-                        $currentSaldoAkhir = $currentSaldo->saldo_awal + $record->total_harga;
+                        
 
-                        // --- SOLUSI PENGAMBILAN DATA QUEUE KERANJANG ---
+                        // $keteranganKas = "Toko: " . $detailToko;
+
+                        // ------------------------------------------------
+
+                        DB::transaction(function () use ($record) {
+                            // --- SOLUSI PENGAMBILAN DATA QUEUE KERANJANG ---
                         // Mengambil seluruh item dari queue_keranjang berdasarkan keranjang_id dari pesanan ini
                         $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)->get();
 
-                        // Menggunakan Collection Map & Implode untuk format yang rapi. 
-                        // Contoh Output: "Besi Beton (2 Pcs), Semen (10 Sak)"
-                        $detailBarang = $queueItems->map(function ($item) {
-                            return "{$item->item_name} ({$item->quantity} {$item->satuan})";
+                        $detailToko = $queueItems->map(function ($item) {
+                            return "{$item->supplier_name}";
                         })->implode(', ');
 
-                        $keteranganKas = "Penjualan: " . $detailBarang;
-                        // ------------------------------------------------
+                            $currentAkunKeuanganLunas = AkunKeuangan::firstOrCreate(
+                                ['name' => "Barang Umum"],
+                                ['kode' => "PBU-0-" . $record->id]               
+                            );
 
-                        // Perbaikan: Gunakan $record, bukan $data untuk field yang berasal dari database
-                        $currentKasHarian = KasHarian::create([
-                            'saldo_id' => $record->saldo_id,
-                            'company_internal_id' => $record->company_internal_id,
-                            'user_id' => $record->user_id, // Atau $currentUserId tergantung logika bisnis Anda
-                            'pesanan_id' => $record->id,
-                            'debet' => $currentSaldoAkhir,
-                            'kredit' => 0,
-                            'keterangan' => $keteranganKas 
-                        ]);
-                        
-                        $currentSaldo->update([
-                            'kas_harian_id' => $currentKasHarian->id,
-                            'saldo_akhir' => $currentSaldoAkhir,
-                        ]);
+                            // Cari saldo akhir terakhir untuk jadi saldo awal baris baru
+                            $lastSaldo = KasHarian::where('akun_keuangan_id', $currentAkunKeuanganLunas->id)
+                                ->latest('id')
+                                ->value('saldo_akhir') ?? 0;
+
+                            KasHarian::create([
+                                'company_internal_id' => $record->company_internal_id,
+                                'user_id'             => $record->user_id, 
+                                'akun_keuangan_id'    => $currentAkunKeuanganLunas->id, 
+                                'pesanan_id'          => $record->id,
+                                'toko'                => $detailToko,
+                                'saldo_awal'          => $lastSaldo, // <--- Menambahkan estafet saldo
+                                'debet'               => $record->total_harga,
+                                'kredit'              => 0,
+                                'keterangan'          => "Penjualan Barang Umum",
+                            ]);
+                        });
+
 
                         // 4. Log Activity
                         LogActivities::create([
@@ -573,8 +603,8 @@ class FinancePemesanansTable
                             ->send();
                     }),
                     Action::make('cetak_invoice_finance')
-                        ->label('Cetak Invoice Finance')
-                        ->icon('heroicon-o-document-text')
+                        ->label('Print Invoice')
+                        ->icon('heroicon-o-printer')
                         ->color('warning')
                         ->requiresConfirmation()
                         ->modalHeading('Cetak Invoice Finance')

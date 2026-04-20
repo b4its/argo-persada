@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('singkatan')->nullable();
             $table->string('alamat')->nullable();
             $table->string('phone_number')->nullable();
-            $table->string('email')->nullable();
+            $table->tinyInteger('is_ppn')->default(0)->comment('0: tanpa ppn, 1: dengan ppn');
             $table->text('gambar')->nullable();
             $table->timestamps();
         });

@@ -99,7 +99,7 @@ class MarketingPemesanansTable
                 Action::make('cetak_surat_requisition')
                     ->label('Cetak Surat Requisition')
                     ->icon('heroicon-o-printer')
-                    ->color('success')
+                    ->color('primary')
                     ->requiresConfirmation() // Memunculkan pop-up/modal
                     ->modalHeading('Cetak Surat Requisition')
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
@@ -211,7 +211,8 @@ class MarketingPemesanansTable
                             ['id' => $record->id],
                             [
                                 'no_requisition' => $noRequisition,
-                                'status_perilisan_dana' => 0,
+                                'status_perilisan_dana' => 1,
+                                'status_pesanan' => 1,
                                 'updated_at' => now()
                             ] 
                         );
@@ -288,7 +289,7 @@ class MarketingPemesanansTable
                             ->send();
                     }),
                     Action::make('cetak_surat_po')
-                        ->label('Cetak Surat Pre Order')
+                        ->label('Print Surat Pre Order')
                         ->icon('heroicon-o-printer')
                         ->color('success')
                         ->requiresConfirmation()

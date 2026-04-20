@@ -17,7 +17,7 @@ class MarketingPemesananForm
         return $schema
             ->components([
                 DatePicker::make('tanggal_pemesanan')
-                    ->label('Tanggal Pemesanan*')
+                    ->label('Tanggal Pemesanan')
                     ->required()
                     ->native(false)
                     ->dehydrated(false),
@@ -31,29 +31,23 @@ class MarketingPemesananForm
                     ->searchable()
                     ->preload()
                     ->required(),
-                Select::make('saldo_id')
-                    ->label('Saldo Awal')
-                    ->relationship('saldo', 'saldo_awal') 
-                    ->getOptionLabelFromRecordUsing(fn ($record) => "Rp " . number_format($record->saldo_awal, 0, ',', '.'))
-                    ->searchable()
-                    ->preload()
-                    ->required(),
                     
                 TextInput::make('group_name')
-                    ->label('Group*')
+                    ->label('Group')
                     ->placeholder('Masukkan Nama Group...')
                     ->required()
                     ->maxLength(255),
 
                 TextInput::make('company_name')
-                    ->label('Company*')
+                    ->label('Company')
                     ->placeholder('Masukkan Nama Company...')
                     ->required()
                     ->maxLength(255),
 
                 Textarea::make('address')
-                    ->label('Alamat Pengiriman*')
+                    ->label('Alamat Pengiriman')
                     ->placeholder('Masukkan Alamat Pengiriman...')
+                    ->rows(4)
                     ->required()
                     ->maxLength(255),
 
@@ -72,25 +66,25 @@ class MarketingPemesananForm
                     ->minItems(1)
                     ->schema([
                         TextInput::make('item_name')
-                            ->label('Nama Barang*')
+                            ->label('Nama Barang')
                             ->placeholder('Masukkan Nama Barang...')
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('quantity')
-                            ->label('Quantity*')
+                            ->label('Quantity')
                             ->numeric()
                             ->default(0)
                             ->required(),
 
                         TextInput::make('satuan')
-                            ->label('Satuan*')
+                            ->label('Satuan')
                             ->placeholder('Masukkan Satuan Barang...')
                             ->required()
                             ->maxLength(255),
 
                         TextInput::make('modal')
-                            ->label('Harga Beli (Modal)*')
+                            ->label('Harga Beli (Modal)')
                             ->prefix('Rp') 
                             ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
                             ->stripCharacters('.') // Buang titik sebelum masuk ke database
@@ -99,7 +93,7 @@ class MarketingPemesananForm
                             ->required(),
 
                         TextInput::make('po')
-                            ->label('Harga Jual (PO)*')
+                            ->label('Harga Jual (PO)')
                             ->prefix('Rp') 
                             ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
                             ->stripCharacters('.') // Buang titik sebelum masuk ke database
@@ -108,13 +102,14 @@ class MarketingPemesananForm
                             ->required(),
 
                         TextInput::make('supplier_name')
-                            ->label('Supplier*')
+                            ->label('Supplier')
                             ->placeholder('Masukkan Nama Supplier...')
                             ->required()
                             ->maxLength(255),
 
-                        TextInput::make('keterangan')
+                        Textarea::make('keterangan')
                             ->label('Keterangan')
+                            ->rows(4)
                             ->placeholder('Masukkan Keterangan...')
                             ->maxLength(255),
                     ])

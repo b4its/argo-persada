@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Resources\Finance\FinanceAkunKeuangans\FinanceAkunKeuanganResource;
 use App\Filament\Resources\Finance\FinanceKasHarians\FinanceKasHarianResource;
+use App\Filament\Resources\Finance\FinanceMutasis\FinanceMutasiResource;
 use App\Filament\Resources\Finance\FinancePemesanans\FinancePemesananResource;
 use App\Filament\Resources\Finance\FinanceSaldos\FinanceSaldoResource;
 use Filament\Http\Middleware\Authenticate;
@@ -53,8 +55,8 @@ class FinancePanelProvider extends PanelProvider
                     ->items([
                         // 1. Dashboard selalu di atas
                         ...Dashboard::getNavigationItems(),
-                        ...FinanceSaldoResource::getNavigationItems(),
                         ...FinancePemesananResource::getNavigationItems(),
+                        ...FinanceAkunKeuanganResource::getNavigationItems(),
                         ...FinanceKasHarianResource::getNavigationItems(),
                     ]);
                     

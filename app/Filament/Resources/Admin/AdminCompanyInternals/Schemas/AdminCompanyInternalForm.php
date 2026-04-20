@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Admin\AdminCompanyInternals\Schemas;
 
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -27,6 +28,17 @@ class AdminCompanyInternalForm
                 TextInput::make("phone_number")
                     ->label("Nomor Telepon")
                     ->maxLength(12),
+
+                Select::make('is_ppn')
+                    ->label('Pakai PPN?')
+                    ->options([
+                        0 => 'Tidak pakai PPN',
+                        1 => 'Iya pakai PPN',
+                    ])
+                    ->default(0)
+                    ->native(false) 
+                    ->required(),
+
                 Textarea::make("alamat")
                     ->label("Alamat")
                     ->rows(3)

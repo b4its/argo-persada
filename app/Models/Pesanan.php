@@ -53,19 +53,15 @@ class Pesanan extends Model
         return $this->belongsTo(CompanyInternal::class, 'company_internal_id');
     }
 
-    public function saldo(): BelongsTo
+    public function kasHarian(): HasMany 
     {
-        return $this->belongsTo(Saldo::class, 'saldo_id');
+        return $this->hasMany(KasHarian::class, 'pesanan_id');
     }
+
 
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
-    }
-
-    public function queueDeletes(): HasMany
-    {
-        return $this->hasMany(QueueDelete::class);
     }
 
     public function bukuBesar(): HasMany

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Marketing\MarketingPemesanans\Pages;
 
 use App\Filament\Resources\Marketing\MarketingPemesanans\MarketingPemesananResource;
+use App\Models\CompanyInternal;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Support\Str;
 use App\Models\Pesanan;
@@ -24,7 +25,7 @@ class ListMarketingPemesanans extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
+            CreateAction::make()->label("Tambahkan Pesanan")
                 // PERBAIKAN 1: Deklarasikan model secara eksplisit agar form tahu konteks datanya
                 ->model(Pesanan::class) 
                 ->form(
@@ -72,19 +73,26 @@ class ListMarketingPemesanans extends ListRecords
                         $keranjang->update([
                             'sub_total' => $totalKeseluruhan
                         ]);
+                        // 1. Ambil data company internal dengan benar
+                        $current_company_internal = CompanyInternal::findOrFail($data['company_internal_id']);
 
-                        $tax_amount = $totalKeseluruhan * 0.11;
+                        // 2. Logika Pajak Jika is_ppn bernilai 1, maka hitung pajak
+                        $tax_amount = 0;
+                        if ($current_company_internal->is_ppn == 1) {
+                            $tax_amount = $totalKeseluruhan * 0.11; // PPN 11%
+                        }
+
+                        // 3. Generate PO Number
                         $generate_po_number = 'PO-' . date('Ymd') . '-' . strtoupper(Str::random(5));
-                        
-                        // LANGKAH 4: Buat Pesanan utama
-                        // PERBAIKAN 3: Gunakan null coalescing (?? null) agar tidak terjadi undefined key
+
+                        // 4. Simpan ke database
                         $pesanan = Pesanan::create([
-                            'user_id'             => $data['user_id'],
+                            'user_id'             => $data['user_id'] ?? auth()->id(),
                             'keranjang_id'        => $keranjang->id,
                             'company_internal_id' => $data['company_internal_id'] ?? null, 
-                            'saldo_id'        =>     $data['saldo_id'],
+                            'saldo_id'            => $data['saldo_id'] ?? null,
                             'no_po'               => $generate_po_number,
-                            'code'                => $data['code'],
+                            'code'                => $data['code'] ?? null,
                             'ppn'                 => $tax_amount,
                             'total_harga'         => $totalKeseluruhan + $tax_amount,
                             'group_name'          => $data['group_name'] ?? null,

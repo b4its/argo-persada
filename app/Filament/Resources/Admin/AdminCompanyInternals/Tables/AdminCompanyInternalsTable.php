@@ -36,7 +36,10 @@ class AdminCompanyInternalsTable
                     ->sortable(),
 
                 TextColumn::make('singkatan')
-                    ->label('Singkatan')
+                    ->label('Singkatan'),
+                TextColumn::make('is_ppn')
+                    ->label('PPN')
+                    ->formatStateUsing(fn (string $state): string => $state === '1' ? 'Pakai PPN' : 'Tidak Pakai PPN')
 
             ])
             ->filters([

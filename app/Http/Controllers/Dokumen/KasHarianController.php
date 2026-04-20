@@ -36,7 +36,7 @@ class KasHarianController extends Controller
     {
         // Menggunakan eager loading untuk menarik semua relasi terkait dalam satu query
         $kasHarian = KasHarian::with([
-            'saldo', 
+            'akunKeuangan', 
             'companyInternal', 
             'user', 
             'pesanan'

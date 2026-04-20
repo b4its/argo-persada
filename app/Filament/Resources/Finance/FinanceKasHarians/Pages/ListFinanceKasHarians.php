@@ -15,7 +15,7 @@ class ListFinanceKasHarians extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // CreateAction::make(),
+            CreateAction::make()->label("Tambahkan Kas Harian"),
             Action::make('cetak_kas_harian')
                         ->label('Cetak Keseluruhan Kas Harian')
                         ->icon('heroicon-o-document-text')

@@ -25,6 +25,11 @@ class FinanceKasHariansTable
                     ->label('Tanggal')
                     ->searchable()
                     ->sortable(),
+
+                TextColumn::make('akunKeuangan.kode')
+                    ->label('Kode Akun')
+                    ->searchable()
+                    ->sortable(),
                     
                 TextColumn::make('companyInternal.singkatan')
                     ->label('PT')
@@ -40,22 +45,27 @@ class FinanceKasHariansTable
                     ->label('PR/PO')
                     ->searchable()
                     ->sortable(),
+
+                TextColumn::make('keterangan')
+                    ->label('Keterangan')
+                    ->searchable()
+                    ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->recordActions([
-                ViewAction::make(),
-                Action::make('cetak_kas_harian')
-                        ->label('Cetak Kas Harian')
-                        ->icon('heroicon-o-document-text')
-                        ->color('warning')
-                        ->requiresConfirmation()
-                        ->modalHeading('Cetak Kas Harian')
-                        ->modalDescription('Apakah anda ingin mencetak dokumen kas harian ini?')
-                        ->modalSubmitActionLabel('Ya, Cetak')
-                        ->url(fn ($record) => route('kas_harian.index', $record->id))
-                        ->openUrlInNewTab(),
+                // ViewAction::make(),
+                // Action::make('cetak_kas_harian')
+                //         ->label('Cetak Kas Harian')
+                //         ->icon('heroicon-o-document-text')
+                //         ->color('warning')
+                //         ->requiresConfirmation()
+                //         ->modalHeading('Cetak Kas Harian')
+                //         ->modalDescription('Apakah anda ingin mencetak dokumen kas harian ini?')
+                //         ->modalSubmitActionLabel('Ya, Cetak')
+                //         ->url(fn ($record) => route('kas_harian.index', $record->id))
+                //         ->openUrlInNewTab(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

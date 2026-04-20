@@ -151,12 +151,19 @@
 
     <main>
       <header>
-        <img src="{{ asset($latestPesanan->companyInternal->gambar) }}" alt="Logo PT Andalan Agro Persada" />
+          @php
+              // Gunakan variabel untuk menampung path gambar
+              $gambar_invoice = asset('images/logo.webp'); // Default awal
+
+              if ($latestPesanan->companyInternal && $latestPesanan->companyInternal->gambar) {
+                  $gambar_invoice = asset($latestPesanan->companyInternal->gambar); 
+              }
+          @endphp
+        <img src="{{ $gambar_invoice }}" alt="Logo PT Andalan Agro Persada" />
         <div class="company-info">
           <p>{{ $latestPesanan->companyInternal->name ?? "PT ANDALAN AGRO PERSADA" }}</p>
           <p>{{ $latestPesanan->companyInternal->alamat ?? "Jl. D.I Panjaitan No 25 D"}}</p>
           <p>Phone : {{ $latestPesanan->companyInternal->phone_number ?? "0541 2832313 / 7777993"}}</p>
-          <p>Email : {{ $latestPesanan->companyInternal->email ?? "admin@masakti.co.id"}}</p>
         </div>
       </header>
 

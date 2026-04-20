@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('saldo', function (Blueprint $table) {
+        Schema::create('akun_keuangan', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('kas_harian_id')->nullable();
-            $table->decimal('saldo_awal', 25, 2)->default(0); 
-            $table->decimal('saldo_akhir', 25, 2)->default(0); 
+            $table->string("kode")->nullable()->unique();
+            $table->string("name")->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('saldo');
+        Schema::dropIfExists('akun_keuangan');
     }
 };

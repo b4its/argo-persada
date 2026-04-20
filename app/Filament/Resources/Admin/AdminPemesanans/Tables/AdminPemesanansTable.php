@@ -92,7 +92,7 @@ class AdminPemesanansTable
                         ->icon('heroicon-o-check-badge')
                         ->color('success')
                         // Muncul jika invoice sudah ada dan belum dilunasi
-                        ->hidden(fn (Pesanan $record): bool => in_array($record->status_perilisan_dana, [2, 3]))
+                        ->hidden(fn (Pesanan $record): bool => in_array($record->status_perilisan_dana, [2, 3]) || $record -> status_perilisan_dana === 0)
                         ->requiresConfirmation()
                         ->modalHeading('Validasi Rilis Dana')
                         ->modalDescription(fn (Pesanan $record) => new HtmlString(

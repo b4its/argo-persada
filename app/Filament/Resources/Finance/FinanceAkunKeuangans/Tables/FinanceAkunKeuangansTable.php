@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\Admin\AdminSaldos\Tables;
+namespace App\Filament\Resources\Finance\FinanceAkunKeuangans\Tables;
 
-use App\Models\Saldo;
+use App\Models\AkunKeuangan;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -10,34 +10,24 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class AdminSaldosTable
+class FinanceAkunKeuangansTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-           ->query(
-                Saldo::query()
-                    ->selectRaw('saldo.*, ROW_NUMBER() OVER (ORDER BY created_at desc) as row_num')
-                    ->orderBy('created_at', 'desc') // urutkan tampilannya dari terbaru
+            ->query(
+                AkunKeuangan::query()
+                    ->orderBy('created_at', 'desc')
             )
             ->columns([
-                //
-                TextColumn::make('row_num')
-                    ->label('No')
-                    ->sortable(),
-
-                TextColumn::make('saldo_awal')
-                    ->label('Saldo Awal')
-                    ->money('IDR', locale: 'id_ID') // Mengatur mata uang ke Rupiah Indonesia
-                    ->sortable()
-                    ->searchable(),
-
-                TextColumn::make('saldo_akhir')
-                    ->label('Saldo Akhir')
-                    ->money('IDR', locale: 'id_ID') // Mengatur mata uang ke Rupiah Indonesia
-                    ->sortable()
+                TextColumn::make('kode')
+                    ->label('Kode Akun')
                     ->searchable()
-
+                    ->sortable(),
+                TextColumn::make('name')
+                    ->label('Nama Akun')
+                    ->searchable()
+                    ->sortable(),
             ])
             ->filters([
                 //

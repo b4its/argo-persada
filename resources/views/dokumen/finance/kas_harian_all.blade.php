@@ -89,13 +89,15 @@
                 <tr>
                     <th class="table-cell table-header" style="width: 10%">Tanggal</th>
                     <th class="table-cell table-header whitespace-nowrap" style="width: 1%">PT</th>
-                    <th class="table-cell table-header" style="width: auto">Nama</th>
-                    <th class="table-cell table-header" style="width: 15%">PR/PO</th>
+                    <th class="table-cell table-header" style="width: auto">NAMA</th>
+                    <th class="table-cell table-header whitespace-nowrap">PR/PO</th>
                     <th class="table-cell table-header" style="width: 10%">DB/FB</th>
                     <th class="table-cell table-header" style="width: 10%">TOKO</th>
+                    <th class="table-cell table-header whitespace-nowrap" style="width: 1%">KODE AKUN</th>
+                    <th class="table-cell table-header" style="width: auto">KETERANGAN</th>
                     <th class="table-cell table-header whitespace-nowrap" style="width: 1%">DEBET</th>
                     <th class="table-cell table-header whitespace-nowrap" style="width: 1%">KREDIT</th>
-                    <th class="table-cell table-header" style="width: auto">Keterangan</th>
+                    <th class="table-cell table-header whitespace-nowrap" style="width: 1%">SALDO</th>
                 </tr>
             </thead>
             <tbody>
@@ -106,10 +108,12 @@
                         <td class="table-cell">{{ $kas->user->name ?? '-' }}</td>
                         <td class="table-cell">{{ $kas->pesanan->no_requisition ?? '-' }}</td>
                         <td class="table-cell text-center">{{ $kas->pesanan->code ?? '-' }}</td>
-                        <td class="table-cell">{{ $kas->pesanan->group_name ?? '-' }}</td>
+                        <td class="table-cell">{{ $kas->toko ?? '-' }}</td>
+                        <td class="table-cell">{{ $kas->akunKeuangan->kode ?? '-' }}</td>
+                        <td class="table-cell">{{ $kas->keterangan ?? '-' }}</td>
                         <td class="table-cell text-right whitespace-nowrap">{{ isset($kas->debet) ? 'Rp ' . number_format($kas->debet, 0, ',', '.') : '-' }}</td>
                         <td class="table-cell text-right whitespace-nowrap">{{ isset($kas->kredit) ? 'Rp ' . number_format($kas->kredit, 0, ',', '.') : '-' }}</td>
-                        <td class="table-cell">{{ $kas->keterangan ?? '-' }}</td>
+                        <td class="table-cell text-right whitespace-nowrap">{{ isset($kas->saldo_akhir) ? 'Rp ' . number_format($kas->saldo_akhir, 0, ',', '.') : '-' }}</td>
                     </tr>
                 @empty
                     <tr>

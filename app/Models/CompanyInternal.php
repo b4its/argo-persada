@@ -19,6 +19,7 @@ class CompanyInternal extends Model
         'singkatan',
         'alamat',
         'phone_number',
+        'is_ppn',
         'gambar',
     ];
 

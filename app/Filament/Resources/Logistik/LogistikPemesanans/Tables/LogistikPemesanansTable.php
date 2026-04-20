@@ -287,8 +287,8 @@ class LogistikPemesanansTable
                     }),
 
                     Action::make('cetak_surat_jalan')
-                        ->label('Cetak Surat Jalan')
-                        ->icon('heroicon-o-truck')
+                        ->label('Print Surat Jalan')
+                        ->icon('heroicon-o-printer')
                         ->color('info')
                         ->requiresConfirmation()
                         ->modalHeading('Cetak Surat Jalan')

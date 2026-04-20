@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('kas_harian', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('saldo_id')->nullable()->constrained('saldo')->onDelete('cascade');
             $table->foreignId('company_internal_id')->nullable()->constrained('company_internal')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('akun_keuangan_id')->nullable()->constrained('akun_keuangan')->onDelete('cascade');
             $table->foreignId('pesanan_id')->nullable()->constrained('pesanan')->onDelete('cascade');
+            $table->string('toko')->nullable();
+            $table->decimal('saldo_awal', 25, 2)->default(0); 
             $table->decimal('debet', 25, 2)->default(0); 
             $table->decimal('kredit', 25, 2)->default(0); 
+            $table->decimal('saldo_akhir', 25, 2)->default(0); 
             $table->string('keterangan')->nullable();
             $table->timestamps();
         });

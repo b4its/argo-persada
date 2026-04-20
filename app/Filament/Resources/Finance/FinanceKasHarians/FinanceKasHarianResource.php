@@ -7,7 +7,7 @@ use App\Filament\Resources\Finance\FinanceKasHarians\Pages\EditFinanceKasHarian;
 use App\Filament\Resources\Finance\FinanceKasHarians\Pages\ListFinanceKasHarians;
 use App\Filament\Resources\Finance\FinanceKasHarians\Schemas\FinanceKasHarianForm;
 use App\Filament\Resources\Finance\FinanceKasHarians\Tables\FinanceKasHariansTable;
-use App\Models\FinanceKasHarian;
+use App\Models\KasHarian;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class FinanceKasHarianResource extends Resource
 {
-    protected static ?string $model = FinanceKasHarian::class;
+    protected static ?string $model = KasHarian::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
