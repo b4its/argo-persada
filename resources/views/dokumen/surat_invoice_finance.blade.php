@@ -264,7 +264,7 @@
             <div style="height: 80%; display: flex; flex-direction: column; justify-content: space-between; padding-top: 10px;">
               <div style="text-align: center;">
                 <p style="margin: 0">Hormat Kami,</p>
-                <p style="margin: 0">PT Andalan Agro Persada</p>
+                <p style="margin: 0">{{ $latestPesanan->companyInternal->name ?? "PT Andalan Argo Persada" }}</p>
               </div>
               <p style="margin: 0; text-align: center; margin-top: 60px;">( {{ Auth::user()->name ?? 'Nama Pembuat' }} )</p>
             </div>

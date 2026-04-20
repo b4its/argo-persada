@@ -267,6 +267,12 @@ class FinancePemesanansTable
                                 'status' => 1,
                             ]);
                         }
+                        
+                        $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)->get();
+
+                        $detailToko = $queueItems->map(function ($item) {
+                            return "{$item->supplier_name}";
+                        })->implode(', ');
 
                         $currentAkunKeuangan = AkunKeuangan::firstOrCreate(
                             ['name' => "Barang Umum"], // Kriteria pencarian
@@ -286,6 +292,7 @@ class FinancePemesanansTable
                             'user_id'             => $record->user_id, 
                             'akun_keuangan_id'    => $currentAkunKeuangan->id, 
                             'pesanan_id'          => $record->id,
+                            'toko'                => $detailToko,
                             'saldo_awal'          => $saldoAwalOtomatis, // Tidak kaku 0, tapi ambil saldo terakhir
                             'debet'               => 0,
                             'kredit'              => $record->total_harga,
@@ -531,7 +538,7 @@ class FinancePemesanansTable
                         $record->update([
                             'tanggal_lunas' => now(),
                             'validasi_tanggal_lunas'=> $data['tanggal_valid_lunas'],
-                            'status_pesanan'=> 2, // selesai
+                            'status_pesanan'=> 2, // selesai  h
                         ]);
 
                         // 2. Update Task Finance jadi Selesai (2)
