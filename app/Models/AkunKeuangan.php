@@ -13,6 +13,7 @@ class AkunKeuangan extends Model
     protected $fillable = [
         'name',
         'kode',
+        'kategori',
     ];
 
     /**

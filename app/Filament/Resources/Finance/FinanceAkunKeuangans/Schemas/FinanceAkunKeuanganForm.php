@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Finance\FinanceAkunKeuangans\Schemas;
 
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
@@ -21,6 +22,20 @@ class FinanceAkunKeuanganForm
                 ->label('Kode Akun')
                 ->required()
                 ->maxLength(255),
+
+            Select::make('kategori')
+                    ->label('Kategori')
+                    ->options([
+                        1 => 'Penjualan',
+                        2 => 'Piutang',
+                        3 => 'Biaya Umum dan Administrasi Kantor',
+                        4 => 'Biaya Lain Lain',
+                    ])
+                    ->default(1)
+                    ->native(false) 
+                    ->required(),
             ]);
+
+            
     }
 }

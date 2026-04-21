@@ -269,14 +269,17 @@ class FinancePemesanansTable
                         }
                         
                         $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)->get();
-
+                        $totalModal = $queueItems->sum('modal');
                         $detailToko = $queueItems->map(function ($item) {
                             return "{$item->supplier_name}";
                         })->implode(', ');
 
                         $currentAkunKeuangan = AkunKeuangan::firstOrCreate(
                             ['name' => "Barang Umum"], // Kriteria pencarian
-                            ['kode' => "PBU-0-" . $record->id]               
+                            [
+                                'kode' => "PBU-0-" . $record->id,
+                                'kategori' => 1,
+                            ],               
                         );
 
                         // 1. Cari saldo terakhir dari database untuk dijadikan default saldo_awal
@@ -295,7 +298,7 @@ class FinancePemesanansTable
                             'toko'                => $detailToko,
                             'saldo_awal'          => $saldoAwalOtomatis, // Tidak kaku 0, tapi ambil saldo terakhir
                             'debet'               => 0,
-                            'kredit'              => $record->total_harga,
+                            'kredit'              => $totalModal,
                             'keterangan'          => "Pembelian Barang Umum" 
                         ]);
 
