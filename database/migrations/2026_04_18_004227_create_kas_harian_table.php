@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('akun_keuangan_id')->nullable()->constrained('akun_keuangan')->onDelete('cascade');
             $table->foreignId('pesanan_id')->nullable()->constrained('pesanan')->onDelete('cascade');
+            $table->tinyInteger('metode_pembayaran')->default(0)->comment("0. belum ditentukan, 1. Tunai, 2. Kredit"); 
             $table->string('toko')->nullable();
             $table->decimal('saldo_awal', 25, 2)->default(0); 
             $table->decimal('debet', 25, 2)->default(0); 

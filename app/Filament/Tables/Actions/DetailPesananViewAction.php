@@ -3,11 +3,14 @@ namespace App\Filament\Tables\Actions;
 
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Repeater;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Support\RawJs;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 
 class DetailPesananViewAction extends ViewAction
 {
@@ -50,13 +53,70 @@ class DetailPesananViewAction extends ViewAction
                 Repeater::make('dokumen_penagihan')
                     ->label('Detail Pesanan, dan Tagihan')
                     ->schema([
-                        TextInput::make('no_requisition')->label('No Requisition')->placeholder('-'),
-                        TextInput::make('no_invoice')->label('No Invoice')->placeholder('-'),
-                        TextInput::make('no_delivery_order')->label('No Delivery Order')->placeholder('-'),
-                        DatePicker::make('tanggal_rilis_dana')->label('Tanggal Rilis Dana')->native(false)->placeholder('belum ditentukan'),
-                        DatePicker::make('tanggal_terbit_invoice')->label('Tanggal Terbit Invoice')->native(false)->placeholder('belum ditentukan'),
-                        DatePicker::make('tanggal_jatuh_tempo')->label('Tanggal Jatuh Tempo')->native(false)->placeholder('belum ditentukan'),
-                        DatePicker::make('tanggal_lunas')->label('Tanggal Lunas')->native(false)->placeholder('belum ditentukan'),
+                        ### Input Nomor Dokumen (TextInput)
+                        TextInput::make('no_requisition')
+                            ->label('No Requisition')
+                            ->placeholder('-')
+                            ->prefixIcon('heroicon-m-document-text')
+                            ->prefixIconColor('gray'),
+
+                        TextInput::make('no_invoice')
+                            ->label('No Invoice')
+                            ->placeholder('-')
+                            ->prefixIcon('heroicon-m-hashtag')
+                            ->prefixIconColor('danger'), // Warna merah tipis agar terlihat kontras sebagai dokumen penting
+
+                        TextInput::make('no_delivery_order')
+                            ->label('No Delivery Order')
+                            ->placeholder('-')
+                            ->prefixIcon('heroicon-m-truck')
+                            ->prefixIconColor('info'),
+
+                        ### Input Tanggal (DatePicker)
+                        DatePicker::make('tanggal_rilis_dana')
+                            ->label('Tanggal Rilis Dana')
+                            ->native(false)
+                            ->displayFormat('d/m/Y') // Format tampilan yang lebih familiar di Indonesia
+                            ->prefixIcon('heroicon-m-banknotes')
+                            ->placeholder('Belum ditentukan'),
+
+                        DatePicker::make('tanggal_terbit_invoice')
+                            ->label('Tanggal Terbit Invoice')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->prefixIcon('heroicon-m-calendar-days')
+                            ->placeholder('Belum ditentukan'),
+
+                        DatePicker::make('tanggal_jatuh_tempo')
+                            ->label('Tanggal Jatuh Tempo')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->prefixIcon('heroicon-m-clock')
+                            ->prefixIconColor('warning') // Warna kuning sebagai tanda peringatan tenggat waktu
+                            ->placeholder('Belum ditentukan'),
+
+                        DatePicker::make('tanggal_lunas')
+                            ->label('Tanggal Lunas')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->prefixIcon('heroicon-m-check-circle')
+                            ->prefixIconColor('success') // Warna hijau menandakan status selesai/lunas
+                            ->placeholder('Belum ditentukan'),  
+                        Placeholder::make("metode_pembayaran_rilis_dana")
+                            ->label("Metode Pembayaran Rilis Dana")
+                            ->content(fn ($record): HtmlString => match ($record?->metode_pembayaran_rilis_dana) {
+                                1 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-success-500/10 text-success-700 ring-success-700/10"><x-heroicon-m-banknotes class="w-4 h-4"/> Tunai</span>'),
+                                2 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-warning-500/10 text-warning-700 ring-warning-700/10"><x-heroicon-m-credit-card class="w-4 h-4"/> Kredit</span>'),
+                                default => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-gray-500/10 text-gray-700 ring-gray-700/10">Belum Ditentukan</span>'),
+                            }),
+
+                        Placeholder::make("metode_pembayaran_lunas")
+                            ->label("Metode Pembayaran Lunas")
+                            ->content(fn ($record): HtmlString => match ($record?->metode_pembayaran_lunas) {
+                                1 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-success-500/10 text-success-700 ring-success-700/10"><x-heroicon-m-check-badge class="w-4 h-4"/> Tunai</span>'),
+                                2 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-info-500/10 text-info-700 ring-info-700/10"><x-heroicon-m-credit-card class="w-4 h-4"/> Kredit</span>'),
+                                default => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-gray-500/10 text-gray-700 ring-gray-700/10">Belum Ditentukan</span>'),
+                            }),
                     ])
                     ->columns(3)
                     ->disabled()
@@ -77,29 +137,29 @@ class DetailPesananViewAction extends ViewAction
                         TextInput::make('satuan')->label('Satuan'),
                         TextInput::make('modal')
                             ->label('Harga Beli (Modal)*')
-                            ->prefix('Rp') 
-                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
-                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
+                            ->prefix('Rp')
                             ->numeric()
                             ->default(0)
-                            ->required(),
+                            ->required()
+                            // 3. Gunakan mask sederhana jika ingin tetap ada pemisah ribuan saat input
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')),
 
                         TextInput::make('po')
                             ->label('Harga Jual (PO)*')
-                            ->prefix('Rp') 
-                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
-                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
+                            ->prefix('Rp')
                             ->numeric()
                             ->default(0)
-                            ->required(),
+                            ->required()
+                            // 3. Gunakan mask sederhana jika ingin tetap ada pemisah ribuan saat input
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')),
                         TextInput::make('sub_total')
                             ->label('Sub Total')
                             ->prefix('Rp')
-                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')) // Format angka Indonesia
-                            ->stripCharacters('.') // Buang titik sebelum masuk ke database
                             ->numeric()
                             ->default(0)
-                            ->required(),   
+                            ->required()
+                            // 3. Gunakan mask sederhana jika ingin tetap ada pemisah ribuan saat input
+                            ->mask(RawJs::make('$money($input, \',\', \'.\', 0)')), 
                         TextInput::make('supplier_name')->label('Supplier')->columnSpanFull(),
                         Textarea::make('keterangan')->label('Keterangan')->columnSpanFull(),
                     ])

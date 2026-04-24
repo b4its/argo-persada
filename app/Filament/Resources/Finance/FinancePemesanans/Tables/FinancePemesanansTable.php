@@ -163,8 +163,7 @@ class FinancePemesanansTable
                                 2 => 'Kredit',
                             ])
                             ->default(1)
-                            ->required()
-                            ->native(false), 
+                            ->required(), 
                     ])
                     ->modalSubmitActionLabel('Iya') 
                     ->modalCancelActionLabel('Tidak') 
@@ -283,11 +282,17 @@ class FinancePemesanansTable
                             ]);
                         }
                         
-                        $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)->get();
-                        $totalModal = $queueItems->sum('modal');
-                        $detailToko = $queueItems->map(function ($item) {
-                            return "{$item->supplier_name}";
-                        })->implode(', ');
+                        // 1. Cukup lakukan satu kali query untuk mengambil data yang diperlukan
+                        $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)
+                            ->get(['supplier_name', 'quantity', 'modal']); // Hanya ambil kolom yang dibutuhkan saja
+
+                        // 2. Hitung total modal dari collection yang sudah ada di memori
+                        $totalModal = $queueItems->sum(function ($item) {
+                            return $item->quantity * $item->modal;
+                        });
+
+                        // 3. Ambil nama supplier
+                        $detailToko = $queueItems->pluck('supplier_name')->unique()->implode(', ');
 
                         $currentAkunKeuangan = AkunKeuangan::firstOrCreate(
                             ['name' => "Barang Umum"], // Kriteria pencarian
@@ -538,8 +543,7 @@ class FinancePemesanansTable
                                 2 => 'Kredit',
                             ])
                             ->default(1)
-                            ->required()
-                            ->native(false),
+                            ->required(),
 
                         \Filament\Forms\Components\DatePicker::make('tanggal_valid_lunas')
                             ->label('Tanggal Lunas')
@@ -595,8 +599,17 @@ class FinancePemesanansTable
                         DB::transaction(function () use ($record) {
                             // --- SOLUSI PENGAMBILAN DATA QUEUE KERANJANG ---
                         // Mengambil seluruh item dari queue_keranjang berdasarkan keranjang_id dari pesanan ini
-                        $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)->get();
+                        // 1. Cukup lakukan satu kali query untuk mengambil data yang diperlukan
+                        $queueItems = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)
+                            ->get(['supplier_name', 'quantity', 'po']); // Hanya ambil kolom yang dibutuhkan saja
 
+                        // 2. Hitung total po dari collection yang sudah ada di memori
+                        $totalPO = $queueItems->sum(function ($item) {
+                            return $item->quantity * $item->po;
+                        });
+
+                        // 3. Ambil nama supplier
+                        $detailToko = $queueItems->pluck('supplier_name')->unique()->implode(', ');
                         $detailToko = $queueItems->map(function ($item) {
                             return "{$item->supplier_name}";
                         })->implode(', ');
@@ -618,7 +631,7 @@ class FinancePemesanansTable
                                 'pesanan_id'          => $record->id,
                                 'toko'                => $detailToko,
                                 'saldo_awal'          => $lastSaldo, // <--- Menambahkan estafet saldo
-                                'debet'               => $record->total_harga,
+                                'debet'               => $totalPO,
                                 'kredit'              => 0,
                                 'keterangan'          => "Penjualan Barang Umum",
                             ]);
