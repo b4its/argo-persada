@@ -13,6 +13,7 @@ use App\Models\TaskActivity;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Actions\Action; // Pastikan menggunakan Action dari Tables
 use Filament\Notifications\Notification; 
@@ -153,6 +154,18 @@ class FinancePemesanansTable
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
                         "No Pemesanan:<br><strong>{$record->code}</strong><br><br>Apakah ingin konfirmasi rilis dana pada pesanan ini?"
                     ))
+                    ->form([
+                        Select::make('metode_pembayaran_rilis_dana')
+                            ->label('Metode Pembayaran untuk Rilis Dana')
+                            ->options([
+                                1 => 'Tunai',
+                                
+                                2 => 'Kredit',
+                            ])
+                            ->default(1)
+                            ->required()
+                            ->native(false), 
+                    ])
                     ->modalSubmitActionLabel('Iya') 
                     ->modalCancelActionLabel('Tidak') 
                     ->mountUsing(function (Action $action, Pesanan $record) {
@@ -230,8 +243,9 @@ class FinancePemesanansTable
                             }
                         }
                     })
-                    ->action(function (Pesanan $record) {
+                    ->action(function (Pesanan $record, array $data) {
                         $currentUserId = auth()->id();
+                        $metodePembayaran_rilis_dana = $data['metode_pembayaran_rilis_dana'];
 
                         $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
                                 $query->where('pesanan_id', $record->id);
@@ -248,6 +262,7 @@ class FinancePemesanansTable
                             ['id' => $record->id],
                             [
                                 'tanggal_rilis_dana' => now(),
+                                'metode_pembayaran_rilis_dana' => $metodePembayaran_rilis_dana,
                                 'updated_at' => now()
                             ] 
                         );
@@ -515,15 +530,29 @@ class FinancePemesanansTable
                         "Tagihan untuk Invoice <strong>{$record->no_invoice}</strong>.<br><br>Apakah uang pembayaran sudah diterima dan pesanan dianggap lunas?"
                     ))
                     ->form([
+                        Select::make('metode_pembayaran_lunas')
+                            ->label('Metode Pembayaran untuk Lunas')
+                            ->options([
+                                1 => 'Tunai',
+                                
+                                2 => 'Kredit',
+                            ])
+                            ->default(1)
+                            ->required()
+                            ->native(false),
+
                         \Filament\Forms\Components\DatePicker::make('tanggal_valid_lunas')
                             ->label('Tanggal Lunas')
                             ->required()
-                            ->native(false)
+                            ->native(false),
+
+                        
                     ])
                     ->modalSubmitActionLabel('Ya, Lunas') 
                     ->modalCancelActionLabel('Batal')
                     ->action(function (Pesanan $record, array $data) {
                         $currentUserId = auth()->id();
+                        $metodePembayaran_lunas = $data['metode_pembayaran_lunas'];
 
                         $currentTask = Task::where('pesanan_id', $record->id)
                             ->where('role', 'finance')
@@ -540,8 +569,9 @@ class FinancePemesanansTable
                         // 1. Update Pesanan Lunas
                         $record->update([
                             'tanggal_lunas' => now(),
+                            'metode_pembayaran_lunas' => $metodePembayaran_lunas,
                             'validasi_tanggal_lunas'=> $data['tanggal_valid_lunas'],
-                            'status_pesanan'=> 2, // selesai  h
+                            'status_pesanan'=> 2, // selesai  
                         ]);
 
                         // 2. Update Task Finance jadi Selesai (2)

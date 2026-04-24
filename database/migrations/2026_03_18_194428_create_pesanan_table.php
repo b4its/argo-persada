@@ -43,6 +43,10 @@ return new class extends Migration
             $table->date('tanggal_lunas')->nullable();
             $table->date('validasi_tanggal_lunas')->nullable();
 
+            // Metode pembayaran 
+            $table->tinyInteger('metode_pembayaran_rilis_dana')->default(1)->comment("0. belum ditentukan, 1. Tunai, 2. Kredit"); 
+            $table->tinyInteger('metode_pembayaran_lunas')->default(1)->comment("0. belum ditentukan, 1. Tunai, 2. Kredit"); 
+
             $table->tinyInteger('status_pesanan')->default(0)->comment('0: dibuat, 1: pending, 2: perlu rilis dana, 3: perlu cetak invoice, 4: perlu penagihan, 5: ditandai lunas, 6. cetak surat jalan, 7. tandai selesai dikirm, 8: selesai');
             $table->tinyInteger('status_perilisan_dana')->default(0)->comment('0: dibuat, 1: pending, 2: dibatalkan, 3: approved');
 

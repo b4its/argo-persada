@@ -33,6 +33,8 @@ class Pesanan extends Model
         'tanggal_surat_kembali',
         'tanggal_lunas',
         'validasi_tanggal_lunas',
+        'metode_pembayaran_rilis_dana',
+        'metode_pembayaran_lunas',
         'pesanan_status',
         'status_perilisan_dana',
         'file_invoice',
