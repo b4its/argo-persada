@@ -297,8 +297,7 @@ class FinancePemesanansTable
                         $currentAkunKeuangan = AkunKeuangan::firstOrCreate(
                             ['name' => "Barang Umum"], // Kriteria pencarian
                             [
-                                'kode' => "PBU-0-" . $record->id,
-                                'kategori' => 1,
+                                'kode' => date('md') ."-" . $record->id
                             ],               
                         );
 
@@ -314,6 +313,7 @@ class FinancePemesanansTable
                             'company_internal_id' => $record->company_internal_id,
                             'user_id'             => $record->user_id, 
                             'akun_keuangan_id'    => $currentAkunKeuangan->id, 
+                            'kategori'    => 3, 
                             'pesanan_id'          => $record->id,
                             'toko'                => $detailToko,
                             'saldo_awal'          => $saldoAwalOtomatis, // Tidak kaku 0, tapi ambil saldo terakhir
@@ -616,7 +616,7 @@ class FinancePemesanansTable
 
                             $currentAkunKeuanganLunas = AkunKeuangan::firstOrCreate(
                                 ['name' => "Barang Umum"],
-                                ['kode' => "PBU-0-" . $record->id]               
+                                ['kode' => date('md') ."-" . $record->id]               
                             );
 
                             // Cari saldo akhir terakhir untuk jadi saldo awal baris baru
@@ -628,6 +628,7 @@ class FinancePemesanansTable
                                 'company_internal_id' => $record->company_internal_id,
                                 'user_id'             => $record->user_id, 
                                 'akun_keuangan_id'    => $currentAkunKeuanganLunas->id, 
+                                'kategori'    => 1, 
                                 'pesanan_id'          => $record->id,
                                 'toko'                => $detailToko,
                                 'saldo_awal'          => $lastSaldo, // <--- Menambahkan estafet saldo

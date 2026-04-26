@@ -4,6 +4,10 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Admin\AdminDashboard;
 use App\Filament\Widgets\Admin\AdminStatsOverview;
+use App\Filament\Widgets\Admin\AdminTaskTables;
+use App\Filament\Widgets\Admin\StatsOverview\AdminAkunStatsOverview;
+use App\Filament\Widgets\Admin\StatsOverview\AdminKasHarianStatsOverview;
+use App\Filament\Widgets\Admin\StatsOverview\AdminPesananStatsOverview;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -52,12 +56,27 @@ class AdminPanelProvider extends PanelProvider
             )
             ->globalSearch(false)
             ->colors([
-                'primary' => Color::Indigo,
-            ])
+                'primary' => Color::hex("#ce6aec"),
+                'royal'     => '#4f46e5', // Biru keunguan mewah
+                'emerald'   => '#10b981', // Hijau perhiasan
+                'ocean'     => '#0ea5e9', // Biru laut cerah
+                'sunshine'  => '#f59e0b', // Kuning hangat
+                'crimson'   => '#e11d48', // Merah gelap elegan
+                'slate'     => '#475569', // Abu-abu kebiruan profesional
+                'night'     => '#1e293b', // Gelap pekat
+                'cyan'  => '#3fbde4', // Ungu modern
+                ])
+                // 'lavender'  => '#8b5cf6', // Ungu modern
             ->discoverResources(in: app_path('Filament/Resources/Admin'), for: 'App\Filament\Resources\Admin')
             ->discoverPages(in: app_path('Filament/Pages/Admin'), for: 'App\Filament\Pages\Admin')
             ->pages([
-                AdminDashboard::class,
+                Dashboard::class,
+            ])
+            ->widgets([
+                AdminAkunStatsOverview::class,
+                AdminPesananStatsOverview::class,
+                AdminKasHarianStatsOverview::class,
+                AdminTaskTables::class
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets/Admin'), for: 'App\Filament\Widgets\Admin')
 

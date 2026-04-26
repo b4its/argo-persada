@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('company_internal_id')->nullable()->constrained('company_internal')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('akun_keuangan_id')->nullable()->constrained('akun_keuangan')->onDelete('cascade');
+            $table->tinyInteger("kategori")->nullable()->comment('1. Penjualan, 2. Piutang, 3. Biaya Umum dan Administrasi Kantor, 4. Biaya Lain lain');
             $table->foreignId('pesanan_id')->nullable()->constrained('pesanan')->onDelete('cascade');
             $table->tinyInteger('metode_pembayaran')->default(0)->comment("0. belum ditentukan, 1. Tunai, 2. Kredit"); 
             $table->string('toko')->nullable();

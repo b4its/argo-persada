@@ -42,7 +42,7 @@ class LogistikPanelProvider extends PanelProvider
             )
             ->globalSearch(false)
             ->colors([
-                'primary' => Color::Lime, // Orange color
+                'primary' => Color::hex('#3fbde4'), // Orange color
             ])
             ->discoverResources(in: app_path('Filament/Resources/Logistik'), for: 'App\Filament\Resources\Logistik')
             ->discoverPages(in: app_path('Filament/Pages/Logistik'), for: 'App\Filament\Pages\Logistik')

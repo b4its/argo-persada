@@ -7,6 +7,7 @@ use App\Filament\Resources\Finance\FinanceKasHarians\FinanceKasHarianResource;
 use App\Filament\Resources\Finance\FinanceMutasis\FinanceMutasiResource;
 use App\Filament\Resources\Finance\FinancePemesanans\FinancePemesananResource;
 use App\Filament\Resources\Finance\FinanceSaldos\FinanceSaldoResource;
+use App\Filament\Widgets\Finance\FinanceStatsOverview;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -49,6 +50,14 @@ class FinancePanelProvider extends PanelProvider
             ->globalSearch(false)
             ->colors([
                 'primary' => Color::Green,
+                'royal'     => '#4f46e5', // Biru keunguan mewah
+                'emerald'   => '#10b981', // Hijau perhiasan
+                'ocean'     => '#0ea5e9', // Biru laut cerah
+                'sunshine'  => '#f59e0b', // Kuning hangat
+                'crimson'   => '#e11d48', // Merah gelap elegan
+                'slate'     => '#475569', // Abu-abu kebiruan profesional
+                'night'     => '#1e293b', // Gelap pekat
+                'cyan'  => '#3fbde4', // Ungu modern
             ])
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
                 return $builder
@@ -68,7 +77,7 @@ class FinancePanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets/Finance'), for: 'App\Filament\Widgets\Finance')
             ->widgets([
-                AccountWidget::class,
+                FinanceStatsOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class,

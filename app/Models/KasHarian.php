@@ -7,8 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KasHarian extends Model
 {
-    // Nama tabel sudah benar sesuai standar plural Laravel, 
-    // tapi pastikan di database memang 'kas_harian' (singular) atau 'kas_harians' (plural default).
+    // Pastikan di tabel database memang menggunakan nama ini
     protected $table = 'kas_harian';
 
     protected $fillable = [
@@ -16,6 +15,7 @@ class KasHarian extends Model
         'user_id',
         'pesanan_id',
         'akun_keuangan_id',
+        'kategori',
         'toko',
         'saldo_awal',
         'debet',
@@ -28,7 +28,7 @@ class KasHarian extends Model
      * Boot function untuk menangani event model secara otomatis.
      * Ini memastikan "Check and Balance" berjalan tanpa harus dipanggil manual.
      */
-    protected static function booted()
+    protected static function booted(): void
     {
         // Setiap kali data dibuat, diupdate, atau dihapus, hitung ulang saldo.
         static::saved(fn (KasHarian $kas) => static::recalculateBalances($kas->akun_keuangan_id));
@@ -63,34 +63,42 @@ class KasHarian extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | Logic: Check and Balance
+    | Logic: Automated Running Balance
     |--------------------------------------------------------------------------
     */
 
-    public static function recalculateBalances($akunId)
-        {
-            if (!$akunId) return;
+    public static function recalculateBalances($akunId): void
+    {
+        if (!$akunId) return;
 
-            $transactions = self::where('akun_keuangan_id', $akunId)
+        // Bungkus dalam transaction agar aman jika terjadi error di tengah jalan
+        \Illuminate\Support\Facades\DB::transaction(function () use ($akunId) {
+            
+            $transactions = \Illuminate\Support\Facades\DB::table('kas_harian')
+                ->where('akun_keuangan_id', $akunId)
                 ->orderBy('created_at', 'asc')
                 ->orderBy('id', 'asc')
                 ->get();
 
-            // Kita tidak lagi menggunakan $runningBalance untuk menimpa saldo_awal baris berikutnya
+            $runningBalance = 0;
+
             foreach ($transactions as $transaction) {
-                if (!$transaction instanceof \Illuminate\Database\Eloquent\Model) {
-                    continue; 
+                $saldoAwal = $runningBalance;
+                $saldoAkhir = $saldoAwal + (float)$transaction->debet - (float)$transaction->kredit;
+
+                // HANYA LAKUKAN UPDATE JIKA ADA PERUBAHAN SALDO
+                // Ini menghemat pemakaian resource database secara masif
+                if ($transaction->saldo_awal != $saldoAwal || $transaction->saldo_akhir != $saldoAkhir) {
+                    \Illuminate\Support\Facades\DB::table('kas_harian')
+                        ->where('id', $transaction->id)
+                        ->update([
+                            'saldo_awal' => $saldoAwal,
+                            'saldo_akhir' => $saldoAkhir
+                        ]);
                 }
 
-                /**
-                 * Saldo akhir adalah hasil kalkulasi dari komponen di baris itu sendiri.
-                 * Ini memberikan fleksibilitas jika Anda ingin mengubah saldo_awal secara manual
-                 * melalui form Filament tanpa ditimpa oleh saldo transaksi sebelumnya.
-                 */
-                $transaction->saldo_akhir = (float)$transaction->saldo_awal + (float)$transaction->debet - (float)$transaction->kredit;
-                
-                $transaction->timestamps = false;
-                $transaction->saveQuietly();
+                $runningBalance = $saldoAkhir;
             }
-        }
+        });
+    }
 }

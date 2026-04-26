@@ -205,7 +205,7 @@ class MarketingPemesanansTable
                             ->where('role', 'marketing')
                             ->latest()
                             ->first();
-                        $noRequisition = Str::upper(Str::random(6)); // Generate No Requisition unik
+                        $noRequisition = 'RQSTN-' . Str::upper(Str::random(6)); // Generate No Requisition unik
                         // Update No Requisition
                         Pesanan::updateOrCreate(
                             ['id' => $record->id],
@@ -230,7 +230,7 @@ class MarketingPemesanansTable
 
                         if ($currentTask) {
                             $currentTask->update([
-                                'status' => 1,
+                                'status' => 2,
                             ]);
                         }
 

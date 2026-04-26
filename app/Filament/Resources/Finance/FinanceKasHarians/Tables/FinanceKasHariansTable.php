@@ -128,13 +128,53 @@ class FinanceKasHariansTable
                                     TextEntry::make('pesanan.tanggal_lunas')->label('Lunas Pada')->date('d M Y')->color('success')->default('-'),
                                 ])->columns(3)->columnSpanFull(),
 
-                                Fieldset::make('Status & Lampiran')->schema([
-                                    TextEntry::make('pesanan.status_pesanan')->label('Status Pesanan')->badge(),
-                                    TextEntry::make('pesanan.status_perilisan_dana')->label('Status Dana')->badge(),
-                                    
-                                    // Bisa diganti pakai ImageEntry atau format html() link download jika itu file PDF
-                                    TextEntry::make('pesanan.file_invoice')->label('File Invoice')->default('Tidak ada file'),
-                                    TextEntry::make('pesanan.file_do')->label('File DO')->default('Tidak ada file'),
+                                Fieldset::make('Status')->schema([
+                                    TextEntry::make('pesanan.status_pesanan')
+                                        ->label('Status Pesanan')
+                                        ->badge()
+                                        ->color(fn (string $state): string => match ($state) {
+                                            '0' => 'slate',      // dibuat
+                                            '1' => 'sunshine',   // pending
+                                            '2' => 'crimson',    // perlu rilis dana (urgent)
+                                            '3' => 'ocean',      // perlu cetak invoice
+                                            '4' => 'lavender',   // perlu penagihan
+                                            '5' => 'emerald',    // ditandai lunas
+                                            '6' => 'royal',      // cetak surat jalan
+                                            '7' => 'info',       // tandai selesai dikirim
+                                            '8' => 'success',    // selesai
+                                            default => 'gray',
+                                        })
+                                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                                            '0' => 'Dibuat',
+                                            '1' => 'Pending',
+                                            '2' => 'Perlu Rilis Dana',
+                                            '3' => 'Perlu Cetak Invoice',
+                                            '4' => 'Perlu Penagihan',
+                                            '5' => 'Ditandai Lunas',
+                                            '6' => 'Cetak Surat Jalan',
+                                            '7' => 'Selesai Dikirim',
+                                            '8' => 'Selesai',
+                                            default => 'Unknown',
+                                        }),
+
+                                    TextEntry::make('pesanan.status_perilisan_dana')
+                                        ->label('Status Rilis Dana')
+                                        ->badge()
+                                        ->color(fn (string $state): string => match ($state) {
+                                            '0' => 'slate',    // dibuat
+                                            '1' => 'sunshine', // pending
+                                            '2' => 'danger',   // dibatalkan
+                                            '3' => 'emerald',  // approved
+                                            default => 'gray',
+                                        })
+                                        ->formatStateUsing(fn (string $state): string => match ($state) {
+                                            '0' => 'Dibuat',
+                                            '1' => 'Pending',
+                                            '2' => 'Dibatalkan',
+                                            '3' => 'Approved',
+                                            default => 'Unknown',
+                                        }),
+
                                 ])->columns(4)->columnSpanFull(),
                                 
                                 Fieldset::make('Total Pesanan (Termasuk Keranjang)')->schema([

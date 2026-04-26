@@ -107,7 +107,7 @@
                         <td class="table-cell text-center whitespace-nowrap">{{ $kas->companyInternal->singkatan ?? '-' }}</td>
                         <td class="table-cell">{{ $kas->user->name ?? '-' }}</td>
                         <td class="table-cell">{{ $kas->pesanan->no_requisition ?? '-' }}</td>
-                        <td class="table-cell text-center">{{ $kas->pesanan->code ?? '-' }}</td>
+                        <td class="table-cell text-center">{{ $kas->pesanan->no_po ?? '-' }}</td>
                         <td class="table-cell">{{ $kas->toko ?? '-' }}</td>
                         <td class="table-cell">{{ $kas->akunKeuangan->kode ?? '-' }}</td>
                         <td class="table-cell">{{ $kas->keterangan ?? '-' }}</td>

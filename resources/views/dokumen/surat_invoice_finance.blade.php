@@ -181,7 +181,7 @@
               <tr style="font-weight: bold">
                 <td>No</td>
                 <td>:</td>
-                <td>{{ $latestPesanan->no_invoice ?? $latestPesanan->code ?? '-' }}</td>
+                <td>{{ $latestPesanan->no_invoice ?? $latestPesanan->no_requisition ?? '-' }}</td>
               </tr>
               <tr style="font-weight: bold">
                 <td>PO No</td>
