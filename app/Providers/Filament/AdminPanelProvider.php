@@ -15,6 +15,7 @@ use App\Filament\Widgets\Admin\AdminTaskTables;
 use App\Filament\Widgets\Admin\StatsOverview\AdminAkunStatsOverview;
 use App\Filament\Widgets\Admin\StatsOverview\AdminKasHarianStatsOverview;
 use App\Filament\Widgets\Admin\StatsOverview\AdminPesananStatsOverview;
+use App\Http\Middleware\CheckAdminRoleRedirect;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -94,9 +95,9 @@ class AdminPanelProvider extends PanelProvider
                     
             })
             ->widgets([
+                AdminKasHarianStatsOverview::class,
                 AdminAkunStatsOverview::class,
                 AdminPesananStatsOverview::class,
-                AdminKasHarianStatsOverview::class,
                 AdminTaskTables::class
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets/Admin'), for: 'App\Filament\Widgets\Admin')
@@ -115,6 +116,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                CheckAdminRoleRedirect::class
             ]);
             
     }

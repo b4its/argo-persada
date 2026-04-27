@@ -8,6 +8,8 @@ use App\Filament\Resources\Finance\FinanceMutasis\FinanceMutasiResource;
 use App\Filament\Resources\Finance\FinancePemesanans\FinancePemesananResource;
 use App\Filament\Resources\Finance\FinanceSaldos\FinanceSaldoResource;
 use App\Filament\Widgets\Finance\FinanceStatsOverview;
+use App\Http\Middleware\CheckAdminRoleRedirect;
+use App\Http\Middleware\CheckFinanceRoleRedirect;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -92,6 +94,7 @@ class FinancePanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                CheckFinanceRoleRedirect::class,
             ]);
     }
 }

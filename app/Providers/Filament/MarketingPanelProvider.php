@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Widgets\Marketing\MarketingStatsOverview;
+use App\Http\Middleware\CheckAdminRoleRedirect;
+use App\Http\Middleware\CheckMarketingRoleRedirect;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -67,6 +69,7 @@ class MarketingPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                CheckMarketingRoleRedirect::class,
             ]);
     }
 }

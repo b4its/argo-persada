@@ -5,6 +5,9 @@ namespace App\Providers\Filament;
 use App\Filament\Widgets\Logistik\LogistikStatsOverview;
 use App\Filament\Widgets\Logistik\StatsOverview\LogistikSuratJalanStatsOverview;
 use App\Filament\Widgets\Logistik\StatsOverview\LogistikSuratKembaliStatsOverview;
+use App\Http\Middleware\CheckAdminRoleRedirect;
+use App\Http\Middleware\CheckFinanceRoleRedirect;
+use App\Http\Middleware\CheckLogistikRoleRedirect;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -70,6 +73,7 @@ class LogistikPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                CheckLogistikRoleRedirect::class,
             ]);
     }
 }

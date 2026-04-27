@@ -184,6 +184,7 @@
 <div class="screen-only">
   <button class="btn btn-back" onclick="history.back()">&#8592; Kembali</button>
   <button class="btn btn-print" onclick="window.print()">&#128438; Print</button>
+  <a href="{{ route('export.surat.pesanan', request()->all()) }}" class="btn" style="background: #217346; color: #fff; text-decoration: none;">&#128190; Export Excel</a>
   <label class="orientation-label" for="orientSelect">Orientasi:</label>
   <select class="orientation-select" id="orientSelect" onchange="setOrientation(this.value)">
     <option value="landscape" selected>Landscape (Horizontal)</option>

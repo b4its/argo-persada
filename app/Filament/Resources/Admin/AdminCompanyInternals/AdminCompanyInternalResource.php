@@ -21,7 +21,7 @@ class AdminCompanyInternalResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'company_internal';
-    protected static ?string $title = 'company-internal';
+    protected static ?string $slug = 'company-internal';
 
     public static function form(Schema $schema): Schema
     {

@@ -17,6 +17,7 @@ Route::prefix('dokumen')->group(function () {
 
     Route::controller(SuratPesanan::class)->group(function () {
         Route::get('/surat-pesanan', 'index')->name('surat_pesanan.index');
+        Route::get('/surat-pesanan/excel', 'exportExcel')->name('export.surat.pesanan');
     });
 
     Route::controller(SuratPOControllers::class)->group(function () {
