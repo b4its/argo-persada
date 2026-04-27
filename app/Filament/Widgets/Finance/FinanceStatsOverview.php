@@ -71,7 +71,7 @@ class FinanceStatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-arrow-trending-down') // Icon tren turun karena uang keluar
                 ->color('danger'),
 
-                Stat::make('Transaksi Minggu Ini', $totalTransaksiMingguIni)
+            Stat::make('Transaksi Minggu Ini', $totalTransaksiMingguIni)
                 ->description('Total Transaksi Minggu Ini')
                 ->descriptionIcon('heroicon-m-banknotes') // Icon tren turun karena uang keluar
                 ->color('ocean'),

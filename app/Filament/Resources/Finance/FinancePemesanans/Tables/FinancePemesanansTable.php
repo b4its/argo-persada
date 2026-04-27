@@ -295,11 +295,17 @@ class FinancePemesanansTable
                         $detailToko = $queueItems->pluck('supplier_name')->unique()->implode(', ');
 
                         $currentAkunKeuangan = AkunKeuangan::firstOrCreate(
-                            ['name' => "Barang Umum"], // Kriteria pencarian
+                            ['name' => "Pesanan Barang No " . $record->no_requisition], // Kriteria pencarian
                             [
                                 'kode' => date('md') ."-" . $record->id
                             ],               
                         );
+                        // $currentAkunKeuangan = AkunKeuangan::firstOrCreate(
+                        //     ['name' => "Barang Umum"], // Kriteria pencarian
+                        //     [
+                        //         'kode' => date('md') ."-" . $record->id
+                        //     ],               
+                        // );
 
                         // 1. Cari saldo terakhir dari database untuk dijadikan default saldo_awal
                         $lastTransaction = KasHarian::where('akun_keuangan_id', $currentAkunKeuangan->id)
@@ -614,10 +620,18 @@ class FinancePemesanansTable
                             return "{$item->supplier_name}";
                         })->implode(', ');
 
-                            $currentAkunKeuanganLunas = AkunKeuangan::firstOrCreate(
-                                ['name' => "Barang Umum"],
-                                ['kode' => date('md') ."-" . $record->id]               
-                            );
+                        $currentAkunKeuanganLunas = AkunKeuangan::firstOrCreate(
+                            ['name' => "Pesanan Barang No " . $record->no_requisition], // Kriteria pencarian
+                            [
+                                'kode' => date('md') ."-" . $record->id
+                            ],               
+                        );
+
+                            // $currentAkunKeuanganLunas = AkunKeuangan::firstOrCreate(
+                            //     ['name' => "Barang Umum"],
+                            //     ['kode' => date('md') ."-" . $record->id]               
+                            // );
+                            
 
                             // Cari saldo akhir terakhir untuk jadi saldo awal baris baru
                             $lastSaldo = KasHarian::where('akun_keuangan_id', $currentAkunKeuanganLunas->id)

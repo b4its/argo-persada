@@ -41,17 +41,6 @@ class FinanceKasHarianForm
                             ->label('Kode Akun')
                             ->required()
                             ->maxLength(255),
-                        Select::make('kategori')
-                            ->label('Kategori')
-                            ->options([
-                                1 => 'Penjualan',
-                                2 => 'Piutang',
-                                3 => 'Biaya Umum dan Administrasi Kantor',
-                                4 => 'Biaya Lain Lain',
-                            ])
-                            ->default(1)
-                            ->native(false) 
-                            ->required(),
                         
                     ])
                     ->getOptionLabelFromRecordUsing(fn (\Illuminate\Database\Eloquent\Model $record) => "{$record->name} - {$record->kode} ") // Opsional: Sesuaikan format tampilan jika butuh lebih dari sekadar nama
@@ -64,8 +53,7 @@ class FinanceKasHarianForm
                     // Format tampilan option-nya (Nama Perusahaan - SINGKATAN)
                     ->getOptionLabelFromRecordUsing(fn (\Illuminate\Database\Eloquent\Model $record) => "{$record->code} - {$record->no_delivery_order}")
                     ->searchable()
-                    ->preload()
-                    ->required(),
+                    ->preload(),
 
                 TextInput::make('saldo_awal')
                     ->label('Saldo Awal')
@@ -92,6 +80,19 @@ class FinanceKasHarianForm
                     ->stripCharacters('.')
                     ->required()
                     ->live(onBlur: true),
+
+                
+                Select::make('kategori')
+                        ->label('Kategori')
+                        ->options([
+                            1 => 'Penjualan',
+                            2 => 'Piutang',
+                            3 => 'Biaya Umum dan Administrasi Kantor',
+                            4 => 'Biaya Lain Lain',
+                        ])
+                        ->default(1)
+                        ->native(false) 
+                        ->required(),
 
                 Textarea::make('keterangan')
                     ->label('Keterangan')

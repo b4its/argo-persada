@@ -2,6 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\Logistik\LogistikStatsOverview;
+use App\Filament\Widgets\Logistik\StatsOverview\LogistikSuratJalanStatsOverview;
+use App\Filament\Widgets\Logistik\StatsOverview\LogistikSuratKembaliStatsOverview;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -51,7 +54,8 @@ class LogistikPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets/Logistik'), for: 'App\Filament\Widgets\Logistik')
             ->widgets([
-                AccountWidget::class,
+                LogistikSuratJalanStatsOverview::class,
+                LogistikSuratKembaliStatsOverview::class,
             ])
             ->middleware([
                 EncryptCookies::class,

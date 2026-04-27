@@ -3,6 +3,13 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Admin\AdminDashboard;
+use App\Filament\Resources\Admin\AdminAkunKeuangans\AdminAkunKeuanganResource;
+use App\Filament\Resources\Admin\AdminCompanyInternals\AdminCompanyInternalResource;
+use App\Filament\Resources\Admin\AdminKaryawans\AdminKaryawanResource;
+use App\Filament\Resources\Admin\AdminKasHarians\AdminKasHarianResource;
+use App\Filament\Resources\Admin\AdminPemesanans\AdminPemesananResource;
+use App\Filament\Resources\Finance\FinanceAkunKeuangans\FinanceAkunKeuanganResource;
+use App\Filament\Resources\Finance\FinanceKasHarians\FinanceKasHarianResource;
 use App\Filament\Widgets\Admin\AdminStatsOverview;
 use App\Filament\Widgets\Admin\AdminTaskTables;
 use App\Filament\Widgets\Admin\StatsOverview\AdminAkunStatsOverview;
@@ -12,6 +19,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationBuilder;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -72,6 +80,19 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
+                return $builder
+                    ->items([
+                        // 1. Dashboard selalu di atas
+                        ...Dashboard::getNavigationItems(),
+                        ...AdminCompanyInternalResource::getNavigationItems(),
+                        ...AdminKaryawanResource::getNavigationItems(),
+                        ...AdminPemesananResource::getNavigationItems(),
+                        ...AdminAkunKeuanganResource::getNavigationItems(),
+                        ...AdminKasHarianResource::getNavigationItems(),
+                    ]);
+                    
+            })
             ->widgets([
                 AdminAkunStatsOverview::class,
                 AdminPesananStatsOverview::class,

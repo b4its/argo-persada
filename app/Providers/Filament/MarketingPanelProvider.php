@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\Marketing\MarketingStatsOverview;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -51,7 +52,7 @@ class MarketingPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets/Marketing'), for: 'App\Filament\Widgets\Marketing')
             ->widgets([
-                AccountWidget::class,
+                MarketingStatsOverview::class
             ])
             ->middleware([
                 EncryptCookies::class,

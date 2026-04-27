@@ -7,7 +7,9 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 
 // Import yang Anda wajibkan (Sesuai arsitektur Filament 5.x / Laravel 13 Anda)
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Builder;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Section;
@@ -72,16 +74,47 @@ class FinanceKasHariansTable
                     ->searchable()
                     ->sortable()
                     ->limit(30),
+
+                
+                TextColumn::make('kategori')
+                    ->label('Kategori')
+                    ->formatStateUsing(fn (int $state): string => match ($state) {
+                        1 => 'Penjualan',
+                        2 => 'Piutang',
+                        3 => 'Biaya Umum dan Administrasi Kantor',
+                        4 => 'Biaya Lain Lain',
+                        default => 'Unknown',
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        // Logika ini memetakan kata kunci pencarian ke angka ID di database
+                        $categories = [
+                            1 => 'penjualan',
+                            2 => 'piutang',
+                            3 => 'biaya umum dan administrasi kantor',
+                            4 => 'biaya lain lain',
+                        ];
+
+                        return $query->where(function ($q) use ($search, $categories) {
+                            foreach ($categories as $id => $name) {
+                                if (str_contains(strtolower($name), strtolower($search))) {
+                                    $q->orWhere('kategori', $id);
+                                }
+                            }
+                        });
+                    })
+                    ->sortable(),
             ])
             ->filters([
                 //
             ])
             ->recordActions([
+                EditAction::make(),
                 ViewAction::make()
                     ->label('Detail')
                     ->icon('heroicon-m-eye')
                     ->modalHeading('Audit Detail Kas Harian & Dokumen Pesanan')
                     ->modalWidth('7xl') // Diperlebar menjadi 7xl untuk menampung tabel rincian keranjang
+                    ->visible(fn ($record) => $record && $record->pesanan_id !== null)
                     ->infolist([
                         
                         // ROW 1: MUTASI KAS & ENTITAS
