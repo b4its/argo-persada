@@ -21,6 +21,7 @@ Route::prefix('dokumen')->group(function () {
     });
 
     Route::controller(SuratPOControllers::class)->group(function () {
+        Route::get('/surat-po/{id}/excel', 'exportExcel')->name('export.surat_po');
         Route::get('/surat-po/{id}', 'index')->name('surat_po.index');
     });
     

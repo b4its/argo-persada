@@ -187,6 +187,10 @@
     <div class="screen-only">
         <a href="{{ route('filament.marketing.resources.pesanan.index') }}" class="btn btn-back">&#8592; Kembali</a>
         <button class="btn btn-print" onclick="window.print()">&#128438; Cetak PDF</button>
+        <a href="{{ route('export.surat_po', $pesanan->id) }}" class="btn" style="background: #217346; color: #fff;">
+            <svg style="width:16px; height:16px; vertical-align: middle; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Export Excel
+        </a>
         
         <label class="orientation-label" for="orientSelect">Orientasi:</label>
         <select class="orientation-select" id="orientSelect" onchange="setOrientation(this.value)">
