@@ -30,6 +30,7 @@ Route::prefix('dokumen')->group(function () {
     });
 
     Route::controller(InvoicePermintaanFinanceControllers::class)->group(function () {
+        Route::get('/surat-invoice-permintaan-finance/{id}/excel', 'exportExcel')->name('export.invoice_finance');
         Route::get('/surat-invoice-permintaan-finance/{id}', 'index')->name('invoice.request.finance.index');
     });
 
