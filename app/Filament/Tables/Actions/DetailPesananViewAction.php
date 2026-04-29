@@ -133,6 +133,7 @@ class DetailPesananViewAction extends ViewAction
                     ->label('Daftar Barang')
                     ->schema([
                         TextInput::make('item_name')->label('Nama Barang'),
+                        TextInput::make('kode')->label('Kode Barang'),
                         TextInput::make('quantity')->numeric()->label('Qty'),
                         TextInput::make('satuan')->label('Satuan'),
                         TextInput::make('modal')
@@ -185,6 +186,7 @@ class DetailPesananViewAction extends ViewAction
                     $data['list_barang'] = $record->keranjang->queueKeranjang->map(function ($item) {
                         return [
                             'item_name'     => $item->item_name,
+                            'kode'      => $item->kode,
                             'quantity'      => $item->quantity,
                             'satuan'        => $item->satuan,
                             'modal'         => $item->modal,

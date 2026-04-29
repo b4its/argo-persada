@@ -65,6 +65,11 @@ class MarketingPemesananForm
                     // PERBAIKAN: Baris ->dehydrated(false) DIHAPUS di sini agar datanya dikirim ke Controller
                     ->minItems(1)
                     ->schema([
+                        TextInput::make('kode')
+                            ->label('Kode Barang')
+                            ->placeholder('Masukkan kode Barang...')
+                            ->required()
+                            ->maxLength(30),
                         TextInput::make('item_name')
                             ->label('Nama Barang')
                             ->placeholder('Masukkan Nama Barang...')

@@ -4,162 +4,271 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Kas - {{ $kasHarian->first()->companyInternal->name ?? 'Semua PT' }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Konfigurasi Default Kertas A4 */
-        @page {
-            size: A4 portrait; 
-            margin: 15mm;
+        /* ── RESET & DASAR ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* Tampilan Mode Print - Menyembunyikan tombol aksi */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white; margin: 0; padding: 0; }
-            .a4-preview { 
-                box-shadow: none; 
-                margin: 0; 
-                padding: 0; 
-                width: 100%; 
-                max-width: none; 
-            }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+            background: #f3f4f6;
+            padding: 20px;
         }
 
-        /* Tampilan Layar (Mockup Kertas A4) */
-        body { background-color: #f3f4f6; font-family: Arial, sans-serif; }
-        
-        .a4-preview {
-            background: white;
-            width: 210mm; /* Lebar default portrait */
-            min-height: 297mm;
-            margin: 40px auto;
-            padding: 20px 30px;
+        /* ── SCREEN ONLY CONTROLS ── */
+        .screen-only {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            z-index: 50;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: background 0.15s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-back { background: #4b5563; color: #fff; }
+        .btn-back:hover { background: #374151; }
+        .btn-print { background: #2563eb; color: #fff; }
+        .btn-print:hover { background: #1d4ed8; }
+
+        .orientation-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            margin-left: 8px;
+        }
+        .orientation-select {
+            padding: 6px 10px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* ── PAGE WRAPPER ── */
+        .page-wrapper {
+            background: #fff;
+            padding: 30px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transition: width 0.3s ease;
+            margin: 0 auto;
+            transition: max-width 0.3s ease;
+            max-width: 297mm; 
+            min-height: 210mm;
+            overflow-x: auto;
         }
 
-        /* Styling Tabel */
-        .table-cell { 
-            border: 1px solid #374151; 
-            padding: 8px 12px; 
-            font-size: 12px; 
-            vertical-align: top;
+        .document-wrapper {
+            width: 100%;
+            min-width: 900px; /* Menjaga struktur di layar monitor */
         }
-        .table-header { 
-            background-color: #e5e7eb; 
-            font-weight: bold; 
-            text-align: center; 
+
+        /* ── HEADER DOKUMEN ── */
+        .report-title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 20px;
             text-transform: uppercase;
+            transition: font-size 0.3s ease;
+        }
+
+        /* ── TABEL DATA UTAMA ── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            word-break: break-word;
+        }
+        .data-table th, 
+        .data-table td {
+            border: 1px solid #374151;
+            padding: 6px 8px;
+            vertical-align: top;
+            transition: all 0.3s ease;
+        }
+        .data-table th {
+            background-color: #e5e7eb;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-align: center;
             font-size: 11px;
+        }
+        
+        /* Utilitas Perataan */
+        .text-center { text-align: center !important; }
+        .text-right { text-align: right !important; }
+        .text-left { text-align: left !important; }
+        .whitespace-nowrap { white-space: nowrap; }
+
+        /* ── PENYESUAIAN KHUSUS MODE PORTRAIT (LAYAR) ── */
+        .page-wrapper.portrait-mode .document-wrapper {
+            min-width: unset; 
+        }
+        .page-wrapper.portrait-mode .report-title {
+            font-size: 15px;
+        }
+
+        /* ── PENGATURAN KHUSUS SAAT PRINT (PDF) ── */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .screen-only {
+                display: none !important;
+            }
+            .page-wrapper {
+                box-shadow: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+                margin: 0 !important;
+                overflow: visible !important; /* Jangan sembunyikan overflow di print */
+            }
+            
+            /* FIX UTAMA: Reset min-width saat masuk ke mode cetak kertas */
+            .document-wrapper {
+                min-width: 100% !important;
+                width: 100% !important;
+            }
+
+            /* FIX UTAMA: Paksa font jadi sangat kecil agar 11 kolom muat di Portrait */
+            .page-wrapper.portrait-mode .data-table th,
+            .page-wrapper.portrait-mode .data-table td {
+                font-size: 8px !important; 
+                padding: 4px 2px !important;
+                white-space: normal !important; /* Paksa teks membungkus ke bawah / tidak memanjang */
+            }
+
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="no-print bg-white p-4 shadow-md flex gap-4 justify-center sticky top-0 z-50 border-b">
-        <button onclick="window.history.back()" class="px-5 py-2.5 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    <div class="screen-only">
+        <button onclick="window.history.back()" class="btn btn-back">
+            <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Kembali
         </button>
-        <button onclick="triggerPrint('portrait')" class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Print Vertikal
+        <button onclick="window.print()" class="btn btn-print">
+            <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Cetak PDF
         </button>
-        <button onclick="triggerPrint('landscape')" class="px-5 py-2.5 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition flex items-center gap-2">
-            <svg class="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Print Horizontal
-        </button>
+        <a href="{{ route('export.kas_harian_all', request()->all()) }}" class="btn" style="background: #217346; color: #fff;">
+            <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Export Excel
+        </a>
+        <label class="orientation-label" for="orientSelect">Orientasi:</label>
+        <select class="orientation-select" id="orientSelect" onchange="setOrientation(this.value)">
+            <option value="landscape" selected>Landscape (Horizontal)</option>
+            <option value="portrait">Portrait (Vertikal)</option>
+        </select>
     </div>
 
-    <div class="a4-preview" id="documentArea">
-        {{-- <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">DATA KAS {{ $kasHarian->first()->created_at->format('Y') ?? now()->format('Y') }}</h1> --}}
-        
-        {{-- <div class="mb-4 text-sm text-gray-600 flex justify-between">
-            <div>
-                <p>Dicetak oleh: <strong>{{ $username }}</strong></p>
-                <p>Tanggal Cetak: <strong>{{ now()->format('Y-m-d H:i') }}</strong></p>
-            </div>
-            <div>
-                <p>Total Data: <strong>{{ $kasHarian->count() }} Baris</strong></p>
-            </div>
-        </div> --}}
+    <style id="printOrientStyle">
+        @page { size: A4 landscape; margin: 10mm; }
+    </style>
 
-        <table class="w-full border-collapse">
-            <thead>
-                <tr>
-                    <th class="table-cell table-header" style="width: 10%">Tanggal</th>
-                    <th class="table-cell table-header whitespace-nowrap" style="width: 1%">PT</th>
-                    <th class="table-cell table-header" style="width: auto">NAMA</th>
-                    <th class="table-cell table-header whitespace-nowrap">PR/PO</th>
-                    <th class="table-cell table-header" style="width: 10%">DB/FB</th>
-                    <th class="table-cell table-header" style="width: 10%">TOKO</th>
-                    <th class="table-cell table-header whitespace-nowrap" style="width: 1%">KODE AKUN</th>
-                    <th class="table-cell table-header" style="width: auto">KETERANGAN</th>
-                    <th class="table-cell table-header whitespace-nowrap" style="width: 1%">DEBET</th>
-                    <th class="table-cell table-header whitespace-nowrap" style="width: 1%">KREDIT</th>
-                    <th class="table-cell table-header whitespace-nowrap" style="width: 1%">SALDO</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($kasHarian as $kas)
+    <div class="page-wrapper" id="pageWrapper">
+        <div class="document-wrapper">
+            
+            <h1 class="report-title">DATA KAS {{ $kasHarian->first()->created_at->format('Y') ?? date('Y') }}</h1>
+
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <td class="table-cell text-center">{{ $kas->created_at->format('Y-m-d') }}</td>
-                        <td class="table-cell text-center whitespace-nowrap">{{ $kas->companyInternal->singkatan ?? '-' }}</td>
-                        <td class="table-cell">{{ $kas->user->name ?? '-' }}</td>
-                        <td class="table-cell">{{ $kas->pesanan->no_requisition ?? '-' }}</td>
-                        <td class="table-cell text-center">{{ $kas->pesanan->no_po ?? '-' }}</td>
-                        <td class="table-cell">{{ $kas->toko ?? '-' }}</td>
-                        <td class="table-cell">{{ $kas->akunKeuangan->kode ?? '-' }}</td>
-                        <td class="table-cell">{{ $kas->keterangan ?? '-' }}</td>
-                        <td class="table-cell text-right whitespace-nowrap">{{ isset($kas->debet) ? 'Rp ' . number_format($kas->debet, 0, ',', '.') : '-' }}</td>
-                        <td class="table-cell text-right whitespace-nowrap">{{ isset($kas->kredit) ? 'Rp ' . number_format($kas->kredit, 0, ',', '.') : '-' }}</td>
-                        <td class="table-cell text-right whitespace-nowrap">{{ isset($kas->saldo_akhir) ? 'Rp ' . number_format($kas->saldo_akhir, 0, ',', '.') : '-' }}</td>
+                        <th style="width: 8%">Tanggal</th>
+                        <th style="width: 4%" class="whitespace-nowrap">PT</th>
+                        <th style="width: 12%">NAMA</th>
+                        <th style="width: 10%" class="whitespace-nowrap">PR/PO</th>
+                        <th style="width: 10%">DB/FB</th>
+                        <th style="width: 10%">TOKO</th>
+                        <th style="width: 8%" class="whitespace-nowrap">KODE AKUN</th>
+                        <th style="width: auto">KETERANGAN</th>
+                        <th style="width: 9%" class="whitespace-nowrap">DEBET</th>
+                        <th style="width: 9%" class="whitespace-nowrap">KREDIT</th>
+                        <th style="width: 9%" class="whitespace-nowrap">SALDO</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="9" class="table-cell text-center py-4 font-medium text-gray-500">Tidak ada data Kas Harian yang tersedia.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse ($kasHarian as $kas)
+                        <tr>
+                            <td class="text-center">{{ $kas->created_at->format('Y-m-d') }}</td>
+                            <td class="text-center whitespace-nowrap">{{ $kas->companyInternal->singkatan ?? '-' }}</td>
+                            <td>{{ $kas->user->name ?? '-' }}</td>
+                            <td>{{ $kas->pesanan->no_requisition ?? '-' }}</td>
+                            <td class="text-center">{{ $kas->pesanan->no_po ?? '-' }}</td>
+                            <td>{{ $kas->toko ?? '-' }}</td>
+                            <td class="text-center whitespace-nowrap">{{ $kas->akunKeuangan->kode ?? '-' }}</td>
+                            <td>{{ $kas->keterangan ?? '-' }}</td>
+                            <td class="text-right whitespace-nowrap">{{ isset($kas->debet) ? 'Rp ' . number_format($kas->debet, 0, ',', '.') : '-' }}</td>
+                            <td class="text-right whitespace-nowrap">{{ isset($kas->kredit) ? 'Rp ' . number_format($kas->kredit, 0, ',', '.') : '-' }}</td>
+                            <td class="text-right whitespace-nowrap">{{ isset($kas->saldo_akhir) ? 'Rp ' . number_format($kas->saldo_akhir, 0, ',', '.') : '-' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="11" class="text-center" style="padding: 16px; font-style: italic; color: #6b7280;">Tidak ada data Kas Harian yang tersedia.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+        </div>
     </div>
 
     <script>
-        window.onload = function() {
-            setTimeout(() => {
-                triggerPrint('landscape'); 
-            }, 500);
-        };
-
-        function triggerPrint(orientation) {
-            let styleId = 'dynamic-print-style';
-            let styleElement = document.getElementById(styleId);
-            let docArea = document.getElementById('documentArea');
-
-            if (!styleElement) {
-                styleElement = document.createElement('style');
-                styleElement.id = styleId;
-                document.head.appendChild(styleElement);
-            }
-
-            if (orientation === 'landscape') {
-                styleElement.innerHTML = `
-                    @page { size: A4 landscape; margin: 10mm; }
-                `;
-                docArea.style.width = '297mm';
-                docArea.style.minHeight = '210mm';
+        function setOrientation(val) {
+            const styleEl = document.getElementById('printOrientStyle');
+            const pageWrapper = document.getElementById('pageWrapper');
+            
+            if (val === 'landscape') {
+                styleEl.textContent = '@page { size: A4 landscape; margin: 10mm; }';
+                if(pageWrapper) {
+                    pageWrapper.style.maxWidth = '297mm'; 
+                    pageWrapper.classList.remove('portrait-mode'); 
+                }
             } else {
-                styleElement.innerHTML = `
-                    @page { size: A4 portrait; margin: 10mm; }
-                `;
-                docArea.style.width = '210mm';
-                docArea.style.minHeight = '297mm';
+                styleEl.textContent = '@page { size: A4 portrait; margin: 10mm; }';
+                if(pageWrapper) {
+                    pageWrapper.style.maxWidth = '210mm';
+                    pageWrapper.classList.add('portrait-mode');
+                }
             }
-
-            setTimeout(() => {
-                window.print();
-            }, 100);
         }
+
+        window.onload = function() {
+            setOrientation('landscape');
+        };
     </script>
 </body>
 </html>

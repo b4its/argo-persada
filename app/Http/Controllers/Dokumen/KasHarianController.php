@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Dokumen;
 
+use App\Exports\KasHarianExport;
 use App\Http\Controllers\Controller;
 use App\Models\KasHarian;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KasHarianController extends Controller
 {
@@ -90,6 +92,60 @@ class KasHarianController extends Controller
                 'filterType' => $filterType // Dilempar ke blade jika ingin print info "Periode Laporan"
             ]);
         }
+
+    public function exportExcel(Request $request)
+    {
+        $query = KasHarian::with([
+            'akunKeuangan', 
+            'companyInternal', 
+            'user', 
+            'pesanan'
+        ]);
+
+        // === LOGIKA FILTERING WAKTU SAMA PERSIS DENGAN INDEX_ALL ===
+        $filterType = $request->query('filter_type', 'all');
+
+        switch ($filterType) {
+            case 'year':
+                if ($request->filled('year')) {
+                    $query->whereYear('created_at', $request->year);
+                }
+                break;
+            case 'month':
+                if ($request->filled('year')) {
+                    $query->whereYear('created_at', $request->year);
+                }
+                if ($request->filled('month')) {
+                    $query->whereMonth('created_at', $request->month);
+                }
+                break;
+            case 'week':
+                if ($request->filled('date')) {
+                    $start = Carbon::parse($request->date)->startOfWeek();
+                    $end = Carbon::parse($request->date)->endOfWeek();
+                    $query->whereBetween('created_at', [$start, $end]);
+                }
+                break;
+            case 'day':
+                if ($request->filled('date')) {
+                    $query->whereDate('created_at', $request->date);
+                }
+                break;
+            case 'custom':
+                if ($request->filled('start_date') && $request->filled('end_date')) {
+                    $query->whereBetween('created_at', [
+                        Carbon::parse($request->start_date)->startOfDay(), 
+                        Carbon::parse($request->end_date)->endOfDay()
+                    ]);
+                }
+                break;
+        }
+
+        $kasHarian = $query->orderBy('created_at', 'asc')->get();
+
+        // Download file Excel
+        return Excel::download(new KasHarianExport($kasHarian), 'Laporan_Kas_Harian.xlsx');
+    }
 
     /**
      * Show the form for creating a new resource.

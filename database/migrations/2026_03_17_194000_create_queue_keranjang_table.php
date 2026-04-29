@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('keranjang_id')->constrained('keranjang')->onDelete('cascade'); 
+            $table->string('kode')->nullable();
             $table->string('supplier_name')->nullable();
             $table->string('keterangan')->nullable();
             $table->string('item_name')->nullable();

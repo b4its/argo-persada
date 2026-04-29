@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Dokumen\KasHarian;
 
+use App\Exports\BukuBesarExport; // <-- Tambahkan ini
 use App\Http\Controllers\Controller;
 use App\Models\AkunKeuangan;
 use App\Models\KasHarian;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel; // <-- Tambahkan ini
 
 class BukuBesarController extends Controller
 {
-    //
-public function index(Request $request)
+    private function getBukuBesarData(Request $request)
     {
         // === 1. TENTUKAN RENTANG WAKTU FILTER ===
         $filterType = $request->query('filter_type', 'all');
@@ -52,7 +53,7 @@ public function index(Request $request)
                 break;
         }
 
-        // === 2. AMBIL DATA MUTASI (DI DALAM RENTANG WAKTU) ===
+        // === 2. AMBIL DATA MUTASI ===
         $mutasiData = DB::table('kas_harian')
             ->leftJoin('company_internal', 'kas_harian.company_internal_id', '=', 'company_internal.id')
             ->select(
@@ -66,7 +67,7 @@ public function index(Request $request)
             ->groupBy('kas_harian.akun_keuangan_id', 'kas_harian.kategori', 'company_internal.name')
             ->get();
 
-        // === 3. AMBIL DATA SALDO AWAL (SEBELUM RENTANG WAKTU) ===
+        // === 3. AMBIL DATA SALDO AWAL ===
         $awalData = DB::table('kas_harian')
             ->leftJoin('company_internal', 'kas_harian.company_internal_id', '=', 'company_internal.id')
             ->select(
@@ -161,27 +162,37 @@ public function index(Request $request)
             ];
         }
 
-        // === 6. FINALISASI GRAND TOTAL (FULL NETTO) ===
+        // === 6. FINALISASI GRAND TOTAL ===
         $totalAkhirNetto = $totalAwal + $totalDebet - $totalKredit;
-        
-        // Cari selisih mutasi agar tidak berdampingan di baris JUMLAH
         $netMutasi = $totalDebet - $totalKredit;
 
         $grandTotals = [
             'awal_debet'    => $totalAwal > 0 ? $totalAwal : 0,
             'awal_kredit'   => $totalAwal < 0 ? abs($totalAwal) : 0,
-            
-            // Mutasi sekarang diselisihkan (Netto), dipastikan hanya isi satu sisi
             'mutasi_debet'  => $netMutasi > 0 ? $netMutasi : 0,
             'mutasi_kredit' => $netMutasi < 0 ? abs($netMutasi) : 0,
-            
             'akhir_debet'   => $totalAkhirNetto > 0 ? $totalAkhirNetto : 0,
             'akhir_kredit'  => $totalAkhirNetto < 0 ? abs($totalAkhirNetto) : 0,
         ];
 
-        return view('dokumen.finance.buku-besar', [
+        return [
             'groupedData' => $groupedData,
             'grandTotals' => $grandTotals
+        ];
+    }
+
+    public function index(Request $request)
+    {
+        $data = $this->getBukuBesarData($request);
+        return view('dokumen.finance.buku-besar', [
+            'groupedData' => $data['groupedData'],
+            'grandTotals' => $data['grandTotals']
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $data = $this->getBukuBesarData($request);
+        return Excel::download(new BukuBesarExport($data['groupedData'], $data['grandTotals']), 'Laporan_Buku_Besar.xlsx');
     }
 }

@@ -37,10 +37,12 @@ Route::prefix('dokumen')->group(function () {
     });
     
     Route::controller(KasHarianController::class)->group(function () {
+        Route::get('/kas-harian/excel', 'exportExcel')->name('export.kas_harian_all');
         Route::get('/kas-harian/{id}', 'index')->name('kas_harian.index');
         Route::get('/kas-harian', 'index_all')->name('kas_harian_all.index');
     });
     Route::controller(BukuBesarController::class)->group(function () {
+        Route::get('/buku-besar/excel', 'exportExcel')->name('export.buku_besar');
         Route::get('/buku-besar', 'index')->name('buku_besar.index');
     });
     

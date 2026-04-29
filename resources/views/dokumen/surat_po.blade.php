@@ -5,96 +5,175 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Belanja - Invoice Surat PO</title>
     <style>
-        /* Pengaturan Gaya Dasar */
+        /* ── RESET & DASAR ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
             font-size: 13px;
-            color: #333;
+            color: #000;
+            background: #f0f0f0;
+            padding: 20px;
         }
-        
-        /* Tombol Cetak */
-        .btn-print {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
+
+        /* ── SCREEN ONLY CONTROLS ── */
+        .screen-only {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 8px 18px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            margin-bottom: 20px;
+            font-size: 13px;
             font-weight: bold;
+            transition: background 0.15s;
+            text-decoration: none;
+            display: inline-block;
         }
-        .btn-print:hover {
-            background-color: #0056b3;
+        .btn-back {
+            background: #6c757d;
+            color: #fff;
+        }
+        .btn-back:hover { background: #5a6268; }
+        .btn-print {
+            background: #007bff;
+            color: #fff;
+        }
+        .btn-print:hover { background: #0056b3; }
+
+        .orientation-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            margin-left: 8px;
+        }
+        .orientation-select {
+            padding: 6px 10px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
         }
 
-        /* Bagian Header (Informasi PO) */
+        /* ── PAGE WRAPPER ── */
+        .page-wrapper {
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            margin: 0 auto;
+            transition: max-width 0.3s ease;
+            max-width: 297mm; 
+            min-height: 210mm;
+            /* Tambahan: mencegah isi tumpah ke luar kotak putih di layar */
+            overflow-x: auto; 
+        }
+
+        .document-wrapper {
+            width: 100%;
+            /* Pastikan tabel tidak terlalu mengerut dan merusak struktur huruf */
+            min-width: 700px;
+        }
+
+        /* ── BAGIAN HEADER (INFORMASI PO) ── */
         .header-title {
             text-align: center;
             font-size: 18px;
             font-weight: bold;
             text-transform: uppercase;
             margin-bottom: 20px;
+            letter-spacing: 1px;
+            transition: font-size 0.3s ease;
         }
+        
         .info-table {
             width: auto;
             margin-bottom: 20px;
             font-weight: bold;
+            transition: font-size 0.3s ease;
         }
         .info-table td {
-            padding: 3px 10px 3px 0;
+            padding: 4px 12px 4px 0;
             vertical-align: top;
         }
 
-        /* Tabel Data Utama */
+        /* ── TABEL DATA UTAMA ── */
         .data-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            word-break: break-word; /* Mencegah teks panjang merusak layout */
         }
-        .data-table th, .data-table td {
+        .data-table th, 
+        .data-table td {
             border: 1px solid #000;
             padding: 8px 6px;
             text-align: center;
+            vertical-align: middle;
+            font-size: 12px;
+            transition: all 0.3s ease;
         }
         .data-table th {
             background-color: #f2f2f2;
             text-transform: uppercase;
             font-weight: bold;
         }
-        a {
-            text-decoration: none;
-        }
         
-        /* Penyesuaian Perataan Kolom Khusus */
-        .data-table td:nth-child(4) {
-            text-align: left; /* Kolom Deskripsi */
+        .col-desc { text-align: left !important; }
+        .col-number { text-align: right !important; }
+        .col-center { text-align: center !important; }
+
+        /* ── PENYESUAIAN KHUSUS MODE PORTRAIT (VERTIKAL) ── */
+        /* Ketika class portrait-mode aktif, kita perkecil ukuran elemen agar muat di kertas A4 Vertikal */
+        .page-wrapper.portrait-mode .document-wrapper {
+            min-width: unset; /* Lepas min-width agar bisa mengecil sesuai kertas */
         }
-        .data-table td:nth-child(7),
-        .data-table td:nth-child(8),
-        .data-table td:nth-child(9),
-        .data-table tfoot th:nth-child(2) {
-            text-align: right; /* Kolom Harga dan Total */
+        .page-wrapper.portrait-mode .header-title {
+            font-size: 15px;
+        }
+        .page-wrapper.portrait-mode .info-table {
+            font-size: 11px;
+        }
+        .page-wrapper.portrait-mode .data-table th, 
+        .page-wrapper.portrait-mode .data-table td {
+            font-size: 10px; /* Font dikecilkan secara signifikan */
+            padding: 5px 3px; /* Padding dikurangi agar hemat ruang horizontal */
         }
 
-        /* Pengaturan Khusus Saat Mode Print (PDF) */
+        /* ── PENGATURAN KHUSUS SAAT PRINT (PDF) ── */
         @media print {
-            /* Aturan @page margin: 0 menghilangkan URL, Tanggal, dan Judul bawaan browser */
-            @page {
-                size: A4 landscape;
-                margin: 0; 
-            }
             body {
-                /* Memberikan jarak konten dari tepi kertas agar tidak terpotong */
-                margin: 15mm; 
-                padding: 0;
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .screen-only {
+                display: none !important;
+            }
+            .page-wrapper {
+                box-shadow: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+                margin: 0 !important;
+                overflow-x: visible !important;
+            }
+            * {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
-            }
-            .btn-print {
-                display: none; /* Sembunyikan tombol saat diubah ke PDF */
             }
         }
     </style>
@@ -102,92 +181,130 @@
 <body>
 
     @php
-        // Mengambil item pertama dari Collection yang dikirimkan oleh controller
         $pesanan = $latestPesanan->first();
     @endphp
 
-    <button class="btn-print" onclick="window.print()">🖨️ Cetak ke PDF</button> <br>
-    <a href="{{ route("filament.marketing.resources.pesanan.index") }}" class="btn-print">Kembali</a>
-
-    <div class="header-title">
-        DAFTAR BELANJA
+    <div class="screen-only">
+        <a href="{{ route('filament.marketing.resources.pesanan.index') }}" class="btn btn-back">&#8592; Kembali</a>
+        <button class="btn btn-print" onclick="window.print()">&#128438; Cetak PDF</button>
+        
+        <label class="orientation-label" for="orientSelect">Orientasi:</label>
+        <select class="orientation-select" id="orientSelect" onchange="setOrientation(this.value)">
+            <option value="landscape" selected>Landscape (Horizontal)</option>
+            <option value="portrait">Portrait (Vertikal)</option>
+        </select>
     </div>
 
-    @if($pesanan)
-    <table class="info-table">
-        <tr>
-            <td>PURCHASE REQUISITION NUMBER</td>
-            <td>:</td>
-            <td>{{ $pesanan->no_requisition ?? '-' }}</td>
-        </tr>
-        <tr>
-            <td>Tanggal Supply</td>
-            <td>:</td>
-            <td>{{ $pesanan->created_at ? $pesanan->created_at->format('d-m-Y') : date('d-m-Y') }}</td>
-        </tr>
-        <tr>
-            <td>DEPARTMENT</td>
-            <td>:</td>
-            <td>{{ $pesanan->group_name ?? 'SUPPLY' }}</td>
-        </tr>
-    </table>
+    <style id="printOrientStyle">
+        @page { size: A4 landscape; margin: 15mm; }
+    </style>
 
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>NO</th>
-                <th>PT</th>
-                <th>NO PO</th>
-                <th>Deskripsi</th>
-                <th>Qty</th>
-                <th>Satuan</th>
-                <th>PO</th>
-                <th>MODAL</th>
-                <th>TOTAL</th>
-                <th>Supplier</th>
-                <th>KET</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if($pesanan->keranjang && $pesanan->keranjang->queueKeranjang)
-                @foreach($pesanan->keranjang->queueKeranjang as $item)
+    <div class="page-wrapper" id="pageWrapper">
+        <div class="document-wrapper">
+            
+            <div class="header-title">
+                DAFTAR BELANJA
+            </div>
+
+            @if($pesanan)
+            <table class="info-table">
                 <tr>
-                    <td>{{ $loop->first ? 1 : '' }}</td>
-                    <td>{{ $loop->first ? $pesanan->company_name : '' }}</td>
-                    <td>{{ $loop->first ? $pesanan->no_po : '' }}</td>
-                    
-                    <td>{{ $item->item_name }}</td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>{{ $item->satuan }}</td>
-                    <td>{{ number_format($item->po, 0, ',', '.') }}</td>
-                    <td>{{ number_format($item->modal, 0, ',', '.') }}</td>
-                    <td>{{ number_format($item->sub_total, 0, ',', '.') }}</td>
-                    <td>{{ $item->supplier_name }}</td>
-                    <td>{{ $item->keterangan }}</td>
+                    <td>PURCHASE REQUISITION NUMBER</td>
+                    <td>:</td>
+                    <td>{{ $pesanan->no_requisition ?? '-' }}</td>
                 </tr>
-                @endforeach
+                <tr>
+                    <td>Tanggal Supply</td>
+                    <td>:</td>
+                    <td>{{ $pesanan->created_at ? $pesanan->created_at->format('d-m-Y') : date('d-m-Y') }}</td>
+                </tr>
+                <tr>
+                    <td>DEPARTMENT</td>
+                    <td>:</td>
+                    <td>{{ $pesanan->group_name ?? 'SUPPLY' }}</td>
+                </tr>
+            </table>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>NO</th>
+                        <th>PT</th>
+                        <th>NO PO</th>
+                        <th>Deskripsi</th>
+                        <th>Qty</th>
+                        <th>Satuan</th>
+                        <th>PO</th>
+                        <th>MODAL</th>
+                        <th>TOTAL</th>
+                        <th>Supplier</th>
+                        <th>KET</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if($pesanan->keranjang && $pesanan->keranjang->queueKeranjang && count($pesanan->keranjang->queueKeranjang) > 0)
+                        @foreach($pesanan->keranjang->queueKeranjang as $item)
+                        <tr>
+                            <td class="col-center">{{ $loop->first ? 1 : '' }}</td>
+                            <td class="col-center">{{ $loop->first ? $pesanan->company_name : '' }}</td>
+                            <td class="col-center">{{ $loop->first ? $pesanan->no_po : '' }}</td>
+                            
+                            <td class="col-desc">{{ $item->item_name }}</td>
+                            <td class="col-center">{{ $item->quantity }}</td>
+                            <td class="col-center">{{ $item->satuan }}</td>
+                            <td class="col-number">{{ number_format($item->po, 0, ',', '.') }}</td>
+                            <td class="col-number">{{ number_format($item->modal, 0, ',', '.') }}</td>
+                            <td class="col-number">{{ number_format($item->sub_total, 0, ',', '.') }}</td>
+                            <td class="col-center">{{ $item->supplier_name }}</td>
+                            <td class="col-center">{{ $item->keterangan }}</td>
+                        </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="11" class="col-center">Data rincian belanja tidak ditemukan.</td>
+                        </tr>
+                    @endif
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="8" class="col-number">TOTAL KESELURUHAN</th>
+                        <th class="col-number">{{ number_format($pesanan->total_harga ?? 0, 0, ',', '.') }}</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tfoot>
+            </table>
             @else
-                <tr>
-                    <td colspan="11">Data rincian belanja tidak ditemukan.</td>
-                </tr>
+                <p style="text-align:center; font-weight:bold; margin-top: 50px;">Data Pesanan Tidak Ditemukan</p>
             @endif
-        </tbody>
-        <tfoot>
-            <tr>
-                <th colspan="8" style="text-align: right;">TOTAL KESELURUHAN</th>
-                <th>{{ number_format($pesanan->total_harga, 0, ',', '.') }}</th>
-                <th colspan="2"></th>
-            </tr>
-        </tfoot>
-    </table>
-    @else
-        <p style="text-align:center; font-weight:bold;">Data Pesanan Tidak Ditemukan</p>
-    @endif
 
+        </div>
+    </div>
 
     <script>
+        function setOrientation(val) {
+            const styleEl = document.getElementById('printOrientStyle');
+            const pageWrapper = document.getElementById('pageWrapper');
+            
+            if (val === 'landscape') {
+                styleEl.textContent = '@page { size: A4 landscape; margin: 15mm; }';
+                if(pageWrapper) {
+                    pageWrapper.style.maxWidth = '297mm'; 
+                    // Hapus class portrait-mode agar tabel kembali ke ukuran normal
+                    pageWrapper.classList.remove('portrait-mode'); 
+                }
+            } else {
+                styleEl.textContent = '@page { size: A4 portrait; margin: 15mm; }';
+                if(pageWrapper) {
+                    pageWrapper.style.maxWidth = '210mm';
+                    // Tambahkan class portrait-mode agar tabel dan font mengecil sesuai area vertikal
+                    pageWrapper.classList.add('portrait-mode');
+                }
+            }
+        }
+
         window.onload = function() {
-            window.print();
+            setOrientation('landscape'); // Set default orientasi
+            // window.print(); // Uncomment baris ini jika ingin otomatis terbuka dialog print
         };
     </script>
 </body>

@@ -1,120 +1,192 @@
 <!doctype html>
 <html lang="id">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Invoice - PT Andalan Agro Persada</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-        color: #000;
-        margin: 0;
-      }
-
-      main {
-        width: 100%;
-        max-width: 768px;
-        padding-block: 24px;
-        margin-inline: auto;
-      }
-
-      header {
-        display: flex;
-        align-items: stretch;
-        gap: 16px;
-        margin-bottom: 16px;
-      }
-
-      header img {
-        aspect-ratio: 1 / 1;
-        height: 96px;
-        object-fit: contain;
-      }
-
-      header .company-info {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-
-      header .company-info p {
-        font-weight: bold;
-        margin: 0;
-        line-height: 1.6;
-      }
-
-      table.invoice {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .terms-list {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-      }
-
-      .terms-list li {
-        margin-bottom: 3px;
-      }
-
-      .bank-indent {
-        padding-left: 14px;
-      }
-
-      /* Gaya untuk Tombol Aksi */
-      .action-buttons {
-        max-width: 768px;
-        margin: 20px auto;
-        display: flex;
-        gap: 10px;
-        justify-content: flex-end;
-      }
-
-      .btn {
-        padding: 8px 16px;
-        cursor: pointer;
-        border: none;
-        border-radius: 4px;
-        font-weight: bold;
-        text-decoration: none;
-        color: white;
-        font-size: 14px;
-      }
-
-      .btn-print { background-color: #28a745; }
-      .btn-back { background-color: #6c757d; }
-
-      /* KONFIGURASI PRINT TENGAH */
-      @media print {
-        /* Sembunyikan tombol */
-        .action-buttons {
-          display: none;
+        /* ── RESET & DASAR ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* Memposisikan body agar konten di dalamnya center secara vertikal & horizontal */
         body {
-          display: flex;
-          justify-content: center; /* Center Horizontal */
-          margin-top: 2em;
-          min-height: 100vh;       /* Gunakan seluruh tinggi kertas */
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #000;
+            background: #f0f0f0;
+            padding: 20px;
         }
 
-        main {
-          margin: 0;
-          padding: 0;
-          width: 90%;             /* Pastikan tidak terpotong margin printer */
+        /* ── SCREEN ONLY CONTROLS ── */
+        .screen-only {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
 
-        /* Menghilangkan header/footer default browser (opsional) */
-        @page {
-          margin: 0.5cm;
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: background 0.15s;
+            text-decoration: none;
+            display: inline-block;
         }
-      }
+        .btn-back { background: #6c757d; color: #fff; }
+        .btn-back:hover { background: #5a6268; }
+        .btn-print { background: #28a745; color: #fff; }
+        .btn-print:hover { background: #218838; }
+
+        .orientation-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            margin-left: 8px;
+        }
+        .orientation-select {
+            padding: 6px 10px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* ── PAGE WRAPPER ── */
+        .page-wrapper {
+            background: #fff;
+            padding: 40px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            margin: 0 auto;
+            transition: max-width 0.3s ease;
+            /* Default Portrait width */
+            max-width: 210mm; 
+            min-height: 297mm;
+            overflow-x: auto; /* Mencegah overflow horizontal di layar */
+        }
+
+        .document-wrapper {
+            width: 100%;
+            min-width: 650px; /* Menjaga struktur tabel agar tidak hancur di layar kecil */
+        }
+
+        /* ── HEADER INVOICE ── */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        header img {
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+        }
+        header .company-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        header .company-info p {
+            font-weight: bold;
+            margin: 0;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* ── TABEL INVOICE UTAMA ── */
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .invoice-table th, 
+        .invoice-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+        }
+        
+        /* Tabel Inner untuk Detail Info (No Border) */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            border: none;
+            padding: 2px 4px 2px 0;
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: bold; }
+        .valign-top { vertical-align: top; }
+        
+        .invoice-title {
+            font-weight: bold;
+            font-size: 16px;
+            text-decoration: underline;
+            margin: 0 0 8px 0;
+            letter-spacing: 1px;
+        }
+
+        /* ── SYARAT KETENTUAN & TTD ── */
+        .terms-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            line-height: 1.5;
+        }
+        .terms-list li { margin-bottom: 3px; }
+        .bank-indent { padding-left: 14px; }
+
+        .signature-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 100%;
+            min-height: 100px;
+            padding-top: 10px;
+        }
+
+        /* ── PRINT MEDIA QUERY ── */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .screen-only {
+                display: none !important;
+            }
+            .page-wrapper {
+                box-shadow: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+                min-height: auto !important;
+                margin: 0 !important;
+                overflow-x: visible !important;
+            }
+            * {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     
     @php
         $items = \Illuminate\Support\Facades\DB::table('queue_keranjang')
@@ -144,136 +216,168 @@
         }
     @endphp
 
-    <div class="action-buttons">
-      <button onclick="window.history.back()" class="btn btn-back">Kembali</button>
-      <button onclick="window.print()" class="btn btn-print">Cetak Invoice</button>
+    <!-- ── SCREEN ONLY CONTROLS ── -->
+    <div class="screen-only">
+        <button onclick="window.history.back()" class="btn btn-back">&#8592; Kembali</button>
+        <button onclick="window.print()" class="btn btn-print">&#128438; Cetak Invoice</button>
+        
+        <label class="orientation-label" for="orientSelect">Orientasi:</label>
+        <select class="orientation-select" id="orientSelect" onchange="setOrientation(this.value)">
+            <option value="portrait" selected>Portrait (Vertikal)</option>
+            <option value="landscape">Landscape (Horizontal)</option>
+        </select>
     </div>
 
-    <main>
-      <header>
-          @php
-              // Gunakan variabel untuk menampung path gambar
-              $gambar_invoice = asset('images/logo.webp'); // Default awal
+    <!-- ── DYNAMIC PAGE ORIENTATION STYLE ── -->
+    <style id="printOrientStyle">
+        @page { size: A4 portrait; margin: 15mm; }
+    </style>
 
-              if ($latestPesanan->companyInternal && $latestPesanan->companyInternal->gambar) {
-                  $gambar_invoice = asset($latestPesanan->companyInternal->gambar); 
-              }
-          @endphp
-        <img src="{{ $gambar_invoice }}" alt="Logo PT Andalan Agro Persada" />
-        <div class="company-info">
-          <p>{{ $latestPesanan->companyInternal->name ?? "PT ANDALAN AGRO PERSADA" }}</p>
-          <p>{{ $latestPesanan->companyInternal->alamat ?? "Jl. D.I Panjaitan No 25 D"}}</p>
-          <p>Phone : {{ $latestPesanan->companyInternal->phone_number ?? "0541 2832313 / 7777993"}}</p>
-        </div>
-      </header>
+    <div class="page-wrapper" id="pageWrapper">
+        <div class="document-wrapper">
+            
+            <header>
+                @php
+                    $gambar_invoice = asset('images/logo.webp'); // Default awal
+                    if ($latestPesanan->companyInternal && $latestPesanan->companyInternal->gambar) {
+                        $gambar_invoice = asset($latestPesanan->companyInternal->gambar); 
+                    }
+                @endphp
+                <img src="{{ $gambar_invoice }}" alt="Logo PT Andalan Agro Persada" />
+                <div class="company-info">
+                    <p>{{ $latestPesanan->companyInternal->name ?? "PT ANDALAN AGRO PERSADA" }}</p>
+                    <p>{{ $latestPesanan->companyInternal->alamat ?? "Jl. D.I Panjaitan No 25 D"}}</p>
+                    <p>Phone : {{ $latestPesanan->companyInternal->phone_number ?? "0541 2832313 / 7777993"}}</p>
+                </div>
+            </header>
 
+            <table class="invoice-table">
+                <tr>
+                    <td colspan="2" class="valign-top">
+                        <p class="invoice-title">INVOICE</p>
+                        <table class="info-table">
+                            <tr class="font-bold">
+                                <td style="width: 90px">Date</td>
+                                <td style="width: 15px">:</td>
+                                <td>{{ $latestPesanan->tanggal_terbit_invoice ? \Carbon\Carbon::parse($latestPesanan->tanggal_terbit_invoice)->format('d-m-Y') : \Carbon\Carbon::now()->format('d-m-Y') }}</td>
+                            </tr>
+                            <tr class="font-bold">
+                                <td>No</td>
+                                <td>:</td>
+                                <td>{{ $latestPesanan->no_invoice ?? $latestPesanan->no_requisition ?? '-' }}</td>
+                            </tr>
+                            <tr class="font-bold">
+                                <td>PO No</td>
+                                <td>:</td>
+                                <td>{{ $latestPesanan->no_po ?? '-' }}</td>
+                            </tr>
+                            <tr class="font-bold">
+                                <td>Jatuh Tempo</td>
+                                <td>:</td>
+                                <td>{{ $latestPesanan->tanggal_jatuh_tempo ? \Carbon\Carbon::parse($latestPesanan->tanggal_jatuh_tempo)->format('d-m-Y') : '-' }}</td>
+                            </tr>
+                        </table>
+                    </td>
 
-      <table border="1" cellpadding="4" cellspacing="0" class="invoice" style="border-color: black">
-        <tr>
-          <td colspan="2" style="vertical-align: top">
-            <p style="font-weight: bold; font-size: 14px; text-decoration: underline; margin: 0 0 4px 0">INVOICE</p>
-            <table cellpadding="2" cellspacing="0" style="border: none; width: 100%">
-              <tr style="font-weight: bold">
-                <td style="width: 80px">Date</td>
-                <td style="width: 10px">:</td>
-                <td>{{ $latestPesanan->tanggal_terbit_invoice ? \Carbon\Carbon::parse($latestPesanan->tanggal_terbit_invoice)->format('d-m-Y') : \Carbon\Carbon::now()->format('d-m-Y') }}</td>
-              </tr>
-              <tr style="font-weight: bold">
-                <td>No</td>
-                <td>:</td>
-                <td>{{ $latestPesanan->no_invoice ?? $latestPesanan->no_requisition ?? '-' }}</td>
-              </tr>
-              <tr style="font-weight: bold">
-                <td>PO No</td>
-                <td>:</td>
-                <td>{{ $latestPesanan->no_po ?? '-' }}</td>
-              </tr>
-              <tr style="font-weight: bold">
-                <td>Jatuh Tempo</td>
-                <td>:</td>
-                <td>{{ $latestPesanan->tanggal_jatuh_tempo ? \Carbon\Carbon::parse($latestPesanan->tanggal_jatuh_tempo)->format('d-m-Y') : '-' }}</td>
-              </tr>
+                    <td colspan="4" class="valign-top font-bold">
+                        <p style="margin-bottom: 4px;">Kepada Yth.</p>
+                        <p style="margin-bottom: 4px; font-size: 14px;">{{ $latestPesanan->company_name ?? $latestPesanan->group_name }}</p>
+                        <p style="font-weight: normal; margin: 0;">{{ $latestPesanan->address ?? '' }}</p>
+                    </td>
+                </tr>
+
+                <tr class="text-center font-bold" style="background-color: #f8f9fa;">
+                    <th style="width: 5%">No</th>
+                    <th style="width: 40%">Nama Barang</th>
+                    <th style="width: 10%">Jumlah</th>
+                    <th style="width: 10%">Satuan</th>
+                    <th style="width: 17.5%">Harga Satuan (Rp.)</th>
+                    <th style="width: 17.5%">Sub Total (Rp.)</th>
+                </tr>
+
+                @forelse($items as $index => $item)
+                <tr style="height: 28px">
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td>{{ $item->item_name }}</td>
+                    <td class="text-center">{{ $item->quantity }}</td>
+                    <td class="text-center">{{ $item->satuan }}</td>
+                    <td class="text-right">{{ number_format($item->po, 0, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($item->sub_total, 0, ',', '.') }}</td>
+                </tr>
+                @empty
+                <tr style="height: 28px">
+                    <td colspan="6" class="text-center" style="font-style: italic;">Tidak ada data barang dalam pesanan ini.</td>
+                </tr>
+                @endforelse
+
+                <tr>
+                    <td colspan="2" rowspan="3"></td>
+                    <td colspan="3" class="text-center font-bold">Total</td>
+                    <td class="text-right">{{ number_format($latestPesanan->keranjang->sub_total ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-center font-bold">PPN 11 %</td>
+                    <td class="text-right">{{ number_format($latestPesanan->ppn ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-center font-bold">Total Pembayaran</td>
+                    <td class="text-right font-bold">{{ number_format($latestPesanan->total_harga ?? 0, 0, ',', '.') }}</td>
+                </tr>
+
+                <tr>
+                    <td colspan="6" style="padding: 16px 8px;">
+                        <span class="font-bold">Terbilang:</span> <em>{{ terbilang($latestPesanan->total_harga ?? 0) }}</em>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="2" class="valign-top" style="padding: 12px 8px;">
+                        <p class="font-bold" style="margin-bottom: 8px;">Term And Conditions :</p>
+                        <ul class="terms-list">
+                            <li>- Barang yang sudah dibeli tidak dapat dikembalikan atau ditukar</li>
+                            <li>- Tidak menerima pembayaran tunai, pembayaran dilakukan dengan transfer ke rekening berikut :</li>
+                            <li class="bank-indent font-bold">Bank Mandiri</li>
+                            <li class="bank-indent">Cabang A. Yani, Samarinda</li>
+                            <li class="bank-indent font-bold">No Rek : xxxx</li>
+                            <li>- Pembayaran dengan Giro/Cek dianggap sah apabila sudah diterima di rekening kami</li>
+                        </ul>
+                    </td>
+
+                    <td colspan="4" class="valign-top" style="padding: 12px 8px;">
+                        <div class="signature-box">
+                            <div class="text-center">
+                                <p style="margin-bottom: 4px;">Hormat Kami,</p>
+                                <p class="font-bold">{{ $latestPesanan->companyInternal->name ?? "PT Andalan Agro Persada" }}</p>
+                            </div>
+                            <div class="text-center" style="margin-top: 60px;">
+                                <p>( {{ Auth::user()->name ?? 'Nama Pembuat' }} )</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
             </table>
-          </td>
 
-          <td colspan="4" style="vertical-align: top; font-weight: bold">
-            <p style="margin: 0">Kepada Yth.</p>
-            <p style="margin: 0">{{ $latestPesanan->company_name ?? $latestPesanan->group_name }}</p>
-            <p style="margin: 0; font-weight: normal;">{{ $latestPesanan->address ?? '' }}</p>
-          </td>
-        </tr>
+        </div>
+    </div>
 
-        <tr style="text-align: center">
-          <th style="width: 4%">No</th>
-          <th style="width: 42%">Nama Barang</th>
-          <th style="width: 9%">Jumlah</th>
-          <th style="width: 9%">Satuan</th>
-          <th style="width: 18%">Harga Satuan (Rp.)</th>
-          <th style="width: 18%">Sub Total (Rp.)</th>
-        </tr>
+    <script>
+        function setOrientation(val) {
+            const styleEl = document.getElementById('printOrientStyle');
+            const pageWrapper = document.getElementById('pageWrapper');
+            
+            if (val === 'landscape') {
+                styleEl.textContent = '@page { size: A4 landscape; margin: 15mm; }';
+                if(pageWrapper) pageWrapper.style.maxWidth = '297mm'; 
+            } else {
+                styleEl.textContent = '@page { size: A4 portrait; margin: 15mm; }';
+                if(pageWrapper) pageWrapper.style.maxWidth = '210mm';
+            }
+        }
 
-        @forelse($items as $index => $item)
-        <tr style="height: 22px">
-          <td style="text-align: center">{{ $index + 1 }}</td>
-          <td>{{ $item->item_name }}</td>
-          <td style="text-align: center">{{ $item->quantity }}</td>
-          <td style="text-align: center">{{ $item->satuan }}</td>
-          <td style="text-align: right">{{ number_format($item->po, 0, ',', '.') }}</td>
-          <td style="text-align: right">{{ number_format($item->sub_total, 0, ',', '.') }}</td>
-        </tr>
-        @empty
-        <tr style="height: 22px">
-          <td colspan="6" style="text-align: center; font-style: italic;">Tidak ada data barang dalam pesanan ini.</td>
-        </tr>
-        @endforelse
-
-        <tr>
-          <td colspan="2" rowspan="3"></td>
-          <td colspan="3" style="text-align: center; font-weight: bold">Total</td>
-          <td style="text-align: right">{{ number_format($latestPesanan->keranjang->sub_total ?? 0, 0, ',', '.') }}</td>
-        </tr>
-        <tr>
-          <td colspan="3" style="text-align: center; font-weight: bold">PPN 11 %</td>
-          <td style="text-align: right">{{ number_format($latestPesanan->ppn ?? 0, 0, ',', '.') }}</td>
-        </tr>
-        <tr>
-          <td colspan="3" style="text-align: center; font-weight: bold">Total Pembayaran</td>
-          <td style="text-align: right; font-weight: bold">{{ number_format($latestPesanan->total_harga ?? 0, 0, ',', '.') }}</td>
-        </tr>
-
-        <tr>
-          <td colspan="6" style="padding-block: 20px">
-              <strong>Terbilang:</strong> <em>{{ terbilang($latestPesanan->total_harga ?? 0) }}</em>
-          </td>
-        </tr>
-
-        <tr>
-          <td colspan="2" style="vertical-align: top">
-            <p style="font-weight: bold; margin: 0 0 4px 0">Term And Conditions :</p>
-            <ul class="terms-list">
-              <li>- Barang yang sudah dibeli tidak dapat dikembalikan atau ditukar</li>
-              <li>- Tidak menerima pembayaran tunai, pembayaran dilakukan dengan transfer ke rekening berikut :</li>
-              <li class="bank-indent">Bank Mandiri</li>
-              <li class="bank-indent">Cabang A. Yani, Samarinda</li>
-              <li class="bank-indent">No Rek : xxxx</li>
-              <li>- Pembayaran dengan Giro/Cek dianggap sah apabila sudah diterima di rekening kami</li>
-            </ul>
-          </td>
-
-          <td colspan="4">
-            <div style="height: 80%; display: flex; flex-direction: column; justify-content: space-between; padding-top: 10px;">
-              <div style="text-align: center;">
-                <p style="margin: 0">Hormat Kami,</p>
-                <p style="margin: 0">{{ $latestPesanan->companyInternal->name ?? "PT Andalan Argo Persada" }}</p>
-              </div>
-              <p style="margin: 0; text-align: center; margin-top: 60px;">( {{ Auth::user()->name ?? 'Nama Pembuat' }} )</p>
-            </div>
-          </td>
-        </tr>
-      </table>
-    </main>
-  </body>
-  <script>
-    print()
-  </script>
+        window.onload = function() {
+            setOrientation('portrait'); // Set orientasi default ke portrait
+            // window.print(); // Uncomment ini jika ingin kotak dialog print langsung terbuka saat direfresh
+        };
+    </script>
+</body>
 </html>

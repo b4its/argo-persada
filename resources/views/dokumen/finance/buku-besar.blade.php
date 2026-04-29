@@ -50,6 +50,9 @@
         </select>
 
         <button class="btn-print" onclick="printPage()">🖨 Print Laporan</button>
+        <a href="{{ route('export.buku_besar', request()->all()) }}" style="background-color: #198754; color: white; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; text-decoration: none; display: inline-block;">
+            📊 Export Excel
+        </a>
     </div>
 
     <div class="page" id="documentPage">
