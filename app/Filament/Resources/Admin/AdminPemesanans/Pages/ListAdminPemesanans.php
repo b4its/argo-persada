@@ -54,6 +54,7 @@ class ListAdminPemesanans extends ListRecords
 
                                 QueueKeranjang::create([
                                     'user_id' => $data['user_id'],
+                                    'kode' => $barang['kode'],
                                     'keranjang_id' => $keranjang->id,
                                     'item_name' => $barang['item_name'],
                                     'quantity' => $barang['quantity'],
