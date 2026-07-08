@@ -19,7 +19,7 @@ class BukuBMutasi extends Controller
         // Tetap gunakan eager loading 'with' untuk performa.
         $bukuBesar = BukuBesar::with(['mutasis.mutasiItems'])->findOrFail($id);
         
-        $username = Auth::user()->username;
+        $username = Auth::user()->name;
         
         return view('dokumen.finance.buku_besar_mutasi', [
             "bukuBesar" => $bukuBesar, // Variabel diubah menjadi lebih relevan

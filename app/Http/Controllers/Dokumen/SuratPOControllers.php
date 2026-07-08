@@ -14,7 +14,7 @@ class SuratPOControllers extends Controller
     public function index($id)
     {
         $latestPesanan = Pesanan::with(['keranjang'])->findOrFail($id);
-        $username = Auth::user()->username;
+        $username = Auth::user()->name;
         return view("dokumen.surat_po", [
             "latestPesanan" => $latestPesanan,
             "username" => $username

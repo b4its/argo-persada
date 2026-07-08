@@ -21,7 +21,6 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationBuilder;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -79,13 +78,13 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources/Admin'), for: 'App\Filament\Resources\Admin')
             ->discoverPages(in: app_path('Filament/Pages/Admin'), for: 'App\Filament\Pages\Admin')
             ->pages([
-                Dashboard::class,
+                AdminDashboard::class,
             ])
             ->navigation(function (NavigationBuilder $builder): NavigationBuilder {
                 return $builder
                     ->items([
                         // 1. Dashboard selalu di atas
-                        ...Dashboard::getNavigationItems(),
+                        ...AdminDashboard::getNavigationItems(),
                         ...AdminCompanyInternalResource::getNavigationItems(),
                         ...AdminKaryawanResource::getNavigationItems(),
                         ...AdminPemesananResource::getNavigationItems(),

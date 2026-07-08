@@ -181,7 +181,7 @@
 <body>
 
     @php
-        $pesanan = $latestPesanan->first();
+        $pesanan = $latestPesanan;
     @endphp
 
     <div class="screen-only">
@@ -247,11 +247,11 @@
                 </thead>
                 <tbody>
                     @if($pesanan->keranjang && $pesanan->keranjang->queueKeranjang && count($pesanan->keranjang->queueKeranjang) > 0)
-                        @foreach($pesanan->keranjang->queueKeranjang as $item)
+                        @foreach($pesanan->keranjang->queueKeranjang as $index => $item)
                         <tr>
-                            <td class="col-center">{{ $loop->first ? 1 : '' }}</td>
-                            <td class="col-center">{{ $loop->first ? $pesanan->company_name : '' }}</td>
-                            <td class="col-center">{{ $loop->first ? $pesanan->no_po : '' }}</td>
+                            <td class="col-center">{{ $index + 1 }}</td>
+                            <td class="col-center">{{ $pesanan->company_name }}</td>
+                            <td class="col-center">{{ $pesanan->no_po ?? $pesanan->code }}</td>
                             
                             <td class="col-desc">{{ $item->item_name }}</td>
                             <td class="col-center">{{ $item->quantity }}</td>

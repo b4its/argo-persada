@@ -14,6 +14,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Actions\Action; // Pastikan menggunakan Action dari Tables
 use Filament\Notifications\Notification; 
@@ -159,11 +160,20 @@ class FinancePemesanansTable
                             ->label('Metode Pembayaran untuk Rilis Dana')
                             ->options([
                                 1 => 'Tunai',
-                                
                                 2 => 'Kredit',
+                                3 => 'Debit',
                             ])
                             ->default(1)
-                            ->required(), 
+                            ->required()
+                            ->live(),
+
+                        TextInput::make('nama_bank_rilis_dana')
+                            ->label('Nama Bank')
+                            ->visible(fn ($get) => in_array($get('metode_pembayaran_rilis_dana'), [2, 3])),
+
+                        TextInput::make('no_rekening_rilis_dana')
+                            ->label('Nomor Rekening')
+                            ->visible(fn ($get) => in_array($get('metode_pembayaran_rilis_dana'), [2, 3])),
                     ])
                     ->modalSubmitActionLabel('Iya') 
                     ->modalCancelActionLabel('Tidak') 
@@ -245,6 +255,8 @@ class FinancePemesanansTable
                     ->action(function (Pesanan $record, array $data) {
                         $currentUserId = auth()->id();
                         $metodePembayaran_rilis_dana = $data['metode_pembayaran_rilis_dana'];
+                        $namaBankRilis = $data['nama_bank_rilis_dana'] ?? null;
+                        $noRekeningRilis = $data['no_rekening_rilis_dana'] ?? null;
 
                         $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
                                 $query->where('pesanan_id', $record->id);
@@ -262,6 +274,8 @@ class FinancePemesanansTable
                             [
                                 'tanggal_rilis_dana' => now(),
                                 'metode_pembayaran_rilis_dana' => $metodePembayaran_rilis_dana,
+                                'nama_bank_rilis_dana' => $namaBankRilis,
+                                'no_rekening_rilis_dana' => $noRekeningRilis,
                                 'updated_at' => now()
                             ] 
                         );
@@ -479,7 +493,7 @@ class FinancePemesanansTable
                             ->value('created_user_id') ?? $currentUserId;
 
                         // Generate nomor invoice
-                        $generatedInvoiceNumber = 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(5));
+                        $generatedInvoiceNumber = 'INV-' . date('dmy') . '-' . strtoupper(Str::random(5));
                         $oldPesananData = $record->toArray();
 
                         // Update tabel pesanan
@@ -545,24 +559,33 @@ class FinancePemesanansTable
                             ->label('Metode Pembayaran untuk Lunas')
                             ->options([
                                 1 => 'Tunai',
-                                
                                 2 => 'Kredit',
+                                3 => 'Debit',
                             ])
                             ->default(1)
-                            ->required(),
+                            ->required()
+                            ->live(),
+
+                        TextInput::make('nama_bank_lunas')
+                            ->label('Nama Bank')
+                            ->visible(fn ($get) => in_array($get('metode_pembayaran_lunas'), [2, 3])),
+
+                        TextInput::make('no_rekening_lunas')
+                            ->label('Nomor Rekening')
+                            ->visible(fn ($get) => in_array($get('metode_pembayaran_lunas'), [2, 3])),
 
                         \Filament\Forms\Components\DatePicker::make('tanggal_valid_lunas')
                             ->label('Tanggal Lunas')
                             ->required()
                             ->native(false),
-
-                        
                     ])
                     ->modalSubmitActionLabel('Ya, Lunas') 
                     ->modalCancelActionLabel('Batal')
                     ->action(function (Pesanan $record, array $data) {
                         $currentUserId = auth()->id();
                         $metodePembayaran_lunas = $data['metode_pembayaran_lunas'];
+                        $namaBankLunas = $data['nama_bank_lunas'] ?? null;
+                        $noRekeningLunas = $data['no_rekening_lunas'] ?? null;
 
                         $currentTask = Task::where('pesanan_id', $record->id)
                             ->where('role', 'finance')
@@ -580,6 +603,8 @@ class FinancePemesanansTable
                         $record->update([
                             'tanggal_lunas' => now(),
                             'metode_pembayaran_lunas' => $metodePembayaran_lunas,
+                            'nama_bank_lunas' => $namaBankLunas,
+                            'no_rekening_lunas' => $noRekeningLunas,
                             'validasi_tanggal_lunas'=> $data['tanggal_valid_lunas'],
                             'status_pesanan'=> 2, // selesai  
                         ]);

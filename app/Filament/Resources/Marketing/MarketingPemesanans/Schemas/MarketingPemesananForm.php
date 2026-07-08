@@ -32,6 +32,11 @@ class MarketingPemesananForm
                     ->preload()
                     ->required(),
                     
+                TextInput::make('no_po')
+                    ->label('No PO (Custom)')
+                    ->placeholder('Masukkan No PO...')
+                    ->maxLength(255),
+
                 TextInput::make('group_name')
                     ->label('Group')
                     ->placeholder('Masukkan Nama Group...')
@@ -56,7 +61,6 @@ class MarketingPemesananForm
                     ->hidden(),
                     
                 TextInput::make('code')
-                    ->default(fn() => 'PO-' . time())
                     ->hidden(),
 
                 Repeater::make('list_barang')

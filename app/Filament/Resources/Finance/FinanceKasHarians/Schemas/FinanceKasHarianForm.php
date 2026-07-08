@@ -82,6 +82,16 @@ class FinanceKasHarianForm
                     ->live(onBlur: true),
 
                 
+                Select::make('metode_pembayaran')
+                    ->label('Metode Pembayaran')
+                    ->options([
+                        0 => 'Belum Ditentukan',
+                        1 => 'Tunai',
+                        2 => 'Kredit',
+                    ])
+                    ->default(0)
+                    ->native(false),
+
                 Select::make('kategori')
                         ->label('Kategori')
                         ->options([

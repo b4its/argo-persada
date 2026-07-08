@@ -250,7 +250,9 @@
 @php
     $dataFromDB = [];
     foreach($pesananAll as $pesanan) {
-        // Query item dari queue_keranjang menggunakan facade DB (Tidak butuh Model Update)
+        $picName = $pesanan->user->name ?? '-';
+
+        // Query item dari queue_keranjang menggunakan facade DB
         $items = \Illuminate\Support\Facades\DB::table('queue_keranjang')
                     ->where('keranjang_id', $pesanan->keranjang_id)
                     ->get();
@@ -258,7 +260,7 @@
         if($items->count() > 0) {
             foreach($items as $item) {
                 $dataFromDB[] = [
-                    'pic' => '', 
+                    'pic' => $picName, 
                     'tgl_po' => $pesanan->created_at ? \Carbon\Carbon::parse($pesanan->created_at)->format('d/m/y') : '-',
                     'group' => $pesanan->group_name ?? '-',
                     'company' => $pesanan->company_name ?? '-',
@@ -283,7 +285,7 @@
         } else {
             // Fallback jika pesanan belum memiliki antrian item
             $dataFromDB[] = [
-                'pic' => '',
+                'pic' => $picName,
                 'tgl_po' => $pesanan->created_at ? \Carbon\Carbon::parse($pesanan->created_at)->format('d/m/y') : '-',
                 'group' => $pesanan->group_name ?? '-',
                 'company' => $pesanan->company_name ?? '-',
@@ -306,6 +308,9 @@
             ];
         }
     }
+    
+    // Eager load user untuk menghindari N+1
+    $pesananAll->load('user');
 @endphp
 
 <script>
@@ -332,7 +337,13 @@
       const total_po = (d.qty && d.h_po) ? d.qty * d.h_po : 0;
       const total_modal = (d.qty && d.h_modal) ? d.qty * d.h_modal : 0;
 
+      // Warna berdasarkan PIC
+      const picLower = (d.pic || '').toLowerCase();
       let bgColorNo = '';
+      if (picLower.includes('marketing') || picLower === 'marketing') bgColorNo = '#9DC3E6';
+      else if (picLower.includes('inka')) bgColorNo = '#00FF99';
+      else if (picLower.includes('lisa')) bgColorNo = '#FFB6C1';
+      else if (picLower.includes('rina')) bgColorNo = '#FFC000';
 
       // Struktur Data Per Baris (22 Kolom)
       const cellsData = [

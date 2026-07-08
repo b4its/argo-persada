@@ -23,23 +23,20 @@ class AdminPemesanansTable
         return $table
             ->query(
                 Pesanan::query()
-                    // Tambahkan with() agar query lebih cepat (mencegah N+1)
-                    ->with(['tasks' => function ($query) {
-                        $query->where('role', 'marketing');
-                    }])
-                    ->whereHas('tasks', function ($query) {
-                        $query->where('role', 'marketing');
-                    })
+                    ->with(['tasks', 'user'])
                     ->orderBy('created_at', 'desc')
             )
             ->columns([
-                TextColumn::make('row_num')
-                    ->label('No')
-                    ->sortable(),
-
                 TextColumn::make('code')
                     ->label('No Pemesanan')
                     ->sortable()
+                    ->searchable()
+                    ->weight('bold'),
+
+                TextColumn::make('user.name')
+                    ->label('Dibuat Oleh')
+                    ->badge()
+                    ->color('info')
                     ->searchable(),
 
                 TextColumn::make('no_requisition')
@@ -47,35 +44,42 @@ class AdminPemesanansTable
                     ->placeholder('---:---')
                     ->default('---:---')
                     ->searchable(),
+
+                TextColumn::make('no_po')
+                    ->label('No PO')
+                    ->searchable(),
                     
                 TextColumn::make('keranjang.sub_total')
-                    ->label('Total Barang')
+                    ->label('Total')
                     ->numeric()
                     ->money('IDR', locale: 'id')
                     ->sortable(),
-                    
-                // PERBAIKAN: Ganti nama identifier agar tidak membaca seluruh array dari relasi
-                TextColumn::make('status_pesanan') 
-                    ->label('Status Pemesanan')
+
+                TextColumn::make('status_marketing')
+                    ->label('Marketing')
                     ->badge()
-                    ->formatStateUsing(fn (int $state): string => match ($state) {
-                        0 => 'Dibuat',
-                        1 => 'In Progress',
-                        2 => 'Selesai',
-                        default => 'Unknown',
-                    })
-                    ->color(fn (int $state): string => match ($state) {
-                        0 => 'gray',
-                        1 => 'warning',
-                        2 => 'success',
-                        default => 'gray',
-                    })
-                    ->icon(fn (int $state): string => match ($state) {
-                        0 => 'heroicon-m-plus-circle',
-                        1 => 'heroicon-m-clock',
-                        2 => 'heroicon-m-check-badge',
-                        default => 'heroicon-m-question-mark-circle',
-                    }),
+                    ->getStateUsing(fn (Pesanan $record): int => (int) ($record->tasks->where('role', 'marketing')->first()?->status ?? 0))
+                    ->formatStateUsing(fn (int $state): string => match ($state) { 0 => 'Pending', 1 => 'Proses', 2 => 'Selesai', default => '-' })
+                    ->color(fn (int $state): string => match ($state) { 0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray' }),
+
+                TextColumn::make('status_finance')
+                    ->label('Finance')
+                    ->badge()
+                    ->getStateUsing(fn (Pesanan $record): int => (int) ($record->tasks->where('role', 'finance')->first()?->status ?? 0))
+                    ->formatStateUsing(fn (int $state): string => match ($state) { 0 => 'Pending', 1 => 'Proses', 2 => 'Selesai', default => '-' })
+                    ->color(fn (int $state): string => match ($state) { 0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray' }),
+
+                TextColumn::make('status_logistik')
+                    ->label('Logistik')
+                    ->badge()
+                    ->getStateUsing(fn (Pesanan $record): int => (int) ($record->tasks->where('role', 'logistik')->first()?->status ?? 0))
+                    ->formatStateUsing(fn (int $state): string => match ($state) { 0 => 'Pending', 1 => 'Proses', 2 => 'Selesai', default => '-' })
+                    ->color(fn (int $state): string => match ($state) { 0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray' }),
+
+                TextColumn::make('created_at')
+                    ->label('Tanggal')
+                    ->date('d/m/Y')
+                    ->sortable(),
             ])
             ->filters([
                 // Tambahkan filter di sini jika diperlukan
@@ -84,8 +88,75 @@ class AdminPemesanansTable
 
                 DetailPesananViewAction::make(),
 
-
-                // Cetak Surat Requisition
+                Action::make('view_tracking')
+                    ->label('Tracking')
+                    ->icon('heroicon-m-rectangle-stack')
+                    ->color('info')
+                    ->button()
+                    ->modalHeading(fn (Pesanan $record) => 'Tracking Operasional: ' . $record->code)
+                    ->modalDescription('Histori tugas dari Marketing → Finance → Logistik')
+                    ->modalWidth('7xl')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->infolist(function (Pesanan $record) {
+                        $record->loadMissing(['tasks.taskActivities.createdUser', 'tasks.taskActivities.updatedUser']);
+                        return [
+                            \Filament\Infolists\Components\RepeatableEntry::make('tasks')
+                                ->hiddenLabel()
+                                ->schema([
+                                    \Filament\Schemas\Components\Section::make(fn ($record) => '▸ ' . strtoupper($record->role) . ' : ' . $record->title)
+                                        ->schema([
+                                            \Filament\Schemas\Components\Grid::make(3)->schema([
+                                                \Filament\Infolists\Components\TextEntry::make('role')
+                                                    ->label('Divisi')
+                                                    ->badge()
+                                                    ->color(fn ($state) => match ($state) {
+                                                        'marketing' => 'info',
+                                                        'finance' => 'success',
+                                                        'logistik' => 'warning',
+                                                        default => 'gray',
+                                                    }),
+                                                \Filament\Infolists\Components\TextEntry::make('status')
+                                                    ->label('Status')
+                                                    ->badge()
+                                                    ->formatStateUsing(fn ($state) => match ((int) $state) {
+                                                        0 => 'Pending', 1 => 'In Progress', 2 => 'Selesai', default => 'Unknown',
+                                                    })
+                                                    ->color(fn ($state) => match ((int) $state) {
+                                                        0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray',
+                                                    }),
+                                                \Filament\Infolists\Components\TextEntry::make('created_at')
+                                                    ->label('Dibuat')
+                                                    ->dateTime('d M Y, H:i'),
+                                            ]),
+                                            \Filament\Infolists\Components\RepeatableEntry::make('taskActivities')
+                                                ->label('Riwayat Eksekusi')
+                                                ->schema([
+                                                    \Filament\Schemas\Components\Grid::make(4)->schema([
+                                                        \Filament\Infolists\Components\TextEntry::make('createdUser.name')
+                                                            ->label('Oleh')->default('System')->weight('bold'),
+                                                        \Filament\Infolists\Components\TextEntry::make('updatedUser.name')
+                                                            ->label('Diperbarui')->default('-'),
+                                                        \Filament\Infolists\Components\TextEntry::make('pesanan_status')
+                                                            ->label('Tahapan')
+                                                            ->badge()
+                                                            ->formatStateUsing(fn ($state) => match ((int) $state) {
+                                                                0 => 'Dibuat', 1 => 'Pending', 2 => 'Perlu Rilis Dana',
+                                                                3 => 'Perlu Cetak Invoice', 4 => 'Perlu Penagihan',
+                                                                5 => 'Ditandai Lunas', 6 => 'Cetak Surat Jalan',
+                                                                7 => 'Selesai Dikirim', 8 => 'Selesai', default => 'Unknown',
+                                                            }),
+                                                        \Filament\Infolists\Components\TextEntry::make('created_at')
+                                                            ->label('Waktu')->dateTime('d M Y, H:i:s'),
+                                                    ]),
+                                                    \Filament\Infolists\Components\TextEntry::make('note')
+                                                        ->label('Catatan')->columnSpanFull(),
+                                                ]),
+                                        ])
+                                        ->collapsible()
+                                ]),
+                        ];
+                    }),
 
                     Action::make('terima_rilis_dana')
                         ->label('Validasi Rilis Dana')

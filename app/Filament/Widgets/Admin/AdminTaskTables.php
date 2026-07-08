@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AdminTaskTables extends TableWidget
 {
-    protected static ?string $heading = 'Riwayat Pesanan dan Tugas';
+    protected static ?string $heading = 'Riwayat Pesanan dan Tracking Tugas (Hulu ke Hilir)';
     protected int | string | array $columnSpan = 'full';
 
     public function table(Table $table): Table
@@ -26,13 +26,14 @@ class AdminTaskTables extends TableWidget
                 fn (): Builder => Pesanan::query()
                     ->whereHas('tasks')
                     ->with([
-                        'tasks', 
-                        'tasks.taskActivities.createdUser'
+                        'tasks.taskActivities.createdUser',
+                        'tasks.taskActivities.updatedUser',
+                        'user',
                     ])
                     ->latest('updated_at')
             )
             ->columns([
-                TextColumn::make('no_po')
+                TextColumn::make('code')
                     ->label('No. Pesanan')
                     ->searchable()
                     ->sortable()
@@ -41,56 +42,90 @@ class AdminTaskTables extends TableWidget
                     ->copyMessage('Nomor pesanan disalin')
                     ->icon('heroicon-m-hashtag'),
 
+                TextColumn::make('user.name')
+                    ->label('Dibuat Oleh')
+                    ->searchable()
+                    ->badge()
+                    ->color('info'),
+
                 TextColumn::make('company_name')
                     ->label('Perusahaan')
                     ->searchable()
                     ->limit(30),
 
-                TextColumn::make('tasks_count')
-                    ->label('Total Tugas')
-                    ->getStateUsing(fn (Pesanan $record): int => $record->tasks->count())
+                TextColumn::make('marketing_status')
+                    ->label('Marketing')
+                    ->getStateUsing(fn (Pesanan $record): string => $this->getRoleTaskStatus($record, 'marketing'))
                     ->badge()
-                    ->color('gray'),
+                    ->color(fn ($state): string => match ($state) { 'Selesai' => 'success', 'Proses' => 'warning', default => 'gray' }),
 
-                TextColumn::make('completed_tasks')
-                    ->label('Tugas Selesai')
-                    ->getStateUsing(fn (Pesanan $record): int => $record->tasks->where('status', 2)->count())
+                TextColumn::make('finance_status')
+                    ->label('Finance')
+                    ->getStateUsing(fn (Pesanan $record): string => $this->getRoleTaskStatus($record, 'finance'))
                     ->badge()
-                    ->color('success'),
+                    ->color(fn ($state): string => match ($state) { 'Selesai' => 'success', 'Proses' => 'warning', default => 'gray' }),
+
+                TextColumn::make('logistik_status')
+                    ->label('Logistik')
+                    ->getStateUsing(fn (Pesanan $record): string => $this->getRoleTaskStatus($record, 'logistik'))
+                    ->badge()
+                    ->color(fn ($state): string => match ($state) { 'Selesai' => 'success', 'Proses' => 'warning', default => 'gray' }),
+
+                TextColumn::make('completed_by')
+                    ->label('Penyelesaian Terakhir')
+                    ->getStateUsing(function (Pesanan $record): string {
+                        $lastActivity = $record->tasks
+                            ->flatMap->taskActivities
+                            ->sortByDesc('created_at')
+                            ->first();
+                        return $lastActivity?->createdUser?->name 
+                            ?? $lastActivity?->updatedUser?->name 
+                            ?? '-';
+                    })
+                    ->description(function (Pesanan $record): string {
+                        $lastActivity = $record->tasks
+                            ->flatMap->taskActivities
+                            ->sortByDesc('created_at')
+                            ->first();
+                        return $lastActivity ? $lastActivity->created_at->diffForHumans() : '';
+                    }),
 
                 TextColumn::make('updated_at')
-                    ->label('Terakhir Update')
-                    ->dateTime('d M Y, H:i')
-                    ->sortable()
-                    ->description(fn (Pesanan $record): string => $record->updated_at?->diffForHumans() ?? ''),
+                    ->label('Update')
+                    ->dateTime('d M y, H:i')
+                    ->sortable(),
             ])
             ->actions([
                 DetailPesananViewAction::make(),
 
                 Action::make('view_log')
-                    ->label('Lihat Detail Aktifitas')
+                    ->label('Tracking Aktifitas')
                     ->icon('heroicon-m-rectangle-stack')
                     ->color('info')
                     ->button() 
-                    ->modalHeading(fn (Pesanan $record) => 'Detail Operasional Pesanan: ' . $record->code)
-                    ->modalDescription('Daftar tugas beserta log riwayat aktivitas eksekusi.')
-                    ->modalWidth('5xl')
+                    ->modalHeading(fn (Pesanan $record) => 'Tracking Operasional: ' . $record->code)
+                    ->modalDescription('Histori tugas dari Marketing → Finance → Logistik (hulu ke hilir)')
+                    ->modalWidth('7xl')
                     ->modalSubmitAction(false) 
                     ->modalCancelActionLabel('Tutup')
-                    // MENGGUNAKAN INFOLIST (Optimal untuk Read-Only)
                     ->infolist([
                         RepeatableEntry::make('tasks')
                             ->hiddenLabel()
                             ->schema([
-                                // Section ini akan otomatis mengambil data per Task
-                                Section::make(fn ($record) => 'Tugas: ' . $record->title)
+                                Section::make(fn ($record) => '▸ ' . strtoupper($record->role) . ' : ' . $record->title)
                                     ->schema([
-                                        Grid::make(2)->schema([
+                                        Grid::make(3)->schema([
                                             TextEntry::make('role')
-                                                ->label('Tim Penanggung Jawab')
-                                                ->badge(),
+                                                ->label('Divisi')
+                                                ->badge()
+                                                ->color(fn ($state) => match ($state) {
+                                                    'marketing' => 'info',
+                                                    'finance' => 'success',
+                                                    'logistik' => 'warning',
+                                                    default => 'gray',
+                                                }),
                                             TextEntry::make('status')
-                                                ->label('Status Tugas')
+                                                ->label('Status')
                                                 ->badge()
                                                 ->formatStateUsing(fn ($state) => match ((int) $state) {
                                                     0 => 'Pending',
@@ -104,20 +139,27 @@ class AdminTaskTables extends TableWidget
                                                     2 => 'success',
                                                     default => 'gray',
                                                 }),
+                                            TextEntry::make('created_at')
+                                                ->label('Dibuat')
+                                                ->dateTime('d M Y, H:i'),
                                         ]),
                                         
-                                        // Nested Repeatable membaca relasi taskActivities secara instan
                                         RepeatableEntry::make('taskActivities')
-                                            ->label('Riwayat Aktivitas')
+                                            ->label('Riwayat Eksekusi')
                                             ->schema([
-                                                Grid::make(3)->schema([
+                                                Grid::make(4)->schema([
                                                     TextEntry::make('createdUser.name')
-                                                        ->label('Dieksekusi Oleh')
+                                                        ->label('Oleh')
                                                         ->default('System')
-                                                        ->weight('bold'),
+                                                        ->weight('bold')
+                                                        ->color('primary'),
                                                     
+                                                    TextEntry::make('updatedUser.name')
+                                                        ->label('Diperbarui Oleh')
+                                                        ->default('-'),
+
                                                     TextEntry::make('pesanan_status')
-                                                        ->label('Status Pesanan (Saat Itu)')
+                                                        ->label('Tahapan')
                                                         ->badge()
                                                         ->formatStateUsing(fn ($state) => match ((int) $state) {
                                                             0 => 'Dibuat',
@@ -127,18 +169,18 @@ class AdminTaskTables extends TableWidget
                                                             4 => 'Perlu Penagihan',
                                                             5 => 'Ditandai Lunas',
                                                             6 => 'Cetak Surat Jalan',
-                                                            7 => 'Tandai Selesai Dikirim',
+                                                            7 => 'Selesai Dikirim',
                                                             8 => 'Selesai',
-                                                            default => 'Unknown Status (' . $state . ')',
+                                                            default => 'Unknown',
                                                         }),
                                                     
                                                     TextEntry::make('created_at')
-                                                        ->label('Waktu Eksekusi')
+                                                        ->label('Waktu')
                                                         ->dateTime('d M Y, H:i:s')
                                                         ->color('gray'),
                                                 ]),
                                                 TextEntry::make('note')
-                                                    ->label('Catatan Log')
+                                                    ->label('Catatan')
                                                     ->columnSpanFull(),
                                             ])
                                     ])
@@ -148,5 +190,17 @@ class AdminTaskTables extends TableWidget
             ])
             ->paginated([5, 10, 25, 50])
             ->defaultSort('updated_at', 'desc');
+    }
+
+    private function getRoleTaskStatus(Pesanan $record, string $role): string
+    {
+        $task = $record->tasks->where('role', $role)->first();
+        if (!$task) return '-';
+        return match ((int) $task->status) {
+            0 => 'Pending',
+            1 => 'Proses',
+            2 => 'Selesai',
+            default => '-',
+        };
     }
 }

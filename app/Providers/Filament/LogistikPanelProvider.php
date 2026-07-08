@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Widgets\Logistik\LogistikStatsOverview;
 use App\Filament\Widgets\Logistik\StatsOverview\LogistikSuratJalanStatsOverview;
 use App\Filament\Widgets\Logistik\StatsOverview\LogistikSuratKembaliStatsOverview;
 use App\Http\Middleware\CheckAdminRoleRedirect;

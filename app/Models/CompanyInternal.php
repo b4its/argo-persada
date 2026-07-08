@@ -21,6 +21,8 @@ class CompanyInternal extends Model
         'phone_number',
         'is_ppn',
         'gambar',
+        'no_rekening',
+        'nama_bank',
     ];
 
 

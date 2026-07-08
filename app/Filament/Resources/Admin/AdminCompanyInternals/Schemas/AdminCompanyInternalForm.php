@@ -44,6 +44,14 @@ class AdminCompanyInternalForm
                     ->rows(3)
                     ->columnSpanFull(),
 
+                TextInput::make("no_rekening")
+                    ->label("No Rekening")
+                    ->maxLength(255),
+
+                TextInput::make("nama_bank")
+                    ->label("Nama Bank")
+                    ->maxLength(255),
+
                 FileUpload::make('gambar')
                     ->disk('public_folder')
                     ->directory(function ($record, $get) {

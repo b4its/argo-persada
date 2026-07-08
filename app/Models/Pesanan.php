@@ -34,6 +34,10 @@ class Pesanan extends Model
         'tanggal_lunas',
         'validasi_tanggal_lunas',
         'metode_pembayaran_rilis_dana',
+        'nama_bank_rilis_dana',
+        'no_rekening_rilis_dana',
+        'nama_bank_lunas',
+        'no_rekening_lunas',
         'metode_pembayaran_lunas',
         'pesanan_status',
         'status_perilisan_dana',
@@ -68,7 +72,7 @@ class Pesanan extends Model
 
     public function bukuBesar(): HasMany
     {
-        return $this->hasMany(BukuBesar::class);
+        return $this->hasMany(BukuBesar::class, 'id_pesanan');
     }
     
 }

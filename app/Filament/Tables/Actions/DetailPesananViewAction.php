@@ -107,16 +107,30 @@ class DetailPesananViewAction extends ViewAction
                             ->content(fn ($record): HtmlString => match ($record?->metode_pembayaran_rilis_dana) {
                                 1 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-success-500/10 text-success-700 ring-success-700/10"><x-heroicon-m-banknotes class="w-4 h-4"/> Tunai</span>'),
                                 2 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-warning-500/10 text-warning-700 ring-warning-700/10"><x-heroicon-m-credit-card class="w-4 h-4"/> Kredit</span>'),
+                                3 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-info-500/10 text-info-700 ring-info-700/10"><x-heroicon-m-credit-card class="w-4 h-4"/> Debit</span>'),
                                 default => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-gray-500/10 text-gray-700 ring-gray-700/10">Belum Ditentukan</span>'),
                             }),
+                        Placeholder::make("bank_rilis_dana")
+                            ->label("Bank / Rekening Rilis Dana")
+                            ->content(fn ($record): HtmlString => $record?->nama_bank_rilis_dana
+                                ? new HtmlString('<span class="text-sm">' . e($record->nama_bank_rilis_dana) . ' - ' . e($record->no_rekening_rilis_dana) . '</span>')
+                                : new HtmlString('<span class="text-sm text-gray-400">-</span>')
+                            ),
 
                         Placeholder::make("metode_pembayaran_lunas")
                             ->label("Metode Pembayaran Lunas")
                             ->content(fn ($record): HtmlString => match ($record?->metode_pembayaran_lunas) {
                                 1 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-success-500/10 text-success-700 ring-success-700/10"><x-heroicon-m-check-badge class="w-4 h-4"/> Tunai</span>'),
                                 2 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-info-500/10 text-info-700 ring-info-700/10"><x-heroicon-m-credit-card class="w-4 h-4"/> Kredit</span>'),
+                                3 => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-info-500/10 text-info-700 ring-info-700/10"><x-heroicon-m-credit-card class="w-4 h-4"/> Debit</span>'),
                                 default => new HtmlString('<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-gray-500/10 text-gray-700 ring-gray-700/10">Belum Ditentukan</span>'),
                             }),
+                        Placeholder::make("bank_lunas")
+                            ->label("Bank / Rekening Lunas")
+                            ->content(fn ($record): HtmlString => $record?->nama_bank_lunas
+                                ? new HtmlString('<span class="text-sm">' . e($record->nama_bank_lunas) . ' - ' . e($record->no_rekening_lunas) . '</span>')
+                                : new HtmlString('<span class="text-sm text-gray-400">-</span>')
+                            ),
                     ])
                     ->columns(3)
                     ->disabled()

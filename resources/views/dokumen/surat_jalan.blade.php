@@ -288,19 +288,28 @@
 
 @php
     $pesanan = isset($latestPesanan->id) ? $latestPesanan : $latestPesanan->first();
-    $totalQty = 0;
-    if ($pesanan && $pesanan->keranjang && $pesanan->keranjang->queueKeranjang) {
-        $totalQty = $pesanan->keranjang->queueKeranjang->sum('quantity');
+    $allItems = $pesanan && $pesanan->keranjang && $pesanan->keranjang->queueKeranjang 
+        ? $pesanan->keranjang->queueKeranjang 
+        : collect();
+    
+    $itemCount = (int) $request->query('items', 0);
+    // Revisi 5: Jika item_ids diberikan, pakai item yang dipilih; jika tidak, pakai semua
+    if ($selectedItemIds) {
+        $displayItems = $selectedItems;
+    } else {
+        $displayItems = $itemCount > 0 ? $allItems->take($itemCount) : $allItems;
     }
-    $satuanTotal = '';
-    if ($pesanan && $pesanan->keranjang && $pesanan->keranjang->queueKeranjang && count($pesanan->keranjang->queueKeranjang) > 0) {
-        $satuanTotal = $pesanan->keranjang->queueKeranjang->first()->satuan ?? '';
-    }
+    
+    $totalQty = $displayItems->sum('quantity');
+    $satuanTotal = $displayItems->count() > 0 ? $displayItems->first()->satuan ?? '' : '';
+    
+    // Revisi 6: Format continuous form untuk kertas continues form
+    $useContinuousForm = $request->query('continuous', '0') === '1';
 @endphp
 
 <!-- ── SCREEN ONLY CONTROLS ── -->
 <div class="screen-only">
-    <a href="{{ route('filament.marketing.resources.pesanan.index') }}" class="btn btn-back">&#8592; Kembali</a>
+    <a href="{{ $request->query('back', route('filament.logistik.resources.pesanan.index')) }}" class="btn btn-back">&#8592; Kembali</a>
     <button class="btn btn-print" onclick="window.print()">&#128438; Cetak PDF</button>
     
     <label class="orientation-label" for="orientSelect">Orientasi:</label>
@@ -308,6 +317,15 @@
         <option value="portrait" selected>Portrait (Vertikal)</option>
         <option value="landscape">Landscape (Horizontal)</option>
     </select>
+
+    <label class="orientation-label" for="itemCountInput">Jml Item:</label>
+    <input type="number" id="itemCountInput" class="orientation-select" style="width:70px;" value="{{ $itemCount }}" min="0" placeholder="0=Semua">
+
+    <label class="orientation-label" for="senderNameInput">Pengirim:</label>
+    <input type="text" id="senderNameInput" class="orientation-select" style="width:150px;" value="{{ $customSenderName }}" placeholder="Nama Pengirim">
+
+    <label class="orientation-label" for="continuousForm"> Continues:</label>
+    <input type="checkbox" id="continuousForm" {{ $useContinuousForm ? 'checked' : '' }}>
 </div>
 
 <!-- ── DYNAMIC PAGE ORIENTATION STYLE ── -->
@@ -356,7 +374,7 @@
         <table class="no-table">
             <tr>
                 <td class="col-no-do">NO : {{ $pesanan->no_delivery_order ?? '260255/AAP-DO/26' }}</td>
-                <td class="col-po-no">PO : {{ $pesanan->no_po ?? 'XXXX' }}</td>
+                <td class="col-po-no">PO : {{ $pesanan->no_po ?? $pesanan->code ?? 'XXXX' }}</td>
             </tr>
         </table>
 
@@ -371,8 +389,8 @@
                 </tr>
             </thead>
             <tbody>
-                @if($pesanan->keranjang && $pesanan->keranjang->queueKeranjang && count($pesanan->keranjang->queueKeranjang) > 0)
-                    @foreach($pesanan->keranjang->queueKeranjang as $index => $item)
+                @if($displayItems->count() > 0)
+                    @foreach($displayItems as $index => $item)
                     <tr>
                         <td class="col-no">{{ $index + 1 }}</td>
                         <td class="col-nama">{{ $item->item_name }}</td>
@@ -380,18 +398,21 @@
                         <td class="col-satuan">{{ $item->satuan }}</td>
                     </tr>
                     @endforeach
-                    {{-- Row Filler Logic jika diperlukan --}}
-                    {{-- @php $fillerRows = max(0, 21 - count($pesanan->keranjang->queueKeranjang)); @endphp
-                    @for($i = 0; $i < $fillerRows; $i++)
-                    <tr>
-                        <td class="col-no"></td>
-                        <td class="col-nama"></td>
-                        <td class="col-jumlah"></td>
-                        <td class="col-satuan"></td>
-                    </tr>
-                    @endfor --}}
+                    {{-- Isi sisa baris jika itemCount ditentukan --}}
+                    @if($itemCount > 0)
+                        @php $fillerRows = max(0, $itemCount - $displayItems->count()); @endphp
+                        @for($i = 0; $i < $fillerRows; $i++)
+                        <tr>
+                            <td class="col-no"></td>
+                            <td class="col-nama"></td>
+                            <td class="col-jumlah"></td>
+                            <td class="col-satuan"></td>
+                        </tr>
+                        @endfor
+                    @endif
                 @else
-                    @for($i = 0; $i < 21; $i++)
+                    @php $emptyRows = $itemCount > 0 ? $itemCount : 21; @endphp
+                    @for($i = 0; $i < $emptyRows; $i++)
                     <tr>
                         <td class="col-no"></td>
                         <td class="col-nama"></td>
@@ -432,7 +453,7 @@
                     <div class="ttd-flex-row"><span class="ttd-label">Tanggal</span><span>:</span></div>
                 </td>
                 <td>
-                    <div class="ttd-flex-row"><span class="ttd-label">Nama</span><span>: {{ $username ?? '' }}</span></div>
+                    <div class="ttd-flex-row"><span class="ttd-label">Nama</span><span>: {{ $customSenderName ?? $username ?? '' }}</span></div>
                     <div class="ttd-flex-row"><span class="ttd-label">Tanggal</span><span>: {{ date('d-m-Y') }}</span></div>
                 </td>
             </tr>
@@ -481,22 +502,51 @@
     function setOrientation(val) {
         const styleEl = document.getElementById('printOrientStyle');
         const pageWrapper = document.getElementById('pageWrapper');
+        const continuousCheck = document.getElementById('continuousForm');
+        const isContinuous = continuousCheck && continuousCheck.checked;
         
         if (val === 'landscape') {
             styleEl.textContent = '@page { size: A4 landscape; margin: 12mm 15mm 12mm 15mm; }';
-            // Menyesuaikan lebar wrapper di layar menjadi landscape
             if(pageWrapper) pageWrapper.style.maxWidth = '297mm'; 
         } else {
             styleEl.textContent = '@page { size: A4 portrait; margin: 12mm 15mm 12mm 15mm; }';
-            // Menyesuaikan lebar wrapper di layar menjadi portrait
             if(pageWrapper) pageWrapper.style.maxWidth = '210mm';
+        }
+
+        // Revisi 6: Continuous form - ukuran kertas menyesuaikan
+        if (isContinuous) {
+            styleEl.textContent = '@page { size: 241mm 140mm; margin: 8mm 10mm; }';
+            if(pageWrapper) {
+                pageWrapper.style.maxWidth = '241mm';
+                pageWrapper.style.minHeight = '140mm';
+            }
         }
     }
 
+    function refreshPage() {
+        const itemCount = document.getElementById('itemCountInput').value;
+        const senderName = document.getElementById('senderNameInput').value;
+        const continuous = document.getElementById('continuousForm').checked ? '1' : '0';
+        const orient = document.getElementById('orientSelect').value;
+        
+        const url = new URL(window.location.href);
+        // Hapus item_ids jika user mengubah jumlah item (biar pake itemCount)
+        url.searchParams.delete('item_ids');
+        url.searchParams.set('items', itemCount);
+        url.searchParams.set('sender_name', senderName);
+        url.searchParams.set('continuous', continuous);
+        url.searchParams.set('orientation', orient);
+        window.location.href = url.toString();
+    }
+
+    document.getElementById('itemCountInput').addEventListener('change', refreshPage);
+    document.getElementById('senderNameInput').addEventListener('change', refreshPage);
+    document.getElementById('continuousForm').addEventListener('change', refreshPage);
+
     window.onload = function () {
-        // Set orientasi default ke portrait
-        setOrientation('portrait');
-        window.print();
+        setOrientation(document.getElementById('orientSelect').value);
+        // Jangan auto print, biar bisa atur setting dulu
+        // window.print();
     };
 </script>
 </body>

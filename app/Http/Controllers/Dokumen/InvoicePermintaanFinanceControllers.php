@@ -14,7 +14,7 @@ class InvoicePermintaanFinanceControllers extends Controller
     public function index($id)
     {
         $latestPesanan = Pesanan::with(['keranjang'])->findOrFail($id);
-        $username = Auth::user()->username; // Atau Auth::user()->name tergantung struktur DB Anda
+        $username = Auth::user()->name;
         return view("dokumen.surat_invoice_finance", [
             "latestPesanan" => $latestPesanan,
             "username" => $username

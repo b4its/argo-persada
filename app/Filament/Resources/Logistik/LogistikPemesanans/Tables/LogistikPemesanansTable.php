@@ -164,7 +164,7 @@ class LogistikPemesanansTable
                             ->orderBy('created_at', 'asc')
                             ->value('created_user_id') ?? $currentUserId;
                         
-                        $delivery_number = "DO-" .date('Ymd') . '-' . strtoupper(Str::random(5));
+                        $delivery_number = "DO-" .date('dmy') . '-' . strtoupper(Str::random(5));
                         // 1. Update Pesanan
                         $record->update([
                             'tanggal_terbit_surat_jalan' => now(),
@@ -290,12 +290,38 @@ class LogistikPemesanansTable
                         ->label('Print Surat Jalan')
                         ->icon('heroicon-o-printer')
                         ->color('info')
-                        ->requiresConfirmation()
-                        ->modalHeading('Cetak Surat Jalan')
-                        ->modalDescription('Apakah anda ingin mencetak dokumen Surat Jalan ini?')
-                        ->modalSubmitActionLabel('Ya, Cetak')
-                        ->url(fn ($record) => route('surat_jalan.index', $record->id))
-                        ->openUrlInNewTab(),
+                        ->hidden(fn (Pesanan $record): bool => $record->tanggal_terbit_surat_jalan === null)
+                        ->modalHeading('Pilih Item untuk Surat Jalan')
+                        ->modalDescription(fn (Pesanan $record) => new HtmlString(
+                            "Pesanan: <strong>{$record->code}</strong><br>Centang item yang akan dikirim."
+                        ))
+                        ->form(fn (Pesanan $record) => [
+                            \Filament\Forms\Components\CheckboxList::make('selected_items')
+                                ->label('Pilih Item Yang Akan Dikirim')
+                                ->options(function () use ($record) {
+                                    $items = \App\Models\QueueKeranjang::where('keranjang_id', $record->keranjang_id)->get();
+                                    return $items->pluck('item_name', 'id')->map(function ($name, $id) use ($items) {
+                                        $item = $items->find($id);
+                                        return "{$item->item_name} ({$item->quantity} {$item->satuan})";
+                                    })->toArray();
+                                })
+                                ->columns(1)
+                                ->required()
+                                ->validationMessages([
+                                    'required' => 'Pilih minimal satu item untuk dicetak di surat jalan.',
+                                ]),
+                        ])
+                        ->modalSubmitActionLabel('Cetak')
+                        ->action(function (Pesanan $record, array $data) {
+                            $selectedIds = $data['selected_items'] ?? [];
+                            $idsParam = implode(',', $selectedIds);
+                            $url = route('surat_jalan.index', [
+                                'id' => $record->id,
+                                'item_ids' => $idsParam,
+                                'back' => url()->previous(),
+                            ]);
+                            return redirect()->to($url);
+                        }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

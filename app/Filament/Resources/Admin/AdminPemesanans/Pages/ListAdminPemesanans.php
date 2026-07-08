@@ -33,7 +33,7 @@ class ListAdminPemesanans extends ListRecords
                 )
                 ->mutateFormDataUsing(function (array $data): array {
                     $data['user_id'] = auth()->id();
-                    $data['code'] = 'PO-' . time();
+                    $data['code'] = $data['no_po'] ?? 'PO-' . date('dmy') . '-' . strtoupper(Str::random(5));
                     return $data;
                 })
                 ->using(function (array $data, string $model): Model {
@@ -74,13 +74,13 @@ class ListAdminPemesanans extends ListRecords
                         ]);
 
                         $tax_amount = $totalKeseluruhan * 0.11;
-                        $generate_po_number = 'PO-' . date('Ymd') . '-' . strtoupper(Str::random(5));
+                        $no_po = $data['no_po'] ?? 'PO-' . date('dmy') . '-' . strtoupper(Str::random(5));
                         // LANGKAH 4: Buat Pesanan utama
                         $pesanan = Pesanan::create([
                             'user_id' => $data['user_id'],
                             'keranjang_id' => $keranjang->id,
-                            'no_po' => $generate_po_number,
-                            'code' => $data['code'],
+                            'no_po' => $no_po,
+                            'code' => $no_po,
                             'ppn' => $tax_amount,
                             'total_harga' => $totalKeseluruhan + $tax_amount,
                             'group_name' => $data['group_name'],

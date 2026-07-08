@@ -21,6 +21,11 @@ class AdminPemesananForm
                     ->native(false)
                     ->dehydrated(false),
 
+                TextInput::make('no_po')
+                    ->label('No PO (Custom)')
+                    ->placeholder('Masukkan No PO...')
+                    ->maxLength(255),
+
                 TextInput::make('group_name')
                     ->label('Group*')
                     ->placeholder('Masukkan Nama Group...')

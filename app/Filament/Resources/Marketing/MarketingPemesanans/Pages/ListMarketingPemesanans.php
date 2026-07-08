@@ -32,9 +32,8 @@ class ListMarketingPemesanans extends ListRecords
                     \App\Filament\Resources\Marketing\MarketingPemesanans\Schemas\MarketingPemesananForm::configure(Schema::make())->getComponents()
                 )
                 ->mutateFormDataUsing(function (array $data): array {
-                    // PERBAIKAN 2: Pastikan data bawaan form tetap aman
                     $data['user_id'] = auth()->id();
-                    $data['code'] = 'PO-' . time();
+                    $data['code'] = $data['no_po'] ?? 'PO-' . date('dmy') . '-' . strtoupper(Str::random(5));
                     
                     return $data;
                 })
@@ -51,7 +50,7 @@ class ListMarketingPemesanans extends ListRecords
                         // LANGKAH 2: Looping barang di Repeater
                         if (!empty($data['list_barang'])) {
                             foreach ($data['list_barang'] as $barang) {
-                                $subTotalBarang = $barang['quantity'] * $barang['po'];
+                                $subTotalBarang = $barang['quantity'] * $barang['modal'];
                                 $totalKeseluruhan += $subTotalBarang;
 
                                 QueueKeranjang::create([
@@ -74,26 +73,22 @@ class ListMarketingPemesanans extends ListRecords
                         $keranjang->update([
                             'sub_total' => $totalKeseluruhan
                         ]);
-                        // 1. Ambil data company internal dengan benar
                         $current_company_internal = CompanyInternal::findOrFail($data['company_internal_id']);
 
-                        // 2. Logika Pajak Jika is_ppn bernilai 1, maka hitung pajak
                         $tax_amount = 0;
                         if ($current_company_internal->is_ppn == 1) {
-                            $tax_amount = $totalKeseluruhan * 0.11; // PPN 11%
+                            $tax_amount = $totalKeseluruhan * 0.11;
                         }
 
-                        // 3. Generate PO Number
-                        $generate_po_number = 'PO-' . date('Ymd') . '-' . strtoupper(Str::random(5));
+                        $no_po = $data['no_po'] ?? 'PO-' . date('dmy') . '-' . strtoupper(Str::random(5));
 
-                        // 4. Simpan ke database
                         $pesanan = Pesanan::create([
                             'user_id'             => $data['user_id'] ?? auth()->id(),
                             'keranjang_id'        => $keranjang->id,
                             'company_internal_id' => $data['company_internal_id'] ?? null, 
                             'saldo_id'            => $data['saldo_id'] ?? null,
-                            'no_po'               => $generate_po_number,
-                            'code'                => $data['code'] ?? null,
+                            'no_po'               => $no_po,
+                            'code'                => $no_po,
                             'ppn'                 => $tax_amount,
                             'total_harga'         => $totalKeseluruhan + $tax_amount,
                             'group_name'          => $data['group_name'] ?? null,
