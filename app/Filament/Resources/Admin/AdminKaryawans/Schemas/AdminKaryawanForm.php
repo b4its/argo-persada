@@ -23,6 +23,7 @@ class AdminKaryawanForm
                 Select::make('role')
                     ->label('Role')
                     ->options([
+                        'admin' => 'Admin',
                         'marketing' => 'Marketing',
                         'finance' => 'Finance',
                         'logistik' => 'Logistik',

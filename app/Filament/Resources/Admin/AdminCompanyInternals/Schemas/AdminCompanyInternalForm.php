@@ -30,10 +30,10 @@ class AdminCompanyInternalForm
                     ->maxLength(12),
 
                 Select::make('is_ppn')
-                    ->label('Pakai PPN?')
+                    ->label('PPN')
                     ->options([
-                        0 => 'Tidak pakai PPN',
-                        1 => 'Iya pakai PPN',
+                        0 => 'Tidak',
+                        1 => 'Iya',
                     ])
                     ->default(0)
                     ->native(false) 

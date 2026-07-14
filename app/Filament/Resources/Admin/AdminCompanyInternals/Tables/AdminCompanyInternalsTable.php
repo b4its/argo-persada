@@ -39,7 +39,7 @@ class AdminCompanyInternalsTable
                     ->label('Singkatan'),
                 TextColumn::make('is_ppn')
                     ->label('PPN')
-                    ->formatStateUsing(fn (string $state): string => $state === '1' ? 'Pakai PPN' : 'Tidak Pakai PPN')
+                    ->formatStateUsing(fn (string $state): string => $state === '1' ? 'Iya' : 'Tidak')
 
             ])
             ->filters([

@@ -33,7 +33,7 @@ class ListMarketingPemesanans extends ListRecords
                 )
                 ->mutateFormDataUsing(function (array $data): array {
                     $data['user_id'] = auth()->id();
-                    $data['code'] = $data['no_po'] ?? 'PO-' . date('dmy') . '-' . strtoupper(Str::random(5));
+                    $data['code'] = $data['no_po'] ?? 'PO-' . date('ymd') . '-' . strtoupper(Str::random(5));
                     
                     return $data;
                 })
@@ -80,7 +80,7 @@ class ListMarketingPemesanans extends ListRecords
                             $tax_amount = $totalKeseluruhan * 0.11;
                         }
 
-                        $no_po = $data['no_po'] ?? 'PO-' . date('dmy') . '-' . strtoupper(Str::random(5));
+                        $no_po = $data['no_po'] ?? 'PO-' . date('ymd') . '-' . strtoupper(Str::random(5));
 
                         $pesanan = Pesanan::create([
                             'user_id'             => $data['user_id'] ?? auth()->id(),

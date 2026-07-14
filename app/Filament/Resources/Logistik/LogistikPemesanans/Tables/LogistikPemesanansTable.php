@@ -164,7 +164,7 @@ class LogistikPemesanansTable
                             ->orderBy('created_at', 'asc')
                             ->value('created_user_id') ?? $currentUserId;
                         
-                        $delivery_number = "DO-" .date('dmy') . '-' . strtoupper(Str::random(5));
+                        $delivery_number = "DO-" .date('ymd') . '-' . strtoupper(Str::random(5));
                         // 1. Update Pesanan
                         $record->update([
                             'tanggal_terbit_surat_jalan' => now(),

@@ -493,7 +493,7 @@ class FinancePemesanansTable
                             ->value('created_user_id') ?? $currentUserId;
 
                         // Generate nomor invoice
-                        $generatedInvoiceNumber = 'INV-' . date('dmy') . '-' . strtoupper(Str::random(5));
+                        $generatedInvoiceNumber = 'INV-' . date('ymd') . '-' . strtoupper(Str::random(5));
                         $oldPesananData = $record->toArray();
 
                         // Update tabel pesanan
