@@ -46,6 +46,20 @@ class MarketingPemesanansTable
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('tipe_pesanan')
+                    ->label('Tipe')
+                    ->badge()
+                    ->formatStateUsing(fn (int $state): string => match ($state) {
+                        0 => 'Supply',
+                        1 => 'Projek',
+                        default => '-',
+                    })
+                    ->color(fn (int $state): string => match ($state) {
+                        0 => 'info',
+                        1 => 'success',
+                        default => 'gray',
+                    }),
+
                 TextColumn::make('no_requisition')
                     ->label('No Requisition')
                     ->placeholder('---:---')

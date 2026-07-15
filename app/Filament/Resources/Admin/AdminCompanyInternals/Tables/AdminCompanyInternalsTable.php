@@ -37,6 +37,19 @@ class AdminCompanyInternalsTable
 
                 TextColumn::make('singkatan')
                     ->label('Singkatan'),
+
+                TextColumn::make('nama_bank')
+                    ->label('Bank')
+                    ->placeholder('-'),
+
+                TextColumn::make('no_rekening')
+                    ->label('No Rekening')
+                    ->placeholder('-'),
+
+                TextColumn::make('nama_pemilik_bank')
+                    ->label('Pemilik Rekening')
+                    ->placeholder('-'),
+
                 TextColumn::make('is_ppn')
                     ->label('PPN')
                     ->formatStateUsing(fn (string $state): string => $state === '1' ? 'Iya' : 'Tidak')

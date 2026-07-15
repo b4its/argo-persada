@@ -31,6 +31,16 @@ class MarketingPemesananForm
                     ->searchable()
                     ->preload()
                     ->required(),
+
+                Select::make('tipe_pesanan')
+                    ->label('Tipe Pesanan')
+                    ->options([
+                        0 => 'Supply',
+                        1 => 'Projek',
+                    ])
+                    ->default(0)
+                    ->native(false)
+                    ->required(),
                     
                 TextInput::make('no_po')
                     ->label('No PO (Custom)')

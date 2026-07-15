@@ -33,6 +33,20 @@ class AdminPemesanansTable
                     ->searchable()
                     ->weight('bold'),
 
+                TextColumn::make('tipe_pesanan')
+                    ->label('Tipe')
+                    ->badge()
+                    ->formatStateUsing(fn (int $state): string => match ($state) {
+                        0 => 'Supply',
+                        1 => 'Projek',
+                        default => '-',
+                    })
+                    ->color(fn (int $state): string => match ($state) {
+                        0 => 'info',
+                        1 => 'success',
+                        default => 'gray',
+                    }),
+
                 TextColumn::make('user.name')
                     ->label('Dibuat Oleh')
                     ->badge()

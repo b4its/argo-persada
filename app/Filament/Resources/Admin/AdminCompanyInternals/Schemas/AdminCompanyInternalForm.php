@@ -52,6 +52,10 @@ class AdminCompanyInternalForm
                     ->label("Nama Bank")
                     ->maxLength(255),
 
+                TextInput::make("nama_pemilik_bank")
+                    ->label("Nama Pemilik Rekening")
+                    ->maxLength(255),
+
                 FileUpload::make('gambar')
                     ->disk('public_folder')
                     ->directory(function ($record, $get) {

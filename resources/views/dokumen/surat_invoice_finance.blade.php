@@ -340,6 +340,7 @@
                             <li>- Barang yang sudah dibeli tidak dapat dikembalikan atau ditukar</li>
                             <li>- Tidak menerima pembayaran tunai, pembayaran dilakukan dengan transfer ke rekening berikut :</li>
                             <li class="bank-indent font-bold">{{ $latestPesanan->companyInternal->nama_bank ?? 'Bank Mandiri' }}</li>
+                            <li class="bank-indent font-bold">A/n : {{ $latestPesanan->companyInternal->nama_pemilik_bank ?? '-' }}</li>
                             <li class="bank-indent font-bold">No Rek : {{ $latestPesanan->companyInternal->no_rekening ?? 'xxxx' }}</li>
                             <li>- Pembayaran dengan Giro/Cek dianggap sah apabila sudah diterima di rekening kami</li>
                         </ul>

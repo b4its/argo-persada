@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources\Admin\AdminKaryawans\Tables;
 
+use App\Models\Pesanan;
+use App\Models\Task;
+use App\Models\TaskActivity;
 use App\Models\User;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class AdminKaryawansTable
@@ -44,14 +49,31 @@ class AdminKaryawansTable
                     ->searchable(),
             ])
             ->filters([
-                //
+                SelectFilter::make('role')
+                    ->label('Filter Role')
+                    ->options([
+                        'marketing' => 'Marketing',
+                        'finance' => 'Finance',
+                        'logistik' => 'Logistik',
+                        'admin' => 'Admin',
+                        'superadmin' => 'Superadmin',
+                        'guest' => 'Guest',
+                    ])
+                    ->placeholder('Semua Role'),
             ])
             ->recordActions([
+                Action::make('showActivity')
+                    ->label('Aktivitas')
+                    ->icon('heroicon-m-clipboard-document-list')
+                    ->color('info')
+                    ->modalHeading(fn ($record) => 'Aktivitas: ' . $record->name)
+                    ->modalWidth('4xl')
+                    ->modalContent(fn ($record) => view('filament.resources.admin-karyawans.user-activity-modal', ['user' => $record])),
                 EditAction::make(),
                 DeleteAction::make()
                     ->button()
-                    ->color('danger') // default abu-abu (tidak merah)
-                    ->requiresConfirmation() // pastikan tampil popup konfirmasi
+                    ->color('danger')
+                    ->requiresConfirmation()
                     ->modalHeading('Konfirmasi Hapus')
                     ->modalDescription('apakah yakin ingin menghapus data ini?')
                     ->modalSubmitActionLabel('Ya, Hapus'),

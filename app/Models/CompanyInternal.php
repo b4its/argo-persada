@@ -23,6 +23,7 @@ class CompanyInternal extends Model
         'gambar',
         'no_rekening',
         'nama_bank',
+        'nama_pemilik_bank',
     ];
 
 

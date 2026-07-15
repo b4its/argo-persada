@@ -218,14 +218,14 @@
                     <td>{{ $pesanan->no_requisition ?? '-' }}</td>
                 </tr>
                 <tr>
-                    <td>Tanggal Supply</td>
+                    <td>Tanggal</td>
                     <td>:</td>
                     <td>{{ $pesanan->created_at ? $pesanan->created_at->format('d-m-Y') : date('d-m-Y') }}</td>
                 </tr>
                 <tr>
                     <td>DEPARTMENT</td>
                     <td>:</td>
-                    <td>{{ $pesanan->group_name ?? 'SUPPLY' }}</td>
+                    <td>{{ $pesanan->tipe_pesanan == 0 ? 'Supply' : 'Projek' }}</td>
                 </tr>
             </table>
 
@@ -233,7 +233,7 @@
                 <thead>
                     <tr>
                         <th>NO</th>
-                        <th>PT</th>
+                        <th>Perusahaan</th>
                         <th>NO PO</th>
                         <th>Deskripsi</th>
                         <th>Qty</th>

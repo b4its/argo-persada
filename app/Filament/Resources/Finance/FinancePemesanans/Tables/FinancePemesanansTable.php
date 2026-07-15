@@ -155,26 +155,6 @@ class FinancePemesanansTable
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
                         "No Pemesanan:<br><strong>{$record->code}</strong><br><br>Apakah ingin konfirmasi rilis dana pada pesanan ini?"
                     ))
-                    ->form([
-                        Select::make('metode_pembayaran_rilis_dana')
-                            ->label('Metode Pembayaran untuk Rilis Dana')
-                            ->options([
-                                1 => 'Tunai',
-                                2 => 'Kredit',
-                                3 => 'Debit',
-                            ])
-                            ->default(1)
-                            ->required()
-                            ->live(),
-
-                        TextInput::make('nama_bank_rilis_dana')
-                            ->label('Nama Bank')
-                            ->visible(fn ($get) => in_array($get('metode_pembayaran_rilis_dana'), [2, 3])),
-
-                        TextInput::make('no_rekening_rilis_dana')
-                            ->label('Nomor Rekening')
-                            ->visible(fn ($get) => in_array($get('metode_pembayaran_rilis_dana'), [2, 3])),
-                    ])
                     ->modalSubmitActionLabel('Iya') 
                     ->modalCancelActionLabel('Tidak') 
                     ->mountUsing(function (Action $action, Pesanan $record) {
@@ -252,11 +232,8 @@ class FinancePemesanansTable
                             }
                         }
                     })
-                    ->action(function (Pesanan $record, array $data) {
+                    ->action(function (Pesanan $record) {
                         $currentUserId = auth()->id();
-                        $metodePembayaran_rilis_dana = $data['metode_pembayaran_rilis_dana'];
-                        $namaBankRilis = $data['nama_bank_rilis_dana'] ?? null;
-                        $noRekeningRilis = $data['no_rekening_rilis_dana'] ?? null;
 
                         $originalCreatorId = TaskActivity::whereHas('task', function($query) use ($record) {
                                 $query->where('pesanan_id', $record->id);
@@ -273,9 +250,6 @@ class FinancePemesanansTable
                             ['id' => $record->id],
                             [
                                 'tanggal_rilis_dana' => now(),
-                                'metode_pembayaran_rilis_dana' => $metodePembayaran_rilis_dana,
-                                'nama_bank_rilis_dana' => $namaBankRilis,
-                                'no_rekening_rilis_dana' => $noRekeningRilis,
                                 'updated_at' => now()
                             ] 
                         );

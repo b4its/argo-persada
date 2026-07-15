@@ -17,6 +17,7 @@ class Pesanan extends Model
         'company_internal_id', 
         'saldo_id', 
         'code', 
+        'tipe_pesanan',
         'group_name', 
         'company_name', 
         'address',
