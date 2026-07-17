@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\LogActivities;
 use Carbon\Carbon;
 use Filament\Pages\Page;
+use App\Filament\Traits\HasDateFilter;
 use App\Filament\Widgets\Admin\StatsOverview\AdminPesananStatsOverview;
 use App\Filament\Widgets\Admin\StatsOverview\AdminKasHarianStatsOverview;
 use App\Filament\Widgets\Admin\StatsOverview\AdminAkunStatsOverview;
@@ -22,6 +23,8 @@ use App\Filament\Widgets\Admin\Charts\PendapatanBarChart;
 
 class AdminDashboard extends Page
 {
+    use HasDateFilter;
+
     protected static ?string $title = 'Dashboard Admin';
 
     protected string $view = 'filament.pages.admin.admin-dashboard';
@@ -50,12 +53,74 @@ class AdminDashboard extends Page
     public int $marketingOverallPage = 1;
     public int $marketingOverallLastPage = 1;
 
+    public string $filterPreset = '';
+    public ?string $filterStartDate = null;
+    public ?string $filterEndDate = null;
+
     public function mount(): void
     {
+        $this->filterPreset = session('dashboard_filter_preset', '');
+        $this->filterStartDate = session('dashboard_filter_start_date', '');
+        $this->filterEndDate = session('dashboard_filter_end_date', '');
+
         $this->loadRoleProgress();
         $this->loadRecentActivities();
         $this->loadRoleTables();
         $this->loadUnparticipatedUsers();
+    }
+
+    public function getRenderHookScopes(): array
+    {
+        return ['admin-dashboard'];
+    }
+
+    public function updatedFilterPreset(): void
+    {
+        $now = Carbon::now();
+
+        match ($this->filterPreset) {
+            '7days' => [
+                $this->filterStartDate = $now->copy()->subDays(7)->format('Y-m-d'),
+                $this->filterEndDate = $now->format('Y-m-d'),
+            ],
+            '2weeks' => [
+                $this->filterStartDate = $now->copy()->subWeeks(2)->format('Y-m-d'),
+                $this->filterEndDate = $now->format('Y-m-d'),
+            ],
+            '3weeks' => [
+                $this->filterStartDate = $now->copy()->subWeeks(3)->format('Y-m-d'),
+                $this->filterEndDate = $now->format('Y-m-d'),
+            ],
+            '1month' => [
+                $this->filterStartDate = $now->copy()->subMonth()->format('Y-m-d'),
+                $this->filterEndDate = $now->format('Y-m-d'),
+            ],
+            default => [
+                $this->filterStartDate = null,
+                $this->filterEndDate = null,
+            ],
+        };
+
+        session([
+            'dashboard_filter_preset' => $this->filterPreset,
+            'dashboard_filter_start_date' => $this->filterStartDate,
+            'dashboard_filter_end_date' => $this->filterEndDate,
+        ]);
+
+        $this->js('window.location.reload()');
+    }
+
+    public function applyCustomFilter(): void
+    {
+        $this->filterPreset = 'custom';
+
+        session([
+            'dashboard_filter_preset' => 'custom',
+            'dashboard_filter_start_date' => $this->filterStartDate,
+            'dashboard_filter_end_date' => $this->filterEndDate,
+        ]);
+
+        $this->js('window.location.reload()');
     }
 
     public function setRecentActivitiesPage(int $page): void
@@ -244,13 +309,13 @@ class AdminDashboard extends Page
             'tanggal_lunas' => $pesanan->tanggal_lunas ? Carbon::parse($pesanan->tanggal_lunas)->format('d M Y') : '-',
             'tanggal_lunas_raw' => $pesanan->tanggal_lunas ? Carbon::parse($pesanan->tanggal_lunas) : null,
 
-            // Jarak antar tahapan (dalam hari)
-            'po_to_do_diff' => $this->diffDays($pesanan->created_at, $pesanan->tanggal_terbit_surat_jalan),
-            'po_to_rilis_diff' => $this->diffDays($pesanan->created_at, $pesanan->tanggal_rilis_dana),
-            'rilis_to_invoice_diff' => $this->diffDays($pesanan->tanggal_rilis_dana, $pesanan->tanggal_terbit_invoice),
-            'invoice_to_do_diff' => $this->diffDays($pesanan->tanggal_terbit_invoice, $pesanan->tanggal_terbit_surat_jalan),
-            'do_to_kembali_diff' => $this->diffDays($pesanan->tanggal_terbit_surat_jalan, $pesanan->tanggal_surat_kembali),
-            'kembali_to_lunas_diff' => $this->diffDays($pesanan->tanggal_surat_kembali, $pesanan->tanggal_lunas),
+            // Jarak antar tahapan
+            'po_to_do_diff' => $this->diffHuman($pesanan->created_at, $pesanan->tanggal_terbit_surat_jalan),
+            'po_to_rilis_diff' => $this->diffHuman($pesanan->created_at, $pesanan->tanggal_rilis_dana),
+            'rilis_to_invoice_diff' => $this->diffHuman($pesanan->tanggal_rilis_dana, $pesanan->tanggal_terbit_invoice),
+            'invoice_to_do_diff' => $this->diffHuman($pesanan->tanggal_terbit_invoice, $pesanan->tanggal_terbit_surat_jalan),
+            'do_to_kembali_diff' => $this->diffHuman($pesanan->tanggal_terbit_surat_jalan, $pesanan->tanggal_surat_kembali),
+            'kembali_to_lunas_diff' => $this->diffHuman($pesanan->tanggal_surat_kembali, $pesanan->tanggal_lunas),
 
             // Pembuat
             'created_by' => $pesanan->user?->name ?? '-',
@@ -592,13 +657,48 @@ class AdminDashboard extends Page
         ];
     }
 
-    protected function diffDays($from, $to): ?int
+    protected function diffHuman($from, $to): ?array
     {
         if (!$from || !$to) return null;
         try {
             $from = $from instanceof Carbon ? $from : Carbon::parse($from);
             $to = $to instanceof Carbon ? $to : Carbon::parse($to);
-            return (int) $from->diffInDays($to);
+
+            $totalDays = (int) $from->diffInDays($to);
+
+            $years = (int) $from->diffInYears($to);
+            if ($years >= 1) {
+                $months = (int) $from->diffInMonths($to) % 12;
+                $text = $years . ' tahun' . ($months ? ' ' . $months . ' bulan' : '');
+                return ['text' => $text, 'totalDays' => $totalDays];
+            }
+
+            $months = (int) $from->diffInMonths($to);
+            if ($months >= 1) {
+                return ['text' => $months . ' bulan', 'totalDays' => $totalDays];
+            }
+
+            $days = (int) $from->diffInDays($to);
+            if ($days >= 1) {
+                return ['text' => $days . ' hari', 'totalDays' => $totalDays];
+            }
+
+            $hours = (int) $from->diffInHours($to);
+            if ($hours >= 1) {
+                $minutes = (int) ($from->diffInMinutes($to) % 60);
+                $text = $hours . ' jam' . ($minutes ? ' ' . $minutes . ' menit' : '');
+                return ['text' => $text, 'totalDays' => $totalDays];
+            }
+
+            $minutes = (int) $from->diffInMinutes($to);
+            if ($minutes >= 1) {
+                $seconds = (int) ($from->diffInSeconds($to) % 60);
+                $text = $minutes . ' menit' . ($seconds ? ' ' . $seconds . ' detik' : '');
+                return ['text' => $text, 'totalDays' => $totalDays];
+            }
+
+            $seconds = (int) $from->diffInSeconds($to);
+            return ['text' => $seconds . ' detik', 'totalDays' => $totalDays];
         } catch (\Exception $e) {
             return null;
         }
@@ -618,15 +718,19 @@ class AdminDashboard extends Page
     {
         $roles = ['marketing', 'finance', 'logistik'];
         $result = [];
+        $dateRange = $this->getFilteredDateRange();
 
         foreach ($roles as $role) {
             $page = $this->roleProgressPage[$role] ?? 1;
             $pesananIds = Task::where('role', $role)->pluck('pesanan_id')->unique();
-            $totalPesanan = Pesanan::whereIn('id', $pesananIds)->count();
+            $totalPesanan = Pesanan::whereIn('id', $pesananIds)
+                ->when($dateRange, fn ($q) => $q->whereBetween('created_at', $dateRange))
+                ->count();
             $completedTasks = Task::where('role', $role)->where('status', 2)->count();
             $totalTasks = Task::where('role', $role)->count();
 
             $paginator = Pesanan::whereIn('id', $pesananIds)
+                ->when($dateRange, fn ($q) => $q->whereBetween('created_at', $dateRange))
                 ->with(['tasks' => function ($q) use ($role) {
                     $q->where('role', $role);
                 }])
@@ -672,7 +776,9 @@ class AdminDashboard extends Page
             'superadmin' => 'danger',
         ];
 
+        $dateRange = $this->getFilteredDateRange();
         $paginator = LogActivities::with('user')
+            ->when($dateRange, fn ($q) => $q->whereBetween('created_at', $dateRange))
             ->latest()
             ->paginate(5, page: $this->recentActivitiesPage);
 
@@ -695,11 +801,13 @@ class AdminDashboard extends Page
     {
         $roles = ['marketing' => 'Marketing', 'finance' => 'Finance', 'logistik' => 'Logistik'];
         $result = [];
+        $dateRange = $this->getFilteredDateRange();
 
         foreach ($roles as $roleKey => $roleLabel) {
             $page = $this->roleTablePage[$roleKey] ?? 1;
 
             $paginator = Pesanan::whereHas('tasks', fn ($q) => $q->where('role', $roleKey))
+                ->when($dateRange, fn ($q) => $q->whereBetween('created_at', $dateRange))
                 ->with([
                     'tasks' => fn ($q) => $q->where('role', $roleKey)->with([
                         'taskActivities.createdUser',

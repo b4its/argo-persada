@@ -4,6 +4,7 @@ namespace App\Filament\Widgets\Admin\Charts;
 
 use App\Models\Pesanan;
 use App\Models\User;
+use App\Filament\Traits\HasDateFilter;
 use Carbon\Carbon;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
@@ -12,6 +13,8 @@ use Illuminate\Support\HtmlString;
 
 class MarketingPerformaChart extends ChartWidget
 {
+    use HasDateFilter;
+
     protected ?string $heading = 'Performa Marketing';
 
     public function getHeading(): string|Htmlable|null
@@ -56,8 +59,9 @@ class MarketingPerformaChart extends ChartWidget
 
     protected function getData(): array
     {
+        $range = $this->getFilteredDateRange();
         $marketingUsers = User::where('role', 'marketing')->get();
-        
+
         $months = collect();
         $datasets = [];
 
@@ -67,7 +71,7 @@ class MarketingPerformaChart extends ChartWidget
         }
 
         $colors = [
-            '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+            '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
             '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1'
         ];
 
@@ -77,11 +81,13 @@ class MarketingPerformaChart extends ChartWidget
 
             for ($i = 5; $i >= 0; $i--) {
                 $date = Carbon::now()->subMonths($i);
-                $count = Pesanan::where('user_id', $user->id)
+                $query = Pesanan::where('user_id', $user->id)
                     ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count();
-                $userData->push($count);
+                    ->whereMonth('created_at', $date->month);
+                if ($range) {
+                    $query->whereBetween('created_at', $range);
+                }
+                $userData->push($query->count());
             }
 
             $datasets[] = [
@@ -99,10 +105,12 @@ class MarketingPerformaChart extends ChartWidget
             $totalData = collect();
             for ($i = 5; $i >= 0; $i--) {
                 $date = Carbon::now()->subMonths($i);
-                $count = Pesanan::whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->count();
-                $totalData->push($count);
+                $query = Pesanan::whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month);
+                if ($range) {
+                    $query->whereBetween('created_at', $range);
+                }
+                $totalData->push($query->count());
             }
 
             $datasets[] = [

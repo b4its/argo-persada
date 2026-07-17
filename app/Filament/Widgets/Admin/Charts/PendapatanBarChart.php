@@ -3,12 +3,15 @@
 namespace App\Filament\Widgets\Admin\Charts;
 
 use App\Models\Pesanan;
+use App\Filament\Traits\HasDateFilter;
 use Carbon\Carbon;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 
 class PendapatanBarChart extends ChartWidget
 {
+    use HasDateFilter;
+
     protected ?string $heading = 'Pendapatan Bulanan';
 
     public function getDescription(): ?string
@@ -38,6 +41,7 @@ class PendapatanBarChart extends ChartWidget
 
     protected function getData(): array
     {
+        $range = $this->getFilteredDateRange();
         $months = collect();
         $pendapatanData = collect();
 
@@ -46,12 +50,13 @@ class PendapatanBarChart extends ChartWidget
             $date = Carbon::now()->subMonths($i);
             $months->push($date->translatedFormat('M Y'));
 
-            // Total pendapatan per bulan (dalam juta)
-            $totalPendapatan = Pesanan::whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->sum('total_harga');
-            
-            // Konversi ke juta
+            $query = Pesanan::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month);
+            if ($range) {
+                $query->whereBetween('created_at', $range);
+            }
+
+            $totalPendapatan = $query->sum('total_harga');
             $pendapatanData->push(round($totalPendapatan / 1000000, 2));
         }
 
@@ -61,12 +66,8 @@ class PendapatanBarChart extends ChartWidget
                     'label' => 'Pendapatan (Juta Rp)',
                     'data' => $pendapatanData->toArray(),
                     'backgroundColor' => [
-                        '#4f46e5',
-                        '#6366f1',
-                        '#818cf8',
-                        '#a5b4fc',
-                        '#c7d2fe',
-                        '#e0e7ff',
+                        '#4f46e5', '#6366f1', '#818cf8',
+                        '#a5b4fc', '#c7d2fe', '#e0e7ff',
                     ],
                     'borderColor' => '#4f46e5',
                     'borderWidth' => 1,

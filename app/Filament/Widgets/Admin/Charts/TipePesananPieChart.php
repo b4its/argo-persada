@@ -3,12 +3,14 @@
 namespace App\Filament\Widgets\Admin\Charts;
 
 use App\Models\Pesanan;
-use Carbon\Carbon;
+use App\Filament\Traits\HasDateFilter;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 
 class TipePesananPieChart extends ChartWidget
 {
+    use HasDateFilter;
+
     protected ?string $heading = 'Tipe Pesanan';
 
     public function getDescription(): ?string
@@ -38,13 +40,19 @@ class TipePesananPieChart extends ChartWidget
 
     protected function getData(): array
     {
-        $supplyCount = Pesanan::where('tipe_pesanan', 0)->count();
-        $projekCount = Pesanan::where('tipe_pesanan', 1)->count();
+        $range = $this->getFilteredDateRange();
+
+        $supplyQuery = Pesanan::where('tipe_pesanan', 0);
+        $projekQuery = Pesanan::where('tipe_pesanan', 1);
+        if ($range) {
+            $supplyQuery->whereBetween('created_at', $range);
+            $projekQuery->whereBetween('created_at', $range);
+        }
 
         return [
             'datasets' => [
                 [
-                    'data' => [$supplyCount, $projekCount],
+                    'data' => [$supplyQuery->count(), $projekQuery->count()],
                     'backgroundColor' => ['#3b82f6', '#8b5cf6'],
                 ],
             ],

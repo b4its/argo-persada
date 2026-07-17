@@ -39,7 +39,7 @@ class DetailPesananViewAction extends ViewAction
                     ->disabled(),
 
                 Placeholder::make('durasi_po_do')
-                    ->label('Durasi PO → DO')
+                    ->label('Durasi PO ke DO')
                     ->content(fn ($record): ?\Illuminate\Support\HtmlString => $record->created_at && $record->tanggal_terbit_surat_jalan
                         ? new \Illuminate\Support\HtmlString(
                             '<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . (

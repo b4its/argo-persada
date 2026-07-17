@@ -3,11 +3,14 @@
 namespace App\Filament\Widgets\Admin\Charts;
 
 use App\Models\Pesanan;
+use App\Filament\Traits\HasDateFilter;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 
 class PesananStatusPieChart extends ChartWidget
 {
+    use HasDateFilter;
+
     protected ?string $heading = 'Status Pesanan';
 
     public function getDescription(): ?string
@@ -37,6 +40,7 @@ class PesananStatusPieChart extends ChartWidget
 
     protected function getData(): array
     {
+        $range = $this->getFilteredDateRange();
         $statusLabels = [
             0 => 'Dibuat',
             1 => 'Pending',
@@ -50,15 +54,8 @@ class PesananStatusPieChart extends ChartWidget
         ];
 
         $colors = [
-            '#6b7280', // Dibuat - gray
-            '#f59e0b', // Pending - amber
-            '#3b82f6', // Perlu Rilis Dana - blue
-            '#8b5cf6', // Perlu Cetak Invoice - violet
-            '#ec4899', // Perlu Penagihan - pink
-            '#14b8a6', // Ditandai Lunas - teal
-            '#f97316', // Cetak Surat Jalan - orange
-            '#06b6d4', // Selesai Dikirim - cyan
-            '#10b981', // Selesai - emerald
+            '#6b7280', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899',
+            '#14b8a6', '#f97316', '#06b6d4', '#10b981',
         ];
 
         $data = [];
@@ -66,7 +63,11 @@ class PesananStatusPieChart extends ChartWidget
         $backgroundColors = [];
 
         foreach ($statusLabels as $status => $label) {
-            $count = Pesanan::where('status_pesanan', $status)->count();
+            $query = Pesanan::where('status_pesanan', $status);
+            if ($range) {
+                $query->whereBetween('created_at', $range);
+            }
+            $count = $query->count();
             if ($count > 0) {
                 $data[] = $count;
                 $labels[] = $label;

@@ -3,12 +3,15 @@
 namespace App\Filament\Widgets\Admin\Charts;
 
 use App\Models\Pesanan;
+use App\Filament\Traits\HasDateFilter;
 use Carbon\Carbon;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 
 class PesananLineChart extends ChartWidget
 {
+    use HasDateFilter;
+
     protected ?string $heading = 'Trend Pesanan Bulanan';
 
     public function getDescription(): ?string
@@ -38,6 +41,7 @@ class PesananLineChart extends ChartWidget
 
     protected function getData(): array
     {
+        $range = $this->getFilteredDateRange();
         $months = collect();
         $pesananData = collect();
         $completedData = collect();
@@ -47,18 +51,19 @@ class PesananLineChart extends ChartWidget
             $date = Carbon::now()->subMonths($i);
             $months->push($date->translatedFormat('M Y'));
 
-            // Total pesanan per bulan
-            $totalPesanan = Pesanan::whereYear('created_at', $date->year)
+            $queryTotal = Pesanan::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month);
+            $queryCompleted = Pesanan::whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
-                ->count();
-            $pesananData->push($totalPesanan);
+                ->where('status_pesanan', 8);
 
-            // Pesanan selesai per bulan (status_pesanan = 8)
-            $completedPesanan = Pesanan::whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->where('status_pesanan', 8)
-                ->count();
-            $completedData->push($completedPesanan);
+            if ($range) {
+                $queryTotal->whereBetween('created_at', $range);
+                $queryCompleted->whereBetween('created_at', $range);
+            }
+
+            $pesananData->push($queryTotal->count());
+            $completedData->push($queryCompleted->count());
         }
 
         return [

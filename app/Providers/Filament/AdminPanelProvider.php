@@ -33,6 +33,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Navigation\MenuItem;
 use Illuminate\Support\Facades\Blade;
+use Livewire\Livewire;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -61,6 +62,17 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::auth.login.form.after',
                 fn () => view('filament.hooks.halaman-utama-button'),
+            )
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::PAGE_HEADER_WIDGETS_BEFORE,
+                function (): string {
+                    $page = Livewire::current();
+                    if (!$page instanceof AdminDashboard) {
+                        return '';
+                    }
+                    return view('filament.pages.admin.partials.date-filter')->render();
+                },
+                scopes: ['admin-dashboard'],
             )
             ->globalSearch(false)
             ->colors([

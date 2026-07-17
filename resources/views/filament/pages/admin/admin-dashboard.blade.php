@@ -358,10 +358,10 @@
                         <div>
                             <span class="text-xs text-gray-500 block">Jarak PO → DO</span>
                             <span class="text-sm font-semibold">
-                                @php $podays = $detailData['po_to_do_diff']; @endphp
-                                @if($podays !== null)
-                                    <x-filament::badge color="{{ $podays > 30 ? 'danger' : ($podays > 14 ? 'warning' : 'success') }}" size="sm">
-                                        {{ $podays }} hari
+                                @php $podiff = $detailData['po_to_do_diff']; @endphp
+                                @if($podiff !== null)
+                                    <x-filament::badge color="{{ ($podiff['totalDays'] ?? 0) > 30 ? 'danger' : (($podiff['totalDays'] ?? 0) > 14 ? 'warning' : 'success') }}" size="sm">
+                                        {{ $podiff['text'] }}
                                     </x-filament::badge>
                                 @else
                                     <span class="text-gray-400">-</span>
@@ -456,7 +456,7 @@
 
                     {{-- Jarak Antar Tahapan --}}
                     <div class="mt-4 pt-3 border-t border-gray-100 dark:border-white/10">
-                        <h5 class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Jarak Antar Tahapan (hari)</h5>
+                        <h5 class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Jarak Antar Tahapan</h5>
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                             @php
                                 $intervals = [
@@ -469,9 +469,10 @@
                             @endphp
                             @foreach($intervals as $int)
                                 @php
-                                    $days = $detailData[$int['key']];
-                                    $display = $days !== null ? $days . ' hari' : '-';
-                                    $badgeColor = $days !== null ? ($days > 30 ? 'danger' : ($days > 14 ? 'warning' : $int['color'])) : 'gray';
+                                    $diff = $detailData[$int['key']];
+                                    $display = $diff !== null ? $diff['text'] : '-';
+                                    $totalDays = $diff['totalDays'] ?? 0;
+                                    $badgeColor = $diff !== null ? ($totalDays > 30 ? 'danger' : ($totalDays > 14 ? 'warning' : $int['color'])) : 'gray';
                                 @endphp
                                 <div class="rounded-lg bg-gray-50 dark:bg-white/5 p-2 text-center">
                                     <span class="text-xs text-gray-500 block">{{ $int['label'] }}</span>

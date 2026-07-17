@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Admin;
 
 use App\Filament\Tables\Actions\DetailPesananViewAction;
+use App\Filament\Traits\HasDateFilter;
 use App\Models\Pesanan;
 use Filament\Actions\Action;
 use Filament\Schemas\Components\Grid;
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class AdminTaskTables extends TableWidget
 {
+    use HasDateFilter;
+
     protected static ?string $heading = 'Riwayat Pesanan dan Tracking Tugas (Hulu ke Hilir)';
     protected int | string | array $columnSpan = 'full';
 
@@ -23,14 +26,20 @@ class AdminTaskTables extends TableWidget
     {
         return $table
             ->query(
-                fn (): Builder => Pesanan::query()
-                    ->whereHas('tasks')
-                    ->with([
-                        'tasks.taskActivities.createdUser',
-                        'tasks.taskActivities.updatedUser',
-                        'user',
-                    ])
-                    ->latest('updated_at')
+                function (): Builder {
+                    $range = $this->getFilteredDateRange();
+                    $query = Pesanan::query()
+                        ->whereHas('tasks')
+                        ->with([
+                            'tasks.taskActivities.createdUser',
+                            'tasks.taskActivities.updatedUser',
+                            'user',
+                        ]);
+                    if ($range) {
+                        $query->whereBetween('created_at', $range);
+                    }
+                    return $query->latest('updated_at');
+                }
             )
             ->columns([
                 TextColumn::make('code')
