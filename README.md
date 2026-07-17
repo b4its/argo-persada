@@ -95,5 +95,13 @@ chmod -R 775 /var/www/html/public/
 # add theme in filament
 php artisan make:filament-theme
 ```
+```bash
+#db import
+docker exec -i <nama_container_mysql> mysql -u <username_db> -p<password_db> <nama_database> < path/ke/file.sql
+
+#db export
+docker exec <nama_container_mysql> mysqldump -u <username_db> -p<password_db> <nama_database> > hasil_export.sql
+
+```
 ## License
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

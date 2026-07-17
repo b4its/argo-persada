@@ -365,6 +365,31 @@
       <button class="theme-toggle" id="themeToggle" title="Ganti tema">
         <i class="fa-solid fa-moon" id="themeIcon"></i>
       </button>
+      @auth
+        @php
+          $role = auth()->user()->role;
+          $panelRoutes = [
+            'superadmin' => 'filament.superadmin.pages.dashboard',
+            'admin'      => 'filament.admin.pages.admin-dashboard',
+            'marketing'  => 'filament.marketing.pages.dashboard',
+            'finance'    => 'filament.finance.pages.dashboard',
+            'logistik'   => 'filament.logistik.pages.dashboard',
+          ];
+          $panelUrl = isset($panelRoutes[$role]) ? route($panelRoutes[$role]) : '#';
+        @endphp
+        <a href="{{ $panelUrl }}" class="btn-login" style="text-decoration:none;">
+          <i class="fa-solid fa-gauge-high"></i>
+          Dashboard
+        </a>
+        <a href="{{ route('filament.admin.auth.logout') }}" class="theme-toggle" title="Logout"
+           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+        <form id="logout-form" method="POST" action="{{ route('filament.admin.auth.logout') }}" style="display:none;">
+          @csrf
+        </form>
+      @endauth
+      @guest
       <div class="login-wrapper">
         <button class="btn-login" id="loginBtn">
           <i class="fa-solid fa-right-to-bracket"></i>
@@ -387,6 +412,7 @@
           </button>
         </div>
       </div>
+      @endguest
       <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>

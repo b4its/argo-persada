@@ -23,6 +23,15 @@ class PesananLineChart extends ChartWidget
     {
         return RawJs::make(<<<JS
             {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' pesanan';
+                            }
+                        }
+                    }
+                },
                 onClick: function(event, elements) {
                     if (elements.length > 0) {
                         let index = elements[0].index;
@@ -71,18 +80,16 @@ class PesananLineChart extends ChartWidget
                 [
                     'label' => 'Total Pesanan',
                     'data' => $pesananData->toArray(),
+                    'backgroundColor' => 'rgba(79, 70, 229, 0.8)',
                     'borderColor' => '#4f46e5',
-                    'backgroundColor' => 'rgba(79, 70, 229, 0.1)',
-                    'fill' => true,
-                    'tension' => 0.4,
+                    'borderWidth' => 1,
                 ],
                 [
                     'label' => 'Pesanan Selesai',
                     'data' => $completedData->toArray(),
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.8)',
                     'borderColor' => '#10b981',
-                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
-                    'fill' => true,
-                    'tension' => 0.4,
+                    'borderWidth' => 1,
                 ],
             ],
             'labels' => $months->toArray(),
@@ -91,6 +98,6 @@ class PesananLineChart extends ChartWidget
 
     protected function getType(): string
     {
-        return 'line';
+        return 'bar';
     }
 }

@@ -1,39 +1,38 @@
 @php
+    use App\Models\Pesanan;
+    use App\Models\Task;
+    use App\Models\TaskActivity;
+    use Carbon\Carbon;
+
     $userId = $user->id;
 
-    // Total pesanan dibuat oleh user
-    $totalPesananDibuat = \App\Models\Pesanan::where('user_id', $userId)->count();
+    $totalPesananDibuat = Pesanan::where('user_id', $userId)->count();
 
-    // Semua task_activity di mana user berpartisipasi
-    $taskActivityIds = \App\Models\TaskActivity::where(function ($q) use ($userId) {
+    $taskActivityIds = TaskActivity::where(function ($q) use ($userId) {
         $q->where('created_user_id', $userId)->orWhere('updated_user_id', $userId);
     })->pluck('task_id');
 
-    // Total task unik yang dikerjakan user
     $totalTaskDikerjakan = $taskActivityIds->unique()->count();
 
-    // Total task selesai oleh user
-    $totalTaskSelesai = \App\Models\Task::whereIn('id', $taskActivityIds->unique())
+    $totalTaskSelesai = Task::whereIn('id', $taskActivityIds->unique())
         ->where('status', 2)->count();
 
-    // Pesanan terkait user (dibuat + memiliki task dengan aktivitas user)
-    $pesananViaTask = \App\Models\Pesanan::whereHas('tasks', function ($q) use ($taskActivityIds) {
+    $pesananViaTask = Pesanan::whereHas('tasks', function ($q) use ($taskActivityIds) {
         $q->whereIn('id', $taskActivityIds->unique());
     })->pluck('id');
 
-    $pesananIds = \App\Models\Pesanan::where('user_id', $userId)
+    $pesananIds = Pesanan::where('user_id', $userId)
         ->orWhereIn('id', $pesananViaTask)
         ->orderBy('created_at', 'desc')
         ->take(50)
         ->pluck('id');
 
-    $pesananList = \App\Models\Pesanan::whereIn('id', $pesananIds)
+    $pesananList = Pesanan::whereIn('id', $pesananIds)
         ->with('user')
         ->orderBy('created_at', 'desc')
         ->get();
 
-    // Aktivitas terbaru
-    $recentActivities = \App\Models\TaskActivity::where(function ($q) use ($userId) {
+    $recentActivities = TaskActivity::where(function ($q) use ($userId) {
         $q->where('created_user_id', $userId)->orWhere('updated_user_id', $userId);
     })
     ->with(['task.pesanan', 'createdUser', 'updatedUser'])
@@ -41,8 +40,45 @@
     ->take(50)
     ->get();
 
-    $totalPesananTerkait = \App\Models\Pesanan::where('user_id', $userId)
+    $totalPesananTerkait = Pesanan::where('user_id', $userId)
         ->orWhereIn('id', $pesananViaTask)->count();
+
+    // Batas Waktu Computation
+    $userTasks = Task::whereIn('id', $taskActivityIds->unique())->get();
+    $now = Carbon::now();
+    $taskRows = [];
+    $stats = ['Tepat Waktu' => 0, 'Terlambat' => 0, 'Tidak Dikerjakan' => 0, 'Dalam Proses' => 0, 'Belum Dikerjakan' => 0];
+
+    foreach ($userTasks as $task) {
+        $hoursSinceCreation = (int) $task->created_at->diffInHours($now);
+
+        if ($task->status === 2) {
+            $hoursToComplete = (int) $task->created_at->diffInHours($task->updated_at);
+            $label = $hoursToComplete <= 48 ? 'Tepat Waktu' : 'Terlambat';
+            $duration = $hoursToComplete . ' jam';
+            $completedAt = $task->updated_at->format('d M Y H:i');
+        } elseif ($task->status === 1) {
+            $label = $hoursSinceCreation <= 48 ? 'Dalam Proses' : 'Terlambat';
+            $duration = $hoursSinceCreation . ' jam';
+            $completedAt = '-';
+        } else {
+            $label = $hoursSinceCreation <= 48 ? 'Belum Dikerjakan' : 'Tidak Dikerjakan';
+            $duration = $hoursSinceCreation . ' jam';
+            $completedAt = '-';
+        }
+
+        if (isset($stats[$label])) $stats[$label]++;
+
+        $taskRows[] = [
+            'pesanan_code' => $task->pesanan?->code ?? '-',
+            'role' => $task->role,
+            'status' => (int) $task->status,
+            'batas_label' => $label,
+            'created_at' => $task->created_at->format('d M Y H:i'),
+            'completed_at' => $completedAt,
+            'duration' => $duration,
+        ];
+    }
 @endphp
 
 <div class="space-y-6">
@@ -67,7 +103,153 @@
         </div>
     </div>
 
-    {{-- Aktivitas Terbaru --}}
+    {{-- Batas Waktu Stats --}}
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        @foreach($stats as $label => $count)
+            @php
+                $cardColor = match($label) {
+                    'Tepat Waktu' => 'text-success-600',
+                    'Terlambat' => 'text-warning-600',
+                    'Tidak Dikerjakan' => 'text-danger-600',
+                    'Dalam Proses' => 'text-primary-600',
+                    default => 'text-gray-600',
+                };
+            @endphp
+            <div class="rounded-lg border border-gray-200 dark:border-white/10 p-3 text-center">
+                <span class="text-2xl font-bold {{ $cardColor }}">{{ $count }}</span>
+                <p class="text-xs text-gray-500 mt-1">{{ $label }}</p>
+            </div>
+        @endforeach
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4"
+         x-init="
+            setTimeout(() => {
+                const barCanvas = document.getElementById('karyawanBarChart');
+                const pieCanvas = document.getElementById('karyawanPieChart');
+                const labels = {{ json_encode(array_keys($stats)) }};
+                const vals = {{ json_encode(array_values($stats)) }};
+                if (barCanvas && window.Chart) {
+                    new Chart(barCanvas.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Jumlah Tugas',
+                                data: vals,
+                                backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' tugas' } }
+                            },
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                        }
+                    });
+                }
+                if (pieCanvas && window.Chart) {
+                    new Chart(pieCanvas.getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: vals,
+                                backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } }
+                            }
+                        }
+                    });
+                }
+            }, 100);
+         ">
+        <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Batang</h4>
+            <canvas id="karyawanBarChart" height="200"></canvas>
+        </div>
+        <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
+            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Lingkaran</h4>
+            <canvas id="karyawanPieChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <div x-data="{ page: 1, perPage: 5, total: {{ count($taskRows) }} }">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
+            Daftar Tugas ({{ count($taskRows) }})
+        </h4>
+        <div class="overflow-x-auto max-h-72 overflow-y-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200 dark:border-white/10">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">No. Pesanan</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Divisi</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Batas Waktu</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Durasi</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Dibuat</th>
+                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Selesai</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                    @forelse($taskRows as $i => $t)
+                        <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition"
+                            x-show="Math.ceil(({{ $i }} + 1) / perPage) === page"
+                            style="display: none">
+                            <td class="px-3 py-2 font-medium text-gray-900 dark:text-white whitespace-nowrap">{{ $t['pesanan_code'] }}</td>
+                            <td class="px-3 py-2 text-center text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ ucfirst($t['role']) }}</td>
+                            <td class="px-3 py-2 text-center whitespace-nowrap">
+                                @php
+                                    $sc = match($t['status']) { 2 => 'success', 1 => 'warning', default => 'gray' };
+                                    $sl = match($t['status']) { 2 => 'Selesai', 1 => 'Proses', default => 'Pending' };
+                                @endphp
+                                <x-filament::badge color="{{ $sc }}" size="sm">{{ $sl }}</x-filament::badge>
+                            </td>
+                            <td class="px-3 py-2 text-center whitespace-nowrap">
+                                @php
+                                    $bc = match($t['batas_label']) {
+                                        'Tepat Waktu' => 'success',
+                                        'Terlambat' => 'danger',
+                                        'Tidak Dikerjakan' => 'danger',
+                                        'Dalam Proses' => 'warning',
+                                        default => 'gray',
+                                    };
+                                @endphp
+                                <x-filament::badge color="{{ $bc }}" size="sm">{{ $t['batas_label'] }}</x-filament::badge>
+                            </td>
+                            <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $t['duration'] }}</td>
+                            <td class="px-3 py-2 text-right text-gray-500 dark:text-gray-400 whitespace-nowrap text-xs">{{ $t['created_at'] }}</td>
+                            <td class="px-3 py-2 text-right text-gray-500 dark:text-gray-400 whitespace-nowrap text-xs">{{ $t['completed_at'] }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-3 py-4 text-center text-sm text-gray-500">Tidak ada tugas</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if(count($taskRows) > 5)
+            <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-white/10">
+                <button type="button" @click.prevent="page = Math.max(1, page - 1)" :disabled="page === 1"
+                        class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
+                    &laquo;
+                </button>
+                <span class="text-xs text-gray-500" x-text="`${page} / ${Math.ceil(total / perPage)}`"></span>
+                <button type="button" @click.prevent="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
+                        class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
+                    &raquo;
+                </button>
+            </div>
+        @endif
+    </div>
+
     <div x-data="{ page: 1, perPage: 5, total: {{ count($recentActivities) }} }">
         <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Aktivitas Terbaru</h4>
         <div class="space-y-2 max-h-60 overflow-y-auto">
@@ -106,12 +288,12 @@
         </div>
         @if(count($recentActivities) > 5)
             <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-white/10">
-                <button @click="page = Math.max(1, page - 1)" :disabled="page === 1"
+                <button type="button" @click.prevent="page = Math.max(1, page - 1)" :disabled="page === 1"
                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                     &laquo;
                 </button>
                 <span class="text-xs text-gray-500" x-text="`${page} / ${Math.ceil(total / perPage)}`"></span>
-                <button @click="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
+                <button type="button" @click.prevent="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                     &raquo;
                 </button>
@@ -119,7 +301,6 @@
         @endif
     </div>
 
-    {{-- Daftar Pesanan --}}
     <div x-data="{ page: 1, perPage: 5, total: {{ count($pesananList) }} }">
         <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Pesanan Terkait</h4>
         <div class="overflow-x-auto max-h-72 overflow-y-auto">
@@ -173,12 +354,12 @@
         </div>
         @if(count($pesananList) > 5)
             <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-white/10">
-                <button @click="page = Math.max(1, page - 1)" :disabled="page === 1"
+                <button type="button" @click.prevent="page = Math.max(1, page - 1)" :disabled="page === 1"
                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                     &laquo;
                 </button>
                 <span class="text-xs text-gray-500" x-text="`${page} / ${Math.ceil(total / perPage)}`"></span>
-                <button @click="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
+                <button type="button" @click.prevent="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                     &raquo;
                 </button>

@@ -4,6 +4,7 @@ namespace App\Filament\Widgets\Admin\Charts;
 
 use App\Models\Task;
 use App\Filament\Traits\HasDateFilter;
+use Carbon\Carbon;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 
@@ -11,17 +12,26 @@ class DivisiPerformaBarChart extends ChartWidget
 {
     use HasDateFilter;
 
-    protected ?string $heading = 'Performa Per Divisi';
+    protected ?string $heading = 'Performa Batas Waktu Per Divisi';
 
     public function getDescription(): ?string
     {
-        return 'Perbandingan task selesai vs total task per divisi';
+        return 'Tugas diselesaikan, terlambat, tidak dikerjakan, dan dalam proses berdasarkan batas waktu 2x24 jam';
     }
 
     protected function getOptions(): RawJs
     {
         return RawJs::make(<<<JS
             {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
                 onClick: function(event, elements) {
                     if (elements.length > 0) {
                         let index = elements[0].index;
@@ -44,42 +54,69 @@ class DivisiPerformaBarChart extends ChartWidget
         $roles = ['marketing', 'finance', 'logistik'];
         $labels = ['Marketing', 'Finance', 'Logistik'];
 
-        $totalTasks = [];
-        $completedTasks = [];
-        $pendingTasks = [];
+        $diselesaikan = [];
+        $terlambat = [];
+        $tidakDikerjakan = [];
+        $dalamProses = [];
+
+        $now = Carbon::now();
 
         foreach ($roles as $role) {
-            $queryTotal = Task::where('role', $role);
-            $queryCompleted = Task::where('role', $role)->where('status', 2);
-            $queryPending = Task::where('role', $role)->where('status', 0);
+            $tasks = Task::where('role', $role)
+                ->when($range, fn ($q) => $q->whereBetween('created_at', $range))
+                ->get();
 
-            if ($range) {
-                $queryTotal->whereBetween('created_at', $range);
-                $queryCompleted->whereBetween('created_at', $range);
-                $queryPending->whereBetween('created_at', $range);
+            $onTime = 0;
+            $late = 0;
+            $overdue = 0;
+            $inProgress = 0;
+
+            foreach ($tasks as $task) {
+                $hoursSinceCreation = $task->created_at->diffInHours($now);
+
+                if ($task->status === 2) {
+                    $hoursToComplete = $task->created_at->diffInHours($task->updated_at);
+                    if ($hoursToComplete <= 48) {
+                        $onTime++;
+                    } else {
+                        $late++;
+                    }
+                } else {
+                    if ($hoursSinceCreation > 48) {
+                        $overdue++;
+                    } else {
+                        $inProgress++;
+                    }
+                }
             }
 
-            $totalTasks[] = $queryTotal->count();
-            $completedTasks[] = $queryCompleted->count();
-            $pendingTasks[] = $queryPending->count();
+            $diselesaikan[] = $onTime;
+            $terlambat[] = $late;
+            $tidakDikerjakan[] = $overdue;
+            $dalamProses[] = $inProgress;
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Task Selesai',
-                    'data' => $completedTasks,
+                    'label' => 'Diselesaikan',
+                    'data' => $diselesaikan,
                     'backgroundColor' => '#10b981',
                 ],
                 [
-                    'label' => 'Task Pending',
-                    'data' => $pendingTasks,
+                    'label' => 'Terlambat',
+                    'data' => $terlambat,
                     'backgroundColor' => '#f59e0b',
                 ],
                 [
-                    'label' => 'Total Task',
-                    'data' => $totalTasks,
-                    'backgroundColor' => '#4f46e5',
+                    'label' => 'Tidak Dikerjakan',
+                    'data' => $tidakDikerjakan,
+                    'backgroundColor' => '#ef4444',
+                ],
+                [
+                    'label' => 'Dalam Proses',
+                    'data' => $dalamProses,
+                    'backgroundColor' => '#3b82f6',
                 ],
             ],
             'labels' => $labels,

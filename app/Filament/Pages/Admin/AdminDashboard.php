@@ -41,6 +41,10 @@ class AdminDashboard extends Page
     public array $unparticipatedUsers = [];
     public ?array $marketingOverallData = null;
     public bool $showMarketingOverallModal = false;
+    public ?array $userAuditData = null;
+    public bool $showUserAuditModal = false;
+    public ?array $batasWaktuDetailData = null;
+    public bool $showBatasWaktuDetailModal = false;
 
     public int $recentActivitiesPage = 1;
     public int $recentActivitiesLastPage = 1;
@@ -192,15 +196,58 @@ class AdminDashboard extends Page
             $task = $pesanan->tasks->where('role', $role)->first();
             $users = [];
             $activities = [];
+            $batasWaktuLabel = '-';
+            $batasWaktuColor = 'gray';
+            $batasWaktuText = '';
 
             if ($task) {
                 $statusLabel = match ((int) $task->status) { 0 => 'Pending', 1 => 'Proses', 2 => 'Selesai', default => '-' };
                 $statusColor = match ((int) $task->status) { 0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray' };
 
+                $hoursSinceCreation = (int) $task->created_at->diffInHours(now());
+
+                if ($task->status === 2) {
+                    $hoursToComplete = (int) $task->created_at->diffInHours($task->updated_at);
+                    $days = round($hoursToComplete / 24, 1);
+                    if ($hoursToComplete <= 48) {
+                        $batasWaktuLabel = 'Tepat Waktu';
+                        $batasWaktuColor = 'success';
+                        $batasWaktuText = "Selesai dalam {$hoursToComplete} jam ({$days} hari)";
+                    } else {
+                        $batasWaktuLabel = 'Terlambat';
+                        $batasWaktuColor = 'danger';
+                        $batasWaktuText = "Selesai dalam {$hoursToComplete} jam ({$days} hari), melebihi 48 jam";
+                    }
+                } elseif ($task->status === 1) {
+                    if ($hoursSinceCreation <= 48) {
+                        $batasWaktuLabel = 'Dalam Proses';
+                        $batasWaktuColor = 'warning';
+                        $batasWaktuText = "Sudah {$hoursSinceCreation} jam, masih dalam batas 48 jam";
+                    } else {
+                        $batasWaktuLabel = 'Terlambat';
+                        $batasWaktuColor = 'danger';
+                        $batasWaktuText = "Sudah {$hoursSinceCreation} jam, melebihi batas 48 jam";
+                    }
+                } else {
+                    if ($hoursSinceCreation <= 48) {
+                        $batasWaktuLabel = 'Belum Dikerjakan';
+                        $batasWaktuColor = 'gray';
+                        $batasWaktuText = "Baru {$hoursSinceCreation} jam, masih dalam batas 48 jam";
+                    } else {
+                        $batasWaktuLabel = 'Tidak Dikerjakan';
+                        $batasWaktuColor = 'danger';
+                        $batasWaktuText = "Sudah {$hoursSinceCreation} jam, melebihi batas 48 jam";
+                    }
+                }
+
                 foreach ($task->taskActivities->sortBy('created_at') as $a) {
                     $actor = $a->createdUser?->name ?? $a->updatedUser?->name ?? 'System';
-                    if ($a->createdUser) $users[] = $a->createdUser->name;
-                    if ($a->updatedUser) $users[] = $a->updatedUser?->name;
+                    if ($a->createdUser) {
+                        $users[] = ['id' => $a->createdUser->id, 'name' => $a->createdUser->name];
+                    }
+                    if ($a->updatedUser) {
+                        $users[] = ['id' => $a->updatedUser->id, 'name' => $a->updatedUser->name];
+                    }
                     $activities[] = [
                         'user' => $actor,
                         'time' => $a->created_at->format('d M Y H:i'),
@@ -208,11 +255,22 @@ class AdminDashboard extends Page
                     ];
                 }
 
+                $uniqueUsers = collect($users)->unique('id')->values()->toArray();
+
                 $roleData[$role] = [
                     'status' => $statusLabel,
                     'status_color' => $statusColor,
-                    'users' => array_values(array_unique(array_filter($users))),
+                    'users' => $uniqueUsers,
                     'activities' => $activities,
+                    'batas_waktu_label' => $batasWaktuLabel,
+                    'batas_waktu_color' => $batasWaktuColor,
+                    'batas_waktu_text' => $batasWaktuText,
+                    'task_id' => $task->id,
+                    'task_created_at' => $task->created_at->format('d M Y H:i'),
+                    'task_updated_at' => $task->updated_at->format('d M Y H:i'),
+                    'task_hours_since_creation' => $hoursSinceCreation,
+                    'task_hours_to_complete' => $task->status === 2 ? ($hoursToComplete ?? null) : null,
+                    'task_due_date' => $task->due_date?->format('d M Y'),
                 ];
             } else {
                 $roleData[$role] = [
@@ -220,6 +278,15 @@ class AdminDashboard extends Page
                     'status_color' => 'gray',
                     'users' => [],
                     'activities' => [],
+                    'batas_waktu_label' => '-',
+                    'batas_waktu_color' => 'gray',
+                    'batas_waktu_text' => '',
+                    'task_id' => null,
+                    'task_created_at' => '-',
+                    'task_updated_at' => '-',
+                    'task_hours_since_creation' => 0,
+                    'task_hours_to_complete' => null,
+                    'task_due_date' => '-',
                 ];
             }
         }
@@ -342,6 +409,102 @@ class AdminDashboard extends Page
         $this->detailData = null;
     }
 
+    public function showUserAudit(int $userId): void
+    {
+        $user = User::find($userId);
+        if (!$user) return;
+
+        $taskActivities = TaskActivity::where(function ($q) use ($userId) {
+                $q->where('created_user_id', $userId)
+                  ->orWhere('updated_user_id', $userId);
+            })
+            ->with(['task.pesanan', 'createdUser', 'updatedUser'])
+            ->latest()
+            ->get();
+
+        $seenTaskIds = [];
+        $taskData = [];
+
+        foreach ($taskActivities as $a) {
+            if (!$a->task || in_array($a->task->id, $seenTaskIds)) continue;
+            $seenTaskIds[] = $a->task->id;
+
+            $task = $a->task;
+            $hoursSinceCreation = (int) $task->created_at->diffInHours(now());
+
+            if ($task->status === 2) {
+                $hoursToComplete = (int) $task->created_at->diffInHours($task->updated_at);
+                $label = $hoursToComplete <= 48 ? 'Tepat Waktu' : 'Terlambat';
+                $duration = $hoursToComplete . ' jam';
+            } elseif ($task->status === 1) {
+                $label = $hoursSinceCreation <= 48 ? 'Dalam Proses' : 'Terlambat';
+                $duration = $hoursSinceCreation . ' jam';
+            } else {
+                $label = $hoursSinceCreation <= 48 ? 'Belum Dikerjakan' : 'Tidak Dikerjakan';
+                $duration = $hoursSinceCreation . ' jam';
+            }
+
+            $taskData[] = [
+                'pesanan_code' => $task->pesanan?->code ?? '-',
+                'role' => $task->role,
+                'status' => (int) $task->status,
+                'batas_label' => $label,
+                'created_at' => $task->created_at->format('d M Y H:i'),
+                'completed_at' => $task->status === 2 ? $task->updated_at->format('d M Y H:i') : '-',
+                'duration' => $task->status === 2 ? $duration : '-',
+                'since_creation' => $duration,
+            ];
+        }
+
+        $stats = ['Tepat Waktu' => 0, 'Terlambat' => 0, 'Tidak Dikerjakan' => 0, 'Dalam Proses' => 0, 'Belum Dikerjakan' => 0];
+        foreach ($taskData as $t) {
+            if (isset($stats[$t['batas_label']])) $stats[$t['batas_label']]++;
+        }
+
+        $this->userAuditData = [
+            'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => ucfirst($user->role)],
+            'tasks' => $taskData,
+            'stats' => $stats,
+        ];
+        $this->showUserAuditModal = true;
+    }
+
+    public function closeUserAudit(): void
+    {
+        $this->showUserAuditModal = false;
+        $this->userAuditData = null;
+    }
+
+    public function showBatasWaktuDetail(string $role): void
+    {
+        if (!$this->detailData || !isset($this->detailData['roles'][$role])) return;
+
+        $rd = $this->detailData['roles'][$role];
+
+        $this->batasWaktuDetailData = [
+            'role' => ucfirst($role),
+            'role_key' => $role,
+            'pesanan_code' => $this->detailData['code'],
+            'batas_waktu_label' => $rd['batas_waktu_label'],
+            'batas_waktu_color' => $rd['batas_waktu_color'],
+            'batas_waktu_text' => $rd['batas_waktu_text'],
+            'task_id' => $rd['task_id'],
+            'task_created_at' => $rd['task_created_at'],
+            'task_updated_at' => $rd['task_updated_at'],
+            'task_hours_since_creation' => $rd['task_hours_since_creation'],
+            'task_hours_to_complete' => $rd['task_hours_to_complete'],
+            'task_due_date' => $rd['task_due_date'],
+            'activities' => $rd['activities'],
+        ];
+        $this->showBatasWaktuDetailModal = true;
+    }
+
+    public function closeBatasWaktuDetail(): void
+    {
+        $this->showBatasWaktuDetailModal = false;
+        $this->batasWaktuDetailData = null;
+    }
+
     public function showDivisiDetail(string $role): void
     {
         $roleLabel = match ($role) {
@@ -456,7 +619,7 @@ class AdminDashboard extends Page
     {
         $title = match ($chart) {
             'pesanan-line' => "Pesanan Bulan {$label}",
-            'marketing-performa' => "Pesanan oleh {$datasetLabel} - {$label}",
+            'marketing-performa' => "Pendapatan Marketing: {$label}",
             'divisi-performa' => "Detail Divisi {$label}",
             'status-pie' => "Pesanan Status: {$label}",
             'tipe-pie' => "Pesanan Tipe: {$label}",
@@ -480,16 +643,26 @@ class AdminDashboard extends Page
                 break;
 
             case 'marketing-performa':
-                $user = User::where('name', $datasetLabel)->first();
-                $parsed = $this->parseMonthLabel($label);
-                if ($user && $parsed) {
+                $user = User::where('name', $label)->first();
+                if ($user) {
                     $orders = Pesanan::where('user_id', $user->id)
-                        ->whereYear('created_at', $parsed['year'])
-                        ->whereMonth('created_at', $parsed['month'])
-                        ->with(['user', 'companyInternal'])
+                        ->where(function ($q) {
+                            $q->where('status_pesanan', 5)
+                              ->orWhere('status_pesanan', 8);
+                        })
+                        ->whereHas('kasHarian', function ($q) {
+                            $q->where('debet', '>', 0);
+                        })
+                        ->with(['user', 'companyInternal', 'keranjang.queueKeranjang'])
                         ->latest()
                         ->get()
-                        ->map(fn ($p) => $this->formatOrderRow($p));
+                        ->map(fn ($p) => [
+                            ...$this->formatOrderRow($p),
+                            'total_harga' => $p->total_harga,
+                            'total_formatted' => 'Rp ' . number_format($p->total_harga ?? 0, 0, ',', '.'),
+                            'total_modal' => $p->keranjang?->queueKeranjang?->sum('modal') ?? 0,
+                            'modal_formatted' => 'Rp ' . number_format($p->keranjang?->queueKeranjang?->sum('modal') ?? 0, 0, ',', '.'),
+                        ]);
                 }
                 break;
 
@@ -664,40 +837,38 @@ class AdminDashboard extends Page
             $from = $from instanceof Carbon ? $from : Carbon::parse($from);
             $to = $to instanceof Carbon ? $to : Carbon::parse($to);
 
-            $totalDays = (int) $from->diffInDays($to);
+            $totalMinutes = abs((int) $from->diffInMinutes($to));
+            $totalDays = (int) ($totalMinutes / 1440);
 
-            $years = (int) $from->diffInYears($to);
-            if ($years >= 1) {
-                $months = (int) $from->diffInMonths($to) % 12;
+            if ($totalMinutes >= 525600) {
+                $years = (int) ($totalMinutes / 525600);
+                $months = (int) (($totalMinutes % 525600) / 43200);
                 $text = $years . ' tahun' . ($months ? ' ' . $months . ' bulan' : '');
                 return ['text' => $text, 'totalDays' => $totalDays];
             }
 
-            $months = (int) $from->diffInMonths($to);
-            if ($months >= 1) {
+            if ($totalMinutes >= 43200) {
+                $months = (int) ($totalMinutes / 43200);
                 return ['text' => $months . ' bulan', 'totalDays' => $totalDays];
             }
 
-            $days = (int) $from->diffInDays($to);
+            $days = (int) ($totalMinutes / 1440);
             if ($days >= 1) {
                 return ['text' => $days . ' hari', 'totalDays' => $totalDays];
             }
 
-            $hours = (int) $from->diffInHours($to);
+            $hours = (int) ($totalMinutes / 60);
             if ($hours >= 1) {
-                $minutes = (int) ($from->diffInMinutes($to) % 60);
-                $text = $hours . ' jam' . ($minutes ? ' ' . $minutes . ' menit' : '');
+                $mins = $totalMinutes % 60;
+                $text = $hours . ' jam' . ($mins ? ' ' . $mins . ' menit' : '');
                 return ['text' => $text, 'totalDays' => $totalDays];
             }
 
-            $minutes = (int) $from->diffInMinutes($to);
-            if ($minutes >= 1) {
-                $seconds = (int) ($from->diffInSeconds($to) % 60);
-                $text = $minutes . ' menit' . ($seconds ? ' ' . $seconds . ' detik' : '');
-                return ['text' => $text, 'totalDays' => $totalDays];
+            if ($totalMinutes >= 1) {
+                return ['text' => $totalMinutes . ' menit', 'totalDays' => $totalDays];
             }
 
-            $seconds = (int) $from->diffInSeconds($to);
+            $seconds = abs((int) $from->diffInSeconds($to));
             return ['text' => $seconds . ' detik', 'totalDays' => $totalDays];
         } catch (\Exception $e) {
             return null;

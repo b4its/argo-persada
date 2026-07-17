@@ -5,7 +5,6 @@ namespace App\Filament\Widgets\Admin\Charts;
 use App\Models\Pesanan;
 use App\Models\User;
 use App\Filament\Traits\HasDateFilter;
-use Carbon\Carbon;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
@@ -32,21 +31,50 @@ class MarketingPerformaChart extends ChartWidget
 
     public function getDescription(): string|Htmlable|null
     {
-        return 'Jumlah pesanan yang dibuat oleh tim marketing per bulan';
+        return 'Pendapatan marketing dari pesanan lunas/selesai dengan kas harian debet';
     }
 
     protected function getOptions(): RawJs
     {
         return RawJs::make(<<<JS
             {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                let value = context.parsed || 0;
+                                let formatted = 'Rp ' + value.toLocaleString('id-ID');
+                                return label + ': ' + formatted;
+                            },
+                            afterLabel: function(context) {
+                                let index = context.dataIndex;
+                                let orders = context.dataset.orderCount ? context.dataset.orderCount[index] : 0;
+                                let avgDays = context.dataset.avgProcessingDays ? context.dataset.avgProcessingDays[index] : 0;
+                                let slaStatus = context.dataset.slaStatus ? context.dataset.slaStatus[index] : '';
+                                return [
+                                    'Total pesanan: ' + orders,
+                                    'Rata-rata proses: ' + avgDays + ' hari',
+                                    'Tepat waktu \u226448 jam: ' + slaStatus
+                                ];
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 8,
+                            font: { size: 11 }
+                        }
+                    }
+                },
                 onClick: function(event, elements) {
                     if (elements.length > 0) {
                         let index = elements[0].index;
-                        let datasetIndex = elements[0].datasetIndex;
                         let label = this.data.labels[index];
-                        let datasetLabel = this.data.datasets[datasetIndex]?.label || '';
-                        let value = this.data.datasets[datasetIndex]?.data[index] || 0;
-                        Livewire.dispatch('chart-clicked', { chart: 'marketing-performa', label: label, datasetLabel: datasetLabel, value: value, index: index });
+                        let value = this.data.datasets[0].data[index];
+                        Livewire.dispatch('chart-clicked', { chart: 'marketing-performa', label: label, datasetLabel: '', value: value, index: index });
                     }
                 }
             }
@@ -62,75 +90,90 @@ class MarketingPerformaChart extends ChartWidget
         $range = $this->getFilteredDateRange();
         $marketingUsers = User::where('role', 'marketing')->get();
 
-        $months = collect();
-        $datasets = [];
-
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $months->push($date->translatedFormat('M Y'));
-        }
-
         $colors = [
             '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
             '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1'
         ];
 
+        $labels = [];
+        $data = [];
+        $bgColors = [];
+        $orderCounts = [];
+        $avgProcessingDays = [];
+        $slaStatuses = [];
+
         $colorIndex = 0;
         foreach ($marketingUsers as $user) {
-            $userData = collect();
+            $pesananIds = Pesanan::where('user_id', $user->id)
+                ->where(function ($q) {
+                    $q->where('status_pesanan', 5)
+                      ->orWhere('status_pesanan', 8);
+                })
+                ->whereHas('kasHarian', function ($q) {
+                    $q->where('debet', '>', 0);
+                });
 
-            for ($i = 5; $i >= 0; $i--) {
-                $date = Carbon::now()->subMonths($i);
-                $query = Pesanan::where('user_id', $user->id)
-                    ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month);
-                if ($range) {
-                    $query->whereBetween('created_at', $range);
-                }
-                $userData->push($query->count());
+            if ($range) {
+                $pesananIds->whereBetween('created_at', $range);
             }
 
-            $datasets[] = [
-                'label' => $user->name,
-                'data' => $userData->toArray(),
-                'borderColor' => $colors[$colorIndex % count($colors)],
-                'backgroundColor' => $colors[$colorIndex % count($colors)] . '20',
-                'fill' => false,
-                'tension' => 0.3,
-            ];
-            $colorIndex++;
-        }
+            $totalRevenue = (float) $pesananIds->sum('total_harga');
 
-        if (empty($datasets)) {
-            $totalData = collect();
-            for ($i = 5; $i >= 0; $i--) {
-                $date = Carbon::now()->subMonths($i);
-                $query = Pesanan::whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month);
+            if ($totalRevenue > 0) {
+                $orders = Pesanan::where('user_id', $user->id)
+                    ->where(function ($q) {
+                        $q->where('status_pesanan', 5)
+                          ->orWhere('status_pesanan', 8);
+                    })
+                    ->whereHas('kasHarian', function ($q) {
+                        $q->where('debet', '>', 0);
+                    });
+
                 if ($range) {
-                    $query->whereBetween('created_at', $range);
+                    $orders->whereBetween('created_at', $range);
                 }
-                $totalData->push($query->count());
-            }
 
-            $datasets[] = [
-                'label' => 'Total Pesanan',
-                'data' => $totalData->toArray(),
-                'borderColor' => '#4f46e5',
-                'backgroundColor' => 'rgba(79, 70, 229, 0.1)',
-                'fill' => true,
-                'tension' => 0.3,
-            ];
+                $orderList = $orders->get(['created_at', 'tanggal_terbit_surat_jalan']);
+                $count = $orderList->count();
+                $totalDays = 0;
+                $withinSla = 0;
+
+                foreach ($orderList as $o) {
+                    if ($o->created_at && $o->tanggal_terbit_surat_jalan) {
+                        $diffDays = $o->created_at->diffInDays($o->tanggal_terbit_surat_jalan);
+                        $totalDays += $diffDays;
+                        if ($diffDays <= 2) {
+                            $withinSla++;
+                        }
+                    }
+                }
+
+                $labels[] = $user->name;
+                $data[] = round($totalRevenue, 2);
+                $bgColors[] = $colors[$colorIndex % count($colors)];
+                $orderCounts[] = $count;
+                $avgProcessingDays[] = $count > 0 ? round($totalDays / $count, 1) : 0;
+                $slaStatuses[] = $count > 0 ? round(($withinSla / $count) * 100) . '%' : '0%';
+                $colorIndex++;
+            }
         }
 
         return [
-            'datasets' => $datasets,
-            'labels' => $months->toArray(),
+            'datasets' => [
+                [
+                    'data' => $data,
+                    'backgroundColor' => $bgColors,
+                    'orderCount' => $orderCounts,
+                    'avgProcessingDays' => $avgProcessingDays,
+                    'slaStatus' => $slaStatuses,
+                ],
+            ],
+            'labels' => $labels,
         ];
     }
 
     protected function getType(): string
     {
-        return 'line';
+        return 'pie';
     }
 }

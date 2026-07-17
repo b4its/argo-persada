@@ -40,16 +40,26 @@ class DetailPesananViewAction extends ViewAction
 
                 Placeholder::make('durasi_po_do')
                     ->label('Durasi PO ke DO')
-                    ->content(fn ($record): ?\Illuminate\Support\HtmlString => $record->created_at && $record->tanggal_terbit_surat_jalan
-                        ? new \Illuminate\Support\HtmlString(
-                            '<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ' . (
-                                ($days = $record->created_at->diffInDays(\Carbon\Carbon::parse($record->tanggal_terbit_surat_jalan))) > 30 ? 'bg-danger-500/10 text-danger-700 ring-danger-700/10' : (
-                                $days > 14 ? 'bg-warning-500/10 text-warning-700 ring-warning-700/10' :
-                                'bg-success-500/10 text-success-700 ring-success-700/10'
-                            )) . '">' . e($days) . ' hari</span>'
-                        )
-                        : new \Illuminate\Support\HtmlString('<span class="text-sm text-gray-400">-</span>')
-                    ),
+                    ->content(fn ($record): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
+                        $record->created_at && $record->tanggal_terbit_surat_jalan
+                            ? (function () use ($record) {
+                                $totalMinutes = abs((int) $record->created_at->diffInMinutes(\Carbon\Carbon::parse($record->tanggal_terbit_surat_jalan)));
+
+                                if ($totalMinutes >= 1440) {
+                                    $days = (int) ($totalMinutes / 1440);
+                                    $color = $days > 30 ? 'danger' : ($days > 14 ? 'warning' : 'success');
+                                    $text = $days . ' hari';
+                                } else {
+                                    $hours = (int) ($totalMinutes / 60);
+                                    $mins = $totalMinutes % 60;
+                                    $text = $hours . ' jam' . ($mins ? ' ' . $mins . ' menit' : '');
+                                    $color = 'info';
+                                }
+
+                                return '<span class="fi-badge flex items-center justify-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-' . $color . '-500/10 text-' . $color . '-700 ring-' . $color . '-700/10">' . e($text) . '</span>';
+                            })()
+                            : '<span class="text-sm text-gray-400">Pesanan belum sampai di Logistik</span>'
+                    )),
 
                 // 1. Ubah name menjadi nama field kustom (bukan dot notation)
                 TextInput::make('company_internal_name')

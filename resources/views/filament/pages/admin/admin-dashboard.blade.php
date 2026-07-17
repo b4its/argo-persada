@@ -364,7 +364,7 @@
                                         {{ $podiff['text'] }}
                                     </x-filament::badge>
                                 @else
-                                    <span class="text-gray-400">-</span>
+                                    <span class="text-gray-400">Pesanan belum sampai di Logistik</span>
                                 @endif
                             </span>
                         </div>
@@ -608,15 +608,22 @@
                             <div class="rounded-lg border border-gray-200 dark:border-white/10 p-3">
                                 <div class="flex items-center justify-between mb-2">
                                     <h5 class="text-sm font-semibold text-gray-900 dark:text-white">{{ $rl }}</h5>
-                                    <x-filament::badge color="{{ $rd['status_color'] }}" size="sm">{{ $rd['status'] }}</x-filament::badge>
+                                    <div class="flex items-center gap-1">
+                                        <x-filament::badge color="{{ $rd['batas_waktu_color'] }}" size="sm" class="cursor-pointer" x-on:click="$wire.showBatasWaktuDetail('{{ $rk }}')">{{ $rd['batas_waktu_label'] }}</x-filament::badge>
+                                        <x-filament::badge color="{{ $rd['status_color'] }}" size="sm">{{ $rd['status'] }}</x-filament::badge>
+                                    </div>
                                 </div>
+
+                                @if($rd['batas_waktu_text'])
+                                    <p class="text-xs text-gray-500 mb-2">{{ $rd['batas_waktu_text'] }}</p>
+                                @endif
 
                                 @if(count($rd['users']) > 0)
                                 <div class="mb-2">
                                     <span class="text-xs text-gray-500 block mb-1">PIC:</span>
                                     <div class="flex flex-wrap gap-1">
                                         @foreach($rd['users'] as $u)
-                                            <x-filament::badge color="primary" size="sm">{{ $u }}</x-filament::badge>
+                                            <x-filament::badge color="primary" size="sm" class="cursor-pointer" x-on:click="open = false; $wire.showUserAudit({{ $u['id'] }})">{{ $u['name'] }}</x-filament::badge>
                                         @endforeach
                                     </div>
                                 </div>
@@ -653,6 +660,115 @@
             {{-- Footer --}}
             <div class="flex justify-end px-6 py-4 border-t border-gray-200 dark:border-white/10">
                 <x-filament::button color="gray" x-on:click="open = false; $wire.closeDetail()">
+                    Tutup
+                </x-filament::button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── MODAL BATAS WAKTU DETAIL (NESTED) ── --}}
+    <div
+        x-data="{ open: @entangle('showBatasWaktuDetailModal') }"
+        x-show="open"
+        x-cloak
+        x-on:keydown.escape.window="open = false; $wire.closeBatasWaktuDetail()"
+        class="fixed inset-0 z-[60] flex items-start justify-center pt-10 pb-10 overflow-y-auto"
+    >
+        <div x-show="open" x-cloak x-transition.opacity
+             class="fixed inset-0 bg-gray-900/60 dark:bg-gray-900/80 backdrop-blur-sm"
+             x-on:click="open = false; $wire.closeBatasWaktuDetail()">
+        </div>
+
+        <div x-show="open" x-cloak x-transition
+             class="relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl ring-1 ring-gray-950/5 dark:ring-white/10 mx-4">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Detail Batas Waktu: {{ $batasWaktuDetailData['role'] ?? '' }}
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-0.5">
+                        Pesanan: {{ $batasWaktuDetailData['pesanan_code'] ?? '' }}
+                    </p>
+                </div>
+                <button x-on:click="open = false; $wire.closeBatasWaktuDetail()"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                    <x-heroicon-m-x-mark class="w-6 h-6" />
+                </button>
+            </div>
+
+            @if($batasWaktuDetailData)
+            <div class="px-6 py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+
+                {{-- Status --}}
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                    <x-filament::badge color="{{ $batasWaktuDetailData['batas_waktu_color'] }}" size="lg">
+                        {{ $batasWaktuDetailData['batas_waktu_label'] }}
+                    </x-filament::badge>
+                </div>
+
+                @if($batasWaktuDetailData['batas_waktu_text'])
+                    <p class="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-lg p-3">
+                        {{ $batasWaktuDetailData['batas_waktu_text'] }}
+                    </p>
+                @endif
+
+                {{-- Timeline --}}
+                <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Timeline Tugas</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-xs text-gray-500 block">ID Tugas</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batasWaktuDetailData['task_id'] ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 block">Tenggat</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batasWaktuDetailData['task_due_date'] ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 block">Dibuat</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batasWaktuDetailData['task_created_at'] }}</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 block">Diperbarui</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batasWaktuDetailData['task_updated_at'] }}</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 block">Jam sejak dibuat</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batasWaktuDetailData['task_hours_since_creation'] }} jam</span>
+                        </div>
+                        @if($batasWaktuDetailData['task_hours_to_complete'] !== null)
+                        <div>
+                            <span class="text-xs text-gray-500 block">Durasi penyelesaian</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batasWaktuDetailData['task_hours_to_complete'] }} jam</span>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Riwayat Aktivitas --}}
+                @if(count($batasWaktuDetailData['activities']) > 0)
+                <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Riwayat Aktivitas</h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        @foreach($batasWaktuDetailData['activities'] as $a)
+                        <div class="text-xs text-gray-600 dark:text-gray-400 border-l-2 border-gray-300 dark:border-gray-600 pl-2 py-1">
+                            <span class="font-medium text-gray-900 dark:text-white">{{ $a['user'] }}</span>
+                            <span class="text-gray-400 ml-1">({{ $a['time'] }})</span>
+                            @if($a['note'])
+                                <p class="mt-0.5 leading-tight">{{ $a['note'] }}</p>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+            </div>
+            @endif
+
+            <div class="flex justify-end px-6 py-4 border-t border-gray-200 dark:border-white/10">
+                <x-filament::button color="gray" x-on:click="open = false; $wire.closeBatasWaktuDetail()">
                     Tutup
                 </x-filament::button>
             </div>
@@ -741,6 +857,9 @@
                                         {{ $ua['total_activities'] }} aktivitas
                                     </span>
                                 </div>
+                                <x-filament::button color="info" size="xs" x-on:click="open = false; $wire.showUserAudit({{ $ua['user_id'] }})">
+                                    Audit
+                                </x-filament::button>
                             </div>
 
                             @if(count($ua['activities']) > 0)
@@ -758,12 +877,12 @@
                                 </div>
                                 @if(count($ua['activities']) > 5)
                                     <div class="flex items-center justify-between pt-2 mt-2 border-t border-gray-100 dark:border-white/5">
-                                        <button @click="actPage = Math.max(1, actPage - 1)" :disabled="actPage === 1"
+                                        <button type="button" @click.prevent="actPage = Math.max(1, actPage - 1)" :disabled="actPage === 1"
                                                 class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                             &laquo;
                                         </button>
                                         <span class="text-xs text-gray-500" x-text="`${actPage} / ${Math.ceil(totalActs / actPerPage)}`"></span>
-                                        <button @click="actPage = Math.min(Math.ceil(totalActs / actPerPage), actPage + 1)" :disabled="actPage === Math.ceil(totalActs / actPerPage)"
+                                        <button type="button" @click.prevent="actPage = Math.min(Math.ceil(totalActs / actPerPage), actPage + 1)" :disabled="actPage === Math.ceil(totalActs / actPerPage)"
                                                 class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                             &raquo;
                                         </button>
@@ -779,12 +898,12 @@
 
                     @if(count($divisiDetailData['user_activities']) > 5)
                         <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-white/10">
-                            <button @click="userPage = Math.max(1, userPage - 1)" :disabled="userPage === 1"
+                            <button type="button" @click.prevent="userPage = Math.max(1, userPage - 1)" :disabled="userPage === 1"
                                     class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                 &laquo; Sebelumnya
                             </button>
                             <span class="text-xs text-gray-500" x-text="`${userPage} / ${Math.ceil(totalUsers / perPage)}`"></span>
-                            <button @click="userPage = Math.min(Math.ceil(totalUsers / perPage), userPage + 1)" :disabled="userPage === Math.ceil(totalUsers / perPage)"
+                            <button type="button" @click.prevent="userPage = Math.min(Math.ceil(totalUsers / perPage), userPage + 1)" :disabled="userPage === Math.ceil(totalUsers / perPage)"
                                     class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                 Selanjutnya &raquo;
                             </button>
@@ -859,12 +978,12 @@
                         </div>
                         @if(count($divisiDetailData['tasks']) > 5)
                             <div class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-white/10 mt-3">
-                                <button @click="page = Math.max(1, page - 1)" :disabled="page === 1"
+                                <button type="button" @click.prevent="page = Math.max(1, page - 1)" :disabled="page === 1"
                                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                     &laquo; Sebelumnya
                                 </button>
                                 <span class="text-xs text-gray-500" x-text="`${page} / ${Math.ceil(total / perPage)}`"></span>
-                                <button @click="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
+                                <button type="button" @click.prevent="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
                                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                     Selanjutnya &raquo;
                                 </button>
@@ -934,11 +1053,16 @@
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Perusahaan</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Dibuat Oleh</th>
+                                    @if($chartDetailData['chart'] === 'marketing-performa')
+                                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total Harga</th>
+                                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Modal</th>
+                                    @endif
                                     <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
                                     <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Tanggal</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                                @php $colspan = $chartDetailData['chart'] === 'marketing-performa' ? 8 : 6; @endphp
                                 @forelse($chartDetailData['orders'] as $i => $order)
                                     <tr x-show="Math.ceil(({{ $i }} + 1) / perPage) === page"
                                         style="display: none" class="hover:bg-gray-50 dark:hover:bg-white/5">
@@ -946,6 +1070,10 @@
                                         <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ $order['company_name'] }}</td>
                                         <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ $order['group_name'] }}</td>
                                         <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ $order['created_by'] }}</td>
+                                        @if($chartDetailData['chart'] === 'marketing-performa')
+                                            <td class="px-3 py-2 text-right text-gray-900 dark:text-white font-medium whitespace-nowrap">{{ $order['total_formatted'] ?? '-' }}</td>
+                                            <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400 whitespace-nowrap">{{ $order['modal_formatted'] ?? '-' }}</td>
+                                        @endif
                                         <td class="px-3 py-2 text-center">
                                             @php
                                                 $sc = match($order['status_label']) {
@@ -960,7 +1088,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-3 py-4 text-center text-sm text-gray-500">Tidak ada data</td>
+                                        <td colspan="{{ $colspan }}" class="px-3 py-4 text-center text-sm text-gray-500">Tidak ada data</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -968,12 +1096,12 @@
                         </div>
                         @if(count($chartDetailData['orders']) > 5)
                             <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-white/10">
-                                <button @click="page = Math.max(1, page - 1)" :disabled="page === 1"
+                                <button type="button" @click.prevent="page = Math.max(1, page - 1)" :disabled="page === 1"
                                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                     &laquo; Sebelumnya
                                 </button>
                                 <span class="text-xs text-gray-500" x-text="`${page} / ${Math.ceil(total / perPage)}`"></span>
-                                <button @click="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
+                                <button type="button" @click.prevent="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
                                         class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
                                     Selanjutnya &raquo;
                                 </button>
@@ -1087,6 +1215,210 @@
 
             <div class="flex justify-end px-6 py-4 border-t border-gray-200 dark:border-white/10">
                 <x-filament::button color="gray" x-on:click="open = false; $wire.closeMarketingOverall()">
+                    Tutup
+                </x-filament::button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ── MODAL AUDIT USER ── --}}
+    <div
+        x-data="{ open: @entangle('showUserAuditModal') }"
+        x-show="open"
+        x-cloak
+        x-on:keydown.escape.window="open = false; $wire.closeUserAudit()"
+        class="fixed inset-0 z-50 flex items-start justify-center pt-10 pb-10 overflow-y-auto"
+        x-init="
+            $watch('open', value => {
+                if (value) {
+                    setTimeout(() => {
+                        const barCanvas = document.getElementById('userAuditBarChart');
+                        const pieCanvas = document.getElementById('userAuditPieChart');
+                        if (barCanvas && window.Chart) {
+                            const ctxBar = barCanvas.getContext('2d');
+                            const labels = {!! json_encode(array_keys($userAuditData['stats'] ?? [])) !!};
+                            const vals = {!! json_encode(array_values($userAuditData['stats'] ?? [])) !!};
+                            new Chart(ctxBar, {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Jumlah Tugas',
+                                        data: vals,
+                                        backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' tugas' } }
+                                    },
+                                    scales: {
+                                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                                    }
+                                }
+                            });
+                        }
+                        if (pieCanvas && window.Chart) {
+                            const ctxPie = pieCanvas.getContext('2d');
+                            const labelsP = {!! json_encode(array_keys($userAuditData['stats'] ?? [])) !!};
+                            const valsP = {!! json_encode(array_values($userAuditData['stats'] ?? [])) !!};
+                            new Chart(ctxPie, {
+                                type: 'pie',
+                                data: {
+                                    labels: labelsP,
+                                    datasets: [{
+                                        data: valsP,
+                                        backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } }
+                                    }
+                                }
+                            });
+                        }
+                    }, 100);
+                }
+            });
+        "
+    >
+        <div x-show="open" x-cloak x-transition.opacity
+             class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm"
+             x-on:click="open = false; $wire.closeUserAudit()">
+        </div>
+
+        <div x-show="open" x-cloak x-transition
+             class="relative w-full max-w-6xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl ring-1 ring-gray-950/5 dark:ring-white/10 mx-4">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Audit User: {{ $userAuditData['user']['name'] ?? '...' }}
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-0.5">
+                        {{ $userAuditData['user']['role'] ?? '' }} &mdash; {{ $userAuditData['user']['email'] ?? '' }}
+                    </p>
+                </div>
+                <button x-on:click="open = false; $wire.closeUserAudit()"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+                    <x-heroicon-m-x-mark class="w-6 h-6" />
+                </button>
+            </div>
+
+            @if($userAuditData)
+            <div class="px-6 py-4 space-y-6 max-h-[75vh] overflow-y-auto">
+
+                {{-- STATS CARDS --}}
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    @foreach($userAuditData['stats'] as $label => $count)
+                        @php
+                            $cardColor = match($label) {
+                                'Tepat Waktu' => 'text-success-600',
+                                'Terlambat' => 'text-warning-600',
+                                'Tidak Dikerjakan' => 'text-danger-600',
+                                'Dalam Proses' => 'text-primary-600',
+                                default => 'text-gray-600',
+                            };
+                        @endphp
+                        <div class="rounded-lg border border-gray-200 dark:border-white/10 p-3 text-center">
+                            <span class="text-2xl font-bold {{ $cardColor }}">{{ $count }}</span>
+                            <p class="text-xs text-gray-500 mt-1">{{ $label }}</p>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- CHARTS --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Batang</h4>
+                        <canvas id="userAuditBarChart" height="200"></canvas>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Lingkaran</h4>
+                        <canvas id="userAuditPieChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                {{-- TASK LIST --}}
+                <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
+                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
+                        Daftar Tugas ({{ count($userAuditData['tasks']) }})
+                    </h4>
+                    <div x-data="{ page: 1, perPage: 5, total: {{ count($userAuditData['tasks']) }} }">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-white/10">
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">No. Pesanan</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Divisi</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Batas Waktu</th>
+                                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Durasi</th>
+                                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Dibuat</th>
+                                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Selesai</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                                    @forelse($userAuditData['tasks'] as $i => $t)
+                                        <tr x-show="Math.ceil(({{ $i }} + 1) / perPage) === page"
+                                            style="display: none" class="hover:bg-gray-50 dark:hover:bg-white/5">
+                                            <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ $t['pesanan_code'] }}</td>
+                                            <td class="px-3 py-2 text-center text-gray-600 dark:text-gray-400">{{ ucfirst($t['role']) }}</td>
+                                            <td class="px-3 py-2 text-center">
+                                                @php
+                                                    $sc = match($t['status']) { 2 => 'success', 1 => 'warning', default => 'gray' };
+                                                    $sl = match($t['status']) { 2 => 'Selesai', 1 => 'Proses', default => 'Pending' };
+                                                @endphp
+                                                <x-filament::badge color="{{ $sc }}" size="sm">{{ $sl }}</x-filament::badge>
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                @php
+                                                    $bc = match($t['batas_label']) {
+                                                        'Tepat Waktu' => 'success',
+                                                        'Terlambat' => 'danger',
+                                                        'Tidak Dikerjakan' => 'danger',
+                                                        'Dalam Proses' => 'warning',
+                                                        default => 'gray',
+                                                    };
+                                                @endphp
+                                                <x-filament::badge color="{{ $bc }}" size="sm">{{ $t['batas_label'] }}</x-filament::badge>
+                                            </td>
+                                            <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ $t['duration'] }}</td>
+                                            <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ $t['created_at'] }}</td>
+                                            <td class="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{{ $t['completed_at'] }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="px-3 py-4 text-center text-sm text-gray-500">Tidak ada tugas</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        @if(count($userAuditData['tasks']) > 5)
+                            <div class="flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-white/10">
+                                <button type="button" @click.prevent="page = Math.max(1, page - 1)" :disabled="page === 1"
+                                        class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
+                                    &laquo;
+                                </button>
+                                <span class="text-xs text-gray-500" x-text="`${page} / ${Math.ceil(total / perPage)}`"></span>
+                                <button type="button" @click.prevent="page = Math.min(Math.ceil(total / perPage), page + 1)" :disabled="page === Math.ceil(total / perPage)"
+                                        class="text-xs font-medium text-primary-600 hover:text-primary-500 disabled:text-gray-400 disabled:cursor-not-allowed transition">
+                                    &raquo;
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+            </div>
+            @endif
+
+            <div class="flex justify-end px-6 py-4 border-t border-gray-200 dark:border-white/10">
+                <x-filament::button color="gray" x-on:click="open = false; $wire.closeUserAudit()">
                     Tutup
                 </x-filament::button>
             </div>
