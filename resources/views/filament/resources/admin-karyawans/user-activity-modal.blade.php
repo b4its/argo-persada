@@ -142,6 +142,7 @@
                         },
                         options: {
                             responsive: true,
+                            maintainAspectRatio: false,
                             plugins: {
                                 legend: { display: false },
                                 tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' tugas' } }
@@ -172,11 +173,11 @@
          ">
         <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
             <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Batang</h4>
-            <canvas id="karyawanBarChart" height="200"></canvas>
+            <div class="max-h-44"><canvas id="karyawanBarChart" height="50"></canvas></div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
             <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Lingkaran</h4>
-            <canvas id="karyawanPieChart" height="200"></canvas>
+            <div class="max-h-44"><canvas id="karyawanPieChart" height="50"></canvas></div>
         </div>
     </div>
 

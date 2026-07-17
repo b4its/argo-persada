@@ -1231,25 +1231,31 @@
         x-init="
             $watch('open', value => {
                 if (value) {
-                    setTimeout(() => {
+                    if (window._userAuditBarChart) { window._userAuditBarChart.destroy(); window._userAuditBarChart = null; }
+                    if (window._userAuditPieChart) { window._userAuditPieChart.destroy(); window._userAuditPieChart = null; }
+                    setTimeout(async () => {
+                        if (!window.Chart) return;
+                        const data = await $wire.get('userAuditData');
+                        if (!data || !data.stats) return;
+                        const labels = Object.keys(data.stats).filter(k => data.stats[k] > 0 || k === 'Tepat Waktu');
+                        const vals = labels.map(k => data.stats[k]);
+                        const colors = { 'Tepat Waktu': '#10b981', 'Terlambat': '#ef4444', 'Tidak Dikerjakan': '#6b7280', 'Dalam Proses': '#3b82f6', 'Belum Dikerjakan': '#f59e0b' };
+                        const bgColors = labels.map(k => colors[k] || '#6b7280');
                         const barCanvas = document.getElementById('userAuditBarChart');
-                        const pieCanvas = document.getElementById('userAuditPieChart');
-                        if (barCanvas && window.Chart) {
-                            const ctxBar = barCanvas.getContext('2d');
-                            const labels = {!! json_encode(array_keys($userAuditData['stats'] ?? [])) !!};
-                            const vals = {!! json_encode(array_values($userAuditData['stats'] ?? [])) !!};
-                            new Chart(ctxBar, {
+                        if (barCanvas) {
+                            window._userAuditBarChart = new Chart(barCanvas.getContext('2d'), {
                                 type: 'bar',
                                 data: {
                                     labels: labels,
                                     datasets: [{
                                         label: 'Jumlah Tugas',
                                         data: vals,
-                                        backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
+                                        backgroundColor: bgColors,
                                     }]
                                 },
                                 options: {
                                     responsive: true,
+                                    maintainAspectRatio: false,
                                     plugins: {
                                         legend: { display: false },
                                         tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' tugas' } }
@@ -1260,28 +1266,27 @@
                                 }
                             });
                         }
-                        if (pieCanvas && window.Chart) {
-                            const ctxPie = pieCanvas.getContext('2d');
-                            const labelsP = {!! json_encode(array_keys($userAuditData['stats'] ?? [])) !!};
-                            const valsP = {!! json_encode(array_values($userAuditData['stats'] ?? [])) !!};
-                            new Chart(ctxPie, {
+                        const pieCanvas = document.getElementById('userAuditPieChart');
+                        if (pieCanvas) {
+                            window._userAuditPieChart = new Chart(pieCanvas.getContext('2d'), {
                                 type: 'pie',
                                 data: {
-                                    labels: labelsP,
+                                    labels: labels,
                                     datasets: [{
-                                        data: valsP,
-                                        backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
+                                        data: vals,
+                                        backgroundColor: bgColors,
                                     }]
                                 },
                                 options: {
                                     responsive: true,
+                                    maintainAspectRatio: false,
                                     plugins: {
                                         legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } }
                                     }
                                 }
                             });
                         }
-                    }, 100);
+                    }, 200);
                 }
             });
         "
@@ -1334,11 +1339,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Batang</h4>
-                        <canvas id="userAuditBarChart" height="200"></canvas>
+                        <div class="max-h-44"><canvas id="userAuditBarChart"></canvas></div>
                     </div>
                     <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Lingkaran</h4>
-                        <canvas id="userAuditPieChart" height="200"></canvas>
+                        <div class="max-h-44"><canvas id="userAuditPieChart"></canvas></div>
                     </div>
                 </div>
 
@@ -1426,6 +1431,8 @@
     </div>
 
     <x-filament-actions::modals />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
     @script
     <script>

@@ -111,7 +111,7 @@ class AdminDashboard extends Page
             'dashboard_filter_end_date' => $this->filterEndDate,
         ]);
 
-        $this->js('window.location.reload()');
+        $this->reloadDashboardData();
     }
 
     public function applyCustomFilter(): void
@@ -124,7 +124,15 @@ class AdminDashboard extends Page
             'dashboard_filter_end_date' => $this->filterEndDate,
         ]);
 
-        $this->js('window.location.reload()');
+        $this->reloadDashboardData();
+    }
+
+    protected function reloadDashboardData(): void
+    {
+        $this->loadRoleProgress();
+        $this->loadRecentActivities();
+        $this->loadRoleTables();
+        $this->loadUnparticipatedUsers();
     }
 
     public function setRecentActivitiesPage(int $page): void
@@ -204,39 +212,41 @@ class AdminDashboard extends Page
                 $statusLabel = match ((int) $task->status) { 0 => 'Pending', 1 => 'Proses', 2 => 'Selesai', default => '-' };
                 $statusColor = match ((int) $task->status) { 0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray' };
 
-                $hoursSinceCreation = (int) $task->created_at->diffInHours(now());
+                $sinceMinutes = abs((int) $task->created_at->diffInMinutes(now()));
+                $sinceText = $sinceMinutes >= 60 ? (int) ($sinceMinutes / 60) . ' jam' : $sinceMinutes . ' menit';
 
                 if ($task->status === 2) {
-                    $hoursToComplete = (int) $task->created_at->diffInHours($task->updated_at);
-                    $days = round($hoursToComplete / 24, 1);
-                    if ($hoursToComplete <= 48) {
+                    $doneMinutes = abs((int) $task->created_at->diffInMinutes($task->updated_at));
+                    $doneText = $doneMinutes >= 60 ? (int) ($doneMinutes / 60) . ' jam' : $doneMinutes . ' menit';
+                    $days = round($doneMinutes / 1440, 1);
+                    if ($doneMinutes <= 2880) {
                         $batasWaktuLabel = 'Tepat Waktu';
                         $batasWaktuColor = 'success';
-                        $batasWaktuText = "Selesai dalam {$hoursToComplete} jam ({$days} hari)";
+                        $batasWaktuText = "Selesai dalam {$doneText} ({$days} hari)";
                     } else {
                         $batasWaktuLabel = 'Terlambat';
                         $batasWaktuColor = 'danger';
-                        $batasWaktuText = "Selesai dalam {$hoursToComplete} jam ({$days} hari), melebihi 48 jam";
+                        $batasWaktuText = "Selesai dalam {$doneText} ({$days} hari), melebihi 48 jam";
                     }
                 } elseif ($task->status === 1) {
-                    if ($hoursSinceCreation <= 48) {
+                    if ($sinceMinutes <= 2880) {
                         $batasWaktuLabel = 'Dalam Proses';
                         $batasWaktuColor = 'warning';
-                        $batasWaktuText = "Sudah {$hoursSinceCreation} jam, masih dalam batas 48 jam";
+                        $batasWaktuText = "Sudah {$sinceText}, masih dalam batas 48 jam";
                     } else {
                         $batasWaktuLabel = 'Terlambat';
                         $batasWaktuColor = 'danger';
-                        $batasWaktuText = "Sudah {$hoursSinceCreation} jam, melebihi batas 48 jam";
+                        $batasWaktuText = "Sudah {$sinceText}, melebihi batas 48 jam";
                     }
                 } else {
-                    if ($hoursSinceCreation <= 48) {
+                    if ($sinceMinutes <= 2880) {
                         $batasWaktuLabel = 'Belum Dikerjakan';
                         $batasWaktuColor = 'gray';
-                        $batasWaktuText = "Baru {$hoursSinceCreation} jam, masih dalam batas 48 jam";
+                        $batasWaktuText = "Baru {$sinceText}, masih dalam batas 48 jam";
                     } else {
                         $batasWaktuLabel = 'Tidak Dikerjakan';
                         $batasWaktuColor = 'danger';
-                        $batasWaktuText = "Sudah {$hoursSinceCreation} jam, melebihi batas 48 jam";
+                        $batasWaktuText = "Sudah {$sinceText}, melebihi batas 48 jam";
                     }
                 }
 
@@ -430,18 +440,18 @@ class AdminDashboard extends Page
             $seenTaskIds[] = $a->task->id;
 
             $task = $a->task;
-            $hoursSinceCreation = (int) $task->created_at->diffInHours(now());
+            $totalMinutes = abs((int) $task->created_at->diffInMinutes(now()));
 
             if ($task->status === 2) {
-                $hoursToComplete = (int) $task->created_at->diffInHours($task->updated_at);
-                $label = $hoursToComplete <= 48 ? 'Tepat Waktu' : 'Terlambat';
-                $duration = $hoursToComplete . ' jam';
+                $doneMinutes = abs((int) $task->created_at->diffInMinutes($task->updated_at));
+                $label = $doneMinutes <= 2880 ? 'Tepat Waktu' : 'Terlambat';
+                $duration = $doneMinutes >= 60 ? (int) ($doneMinutes / 60) . ' jam' : $doneMinutes . ' menit';
             } elseif ($task->status === 1) {
-                $label = $hoursSinceCreation <= 48 ? 'Dalam Proses' : 'Terlambat';
-                $duration = $hoursSinceCreation . ' jam';
+                $label = $totalMinutes <= 2880 ? 'Dalam Proses' : 'Terlambat';
+                $duration = $totalMinutes >= 60 ? (int) ($totalMinutes / 60) . ' jam' : $totalMinutes . ' menit';
             } else {
-                $label = $hoursSinceCreation <= 48 ? 'Belum Dikerjakan' : 'Tidak Dikerjakan';
-                $duration = $hoursSinceCreation . ' jam';
+                $label = $totalMinutes <= 2880 ? 'Belum Dikerjakan' : 'Tidak Dikerjakan';
+                $duration = $totalMinutes >= 60 ? (int) ($totalMinutes / 60) . ' jam' : $totalMinutes . ' menit';
             }
 
             $taskData[] = [

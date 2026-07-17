@@ -14,11 +14,11 @@
                 <select wire:model.live="filterPreset"
                         class="block min-w-[200px] rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm focus:ring-primary-500 focus:border-primary-500 shadow-sm">
                     <option value="">Semua Data</option>
-                    <option value="7days" @selected($filterPreset === '7days')>7 Hari Terakhir</option>
-                    <option value="2weeks" @selected($filterPreset === '2weeks')>2 Minggu Terakhir</option>
-                    <option value="3weeks" @selected($filterPreset === '3weeks')>3 Minggu Terakhir</option>
-                    <option value="1month" @selected($filterPreset === '1month')>1 Bulan Terakhir</option>
-                    <option value="custom" @selected($filterPreset === 'custom')>Kustom</option>
+                    <option value="7days">7 Hari Terakhir</option>
+                    <option value="2weeks">2 Minggu Terakhir</option>
+                    <option value="3weeks">3 Minggu Terakhir</option>
+                    <option value="1month">1 Bulan Terakhir</option>
+                    <option value="custom">Kustom</option>
                 </select>
             </div>
             @if($filterPreset === 'custom')
@@ -26,14 +26,14 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Dari Tanggal
                     </label>
-                    <input type="date" wire:model="filterStartDate"
+                    <input type="date" wire:model.blur="filterStartDate"
                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm focus:ring-primary-500 focus:border-primary-500 shadow-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Sampai Tanggal
                     </label>
-                    <input type="date" wire:model="filterEndDate"
+                    <input type="date" wire:model.blur="filterEndDate"
                            class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm focus:ring-primary-500 focus:border-primary-500 shadow-sm">
                 </div>
                 <div>
