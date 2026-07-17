@@ -13,6 +13,9 @@ use App\Filament\Traits\HasDateFilter;
 use App\Filament\Widgets\Admin\StatsOverview\AdminPesananStatsOverview;
 use App\Filament\Widgets\Admin\StatsOverview\AdminKasHarianStatsOverview;
 use App\Filament\Widgets\Admin\StatsOverview\AdminAkunStatsOverview;
+use App\Filament\Widgets\Admin\StatsOverview\AdminMarketingTaskStatsOverview;
+use App\Filament\Widgets\Admin\StatsOverview\AdminFinanceTaskStatsOverview;
+use App\Filament\Widgets\Admin\StatsOverview\AdminLogistikTaskStatsOverview;
 use App\Filament\Widgets\Admin\AdminTaskTables;
 use App\Filament\Widgets\Admin\Charts\PesananLineChart;
 use App\Filament\Widgets\Admin\Charts\MarketingPerformaChart;
@@ -20,6 +23,7 @@ use App\Filament\Widgets\Admin\Charts\DivisiPerformaBarChart;
 use App\Filament\Widgets\Admin\Charts\PesananStatusPieChart;
 use App\Filament\Widgets\Admin\Charts\TipePesananPieChart;
 use App\Filament\Widgets\Admin\Charts\PendapatanBarChart;
+use App\Filament\Widgets\Admin\Charts\DivisiTaskPieChart;
 
 class AdminDashboard extends Page
 {
@@ -133,6 +137,7 @@ class AdminDashboard extends Page
         $this->loadRecentActivities();
         $this->loadRoleTables();
         $this->loadUnparticipatedUsers();
+        $this->dispatch('dashboard-filter-changed');
     }
 
     public function setRecentActivitiesPage(int $page): void
@@ -165,6 +170,9 @@ class AdminDashboard extends Page
             AdminPesananStatsOverview::class,
             AdminKasHarianStatsOverview::class,
             AdminAkunStatsOverview::class,
+            AdminMarketingTaskStatsOverview::class,
+            AdminFinanceTaskStatsOverview::class,
+            AdminLogistikTaskStatsOverview::class,
             PesananLineChart::class,
             MarketingPerformaChart::class,
         ];
@@ -174,6 +182,7 @@ class AdminDashboard extends Page
     {
         return [
             DivisiPerformaBarChart::class,
+            DivisiTaskPieChart::class,
             PesananStatusPieChart::class,
             TipePesananPieChart::class,
             PendapatanBarChart::class,
@@ -213,6 +222,7 @@ class AdminDashboard extends Page
                 $statusColor = match ((int) $task->status) { 0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray' };
 
                 $sinceMinutes = abs((int) $task->created_at->diffInMinutes(now()));
+                $hoursSinceCreation = (int) round($sinceMinutes / 60);
                 $sinceText = $sinceMinutes >= 60 ? (int) ($sinceMinutes / 60) . ' jam' : $sinceMinutes . ' menit';
 
                 if ($task->status === 2) {
@@ -239,15 +249,9 @@ class AdminDashboard extends Page
                         $batasWaktuText = "Sudah {$sinceText}, melebihi batas 48 jam";
                     }
                 } else {
-                    if ($sinceMinutes <= 2880) {
-                        $batasWaktuLabel = 'Belum Dikerjakan';
-                        $batasWaktuColor = 'gray';
-                        $batasWaktuText = "Baru {$sinceText}, masih dalam batas 48 jam";
-                    } else {
-                        $batasWaktuLabel = 'Tidak Dikerjakan';
-                        $batasWaktuColor = 'danger';
-                        $batasWaktuText = "Sudah {$sinceText}, melebihi batas 48 jam";
-                    }
+                    $batasWaktuLabel = 'Dalam Proses';
+                    $batasWaktuColor = 'warning';
+                    $batasWaktuText = "Baru {$sinceText}";
                 }
 
                 foreach ($task->taskActivities->sortBy('created_at') as $a) {
@@ -450,7 +454,7 @@ class AdminDashboard extends Page
                 $label = $totalMinutes <= 2880 ? 'Dalam Proses' : 'Terlambat';
                 $duration = $totalMinutes >= 60 ? (int) ($totalMinutes / 60) . ' jam' : $totalMinutes . ' menit';
             } else {
-                $label = $totalMinutes <= 2880 ? 'Belum Dikerjakan' : 'Tidak Dikerjakan';
+                $label = 'Dalam Proses';
                 $duration = $totalMinutes >= 60 ? (int) ($totalMinutes / 60) . ' jam' : $totalMinutes . ' menit';
             }
 
@@ -466,7 +470,7 @@ class AdminDashboard extends Page
             ];
         }
 
-        $stats = ['Tepat Waktu' => 0, 'Terlambat' => 0, 'Tidak Dikerjakan' => 0, 'Dalam Proses' => 0, 'Belum Dikerjakan' => 0];
+        $stats = ['Tepat Waktu' => 0, 'Terlambat' => 0, 'Dalam Proses' => 0];
         foreach ($taskData as $t) {
             if (isset($stats[$t['batas_label']])) $stats[$t['batas_label']]++;
         }
@@ -634,6 +638,7 @@ class AdminDashboard extends Page
             'status-pie' => "Pesanan Status: {$label}",
             'tipe-pie' => "Pesanan Tipe: {$label}",
             'pendapatan-bar' => "Pendapatan Bulan {$label}",
+            'divisi-task-status' => "Detail Tugas: {$label}",
             default => "Detail Chart: {$label}",
         };
 
@@ -726,6 +731,36 @@ class AdminDashboard extends Page
                             'total_harga' => $p->total_harga,
                             'total_formatted' => 'Rp ' . number_format($p->total_harga ?? 0, 0, ',', '.'),
                         ]);
+                }
+                break;
+
+            case 'divisi-task-status':
+                $labelMap = [
+                    'Marketing Dibuat' => ['role' => 'marketing', 'status' => 0],
+                    'Marketing Pending' => ['role' => 'marketing', 'status' => 1],
+                    'Finance Rilis Dana' => ['role' => 'finance', 'status' => 2],
+                    'Finance Cetak Invoice' => ['role' => 'finance', 'status' => 3],
+                    'Finance Penagihan' => ['role' => 'finance', 'status' => 4],
+                    'Finance Lunas' => ['role' => 'finance', 'status' => 5],
+                    'Logistik Cetak SJ' => ['role' => 'logistik', 'status' => 6],
+                    'Logistik Selesai Kirim' => ['role' => 'logistik', 'status' => 7],
+                ];
+                $mapped = $labelMap[$label] ?? null;
+                if ($mapped) {
+                    $taskIds = Task::where('role', $mapped['role'])
+                        ->with('taskActivities')
+                        ->get()
+                        ->filter(function ($t) use ($mapped) {
+                            $last = $t->taskActivities->sortByDesc('created_at')->first();
+                            return $last && (int) $last->pesanan_status === $mapped['status'];
+                        })
+                        ->pluck('pesanan_id');
+
+                    $orders = Pesanan::whereIn('id', $taskIds)
+                        ->with(['user', 'companyInternal'])
+                        ->latest()
+                        ->get()
+                        ->map(fn ($p) => $this->formatOrderRow($p));
                 }
                 break;
         }

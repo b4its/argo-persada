@@ -21,7 +21,7 @@ class MarketingPerformaChart extends ChartWidget
         return new HtmlString(
             '<div class="flex items-center justify-between w-full gap-4">' .
             '<span>Performa Marketing</span>' .
-            '<button type="button" onclick="Livewire.dispatch(\'chart-overall-clicked\')" ' .
+            '<button type="button" id="marketing-overall-btn" ' .
             'class="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-500 rounded-lg px-3 py-1.5 transition shadow-sm">' .
             '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>' .
             'Lihat Keseluruhan</button>' .
@@ -67,6 +67,19 @@ class MarketingPerformaChart extends ChartWidget
                             padding: 8,
                             font: { size: 11 }
                         }
+                    },
+                    datalabels: {
+                        display: true,
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        formatter: function(value, ctx) {
+                            let label = ctx.chart.data.labels[ctx.dataIndex];
+                            let parts = label.split(' ');
+                            return parts.length > 1 ? parts[0] : label;
+                        }
                     }
                 },
                 onClick: function(event, elements) {
@@ -74,7 +87,7 @@ class MarketingPerformaChart extends ChartWidget
                         let index = elements[0].index;
                         let label = this.data.labels[index];
                         let value = this.data.datasets[0].data[index];
-                        Livewire.dispatch('chart-clicked', { chart: 'marketing-performa', label: label, datasetLabel: '', value: value, index: index });
+                        window.dispatchEvent(new CustomEvent('chart-clicked', { detail: { chart: 'marketing-performa', label: label, datasetLabel: '', value: value, index: index } }));
                     }
                 }
             }

@@ -47,7 +47,7 @@
     $userTasks = Task::whereIn('id', $taskActivityIds->unique())->get();
     $now = Carbon::now();
     $taskRows = [];
-    $stats = ['Tepat Waktu' => 0, 'Terlambat' => 0, 'Tidak Dikerjakan' => 0, 'Dalam Proses' => 0, 'Belum Dikerjakan' => 0];
+    $stats = ['Tepat Waktu' => 0, 'Terlambat' => 0, 'Dalam Proses' => 0];
 
     foreach ($userTasks as $task) {
         $hoursSinceCreation = (int) $task->created_at->diffInHours($now);
@@ -62,7 +62,7 @@
             $duration = $hoursSinceCreation . ' jam';
             $completedAt = '-';
         } else {
-            $label = $hoursSinceCreation <= 48 ? 'Belum Dikerjakan' : 'Tidak Dikerjakan';
+            $label = 'Dalam Proses';
             $duration = $hoursSinceCreation . ' jam';
             $completedAt = '-';
         }
@@ -110,7 +110,6 @@
                 $cardColor = match($label) {
                     'Tepat Waktu' => 'text-success-600',
                     'Terlambat' => 'text-warning-600',
-                    'Tidak Dikerjakan' => 'text-danger-600',
                     'Dalam Proses' => 'text-primary-600',
                     default => 'text-gray-600',
                 };
@@ -124,52 +123,28 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4"
          x-init="
-            setTimeout(() => {
-                const barCanvas = document.getElementById('karyawanBarChart');
-                const pieCanvas = document.getElementById('karyawanPieChart');
-                const labels = {{ json_encode(array_keys($stats)) }};
-                const vals = {{ json_encode(array_values($stats)) }};
-                if (barCanvas && window.Chart) {
-                    new Chart(barCanvas.getContext('2d'), {
+            $nextTick(() => {
+                if (typeof Chart === 'undefined') return;
+                var bc = document.getElementById('karyawanBarChart');
+                var pc = document.getElementById('karyawanPieChart');
+                if (!bc && !pc) return;
+                var labels = {{ json_encode(array_keys($stats)) }};
+                var vals = {{ json_encode(array_values($stats)) }};
+                if (bc) {
+                    new Chart(bc.getContext('2d'), {
                         type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Jumlah Tugas',
-                                data: vals,
-                                backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' tugas' } }
-                            },
-                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                        }
+                        data: { labels: labels, datasets: [{ label: 'Jumlah Tugas', data: vals, backgroundColor: ['#10b981','#ef4444','#3b82f6'] }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.y + ' tugas'; } } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
                     });
                 }
-                if (pieCanvas && window.Chart) {
-                    new Chart(pieCanvas.getContext('2d'), {
+                if (pc) {
+                    new Chart(pc.getContext('2d'), {
                         type: 'pie',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: vals,
-                                backgroundColor: ['#10b981','#f59e0b','#ef4444','#3b82f6','#6b7280'],
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } }
-                            }
-                        }
+                        data: { labels: labels, datasets: [{ data: vals, backgroundColor: ['#10b981','#ef4444','#3b82f6'] }] },
+                        options: { responsive: true, plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } } } }
                     });
                 }
-            }, 100);
+            });
          ">
         <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4">
             <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">Grafik Batang</h4>
@@ -217,7 +192,6 @@
                                     $bc = match($t['batas_label']) {
                                         'Tepat Waktu' => 'success',
                                         'Terlambat' => 'danger',
-                                        'Tidak Dikerjakan' => 'danger',
                                         'Dalam Proses' => 'warning',
                                         default => 'gray',
                                     };

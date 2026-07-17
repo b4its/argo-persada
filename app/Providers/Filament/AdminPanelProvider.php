@@ -58,7 +58,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 'panels::body.end',
-                fn (): string => Blade::render('@livewire(\App\Livewire\EditProfileModal::class)')
+                fn (): string => '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>' . Blade::render('@livewire(\App\Livewire\EditProfileModal::class)')
             )
             ->renderHook(
                 'panels::auth.login.form.after',

@@ -310,10 +310,17 @@ class LogistikPemesanansTable
                                 ->validationMessages([
                                     'required' => 'Pilih minimal satu item untuk dicetak di surat jalan.',
                                 ]),
+                            \Filament\Forms\Components\Textarea::make('keterangan_logistik')
+                                ->label('Keterangan Logistik')
+                                ->placeholder('Isi keterangan untuk surat jalan...')
+                                ->columnSpanFull()
+                                ->default($record->keterangan_logistik),
                         ])
                         ->modalSubmitActionLabel('Cetak')
                         ->action(function (Pesanan $record, array $data) {
                             $selectedIds = $data['selected_items'] ?? [];
+                            $keterangan = $data['keterangan_logistik'] ?? null;
+                            $record->update(['keterangan_logistik' => $keterangan]);
                             $idsParam = implode(',', $selectedIds);
                             $url = route('surat_jalan.index', [
                                 'id' => $record->id,

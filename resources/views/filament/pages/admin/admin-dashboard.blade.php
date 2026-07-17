@@ -1257,7 +1257,7 @@
                         if (!data || !data.stats) return;
                         const labels = Object.keys(data.stats).filter(k => data.stats[k] > 0 || k === 'Tepat Waktu');
                         const vals = labels.map(k => data.stats[k]);
-                        const colors = { 'Tepat Waktu': '#10b981', 'Terlambat': '#ef4444', 'Tidak Dikerjakan': '#6b7280', 'Dalam Proses': '#3b82f6', 'Belum Dikerjakan': '#f59e0b' };
+                        const colors = { 'Tepat Waktu': '#10b981', 'Terlambat': '#ef4444', 'Dalam Proses': '#3b82f6' };
                         const bgColors = labels.map(k => colors[k] || '#6b7280');
                         const barCanvas = document.getElementById('userAuditBarChart');
                         if (barCanvas) {
@@ -1341,7 +1341,6 @@
                             $cardColor = match($label) {
                                 'Tepat Waktu' => 'text-success-600',
                                 'Terlambat' => 'text-warning-600',
-                                'Tidak Dikerjakan' => 'text-danger-600',
                                 'Dalam Proses' => 'text-primary-600',
                                 default => 'text-gray-600',
                             };
@@ -1402,7 +1401,6 @@
                                                     $bc = match($t['batas_label']) {
                                                         'Tepat Waktu' => 'success',
                                                         'Terlambat' => 'danger',
-                                                        'Tidak Dikerjakan' => 'danger',
                                                         'Dalam Proses' => 'warning',
                                                         default => 'gray',
                                                     };
@@ -1450,22 +1448,59 @@
 
     <x-filament-actions::modals />
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        window.filamentChartJsPlugins = [{
+            id: 'datalabels',
+            afterDraw: function(chart) {
+                try {
+                    var cfg = chart.options && chart.options.plugins && chart.options.plugins.datalabels;
+                    if (!cfg || !cfg.display) return;
+                    var meta = chart.getDatasetMeta(0);
+                    if (!meta || !meta.data || !meta.data.length) return;
+                    var isArc = false;
+                    for (var si = 0; si < meta.data.length; si++) {
+                        if (meta.data[si] && meta.data[si].startAngle !== void 0) { isArc = true; break; }
+                    }
+                    if (!isArc) return;
+                    var ctx = chart.ctx;
+                    if (!ctx) return;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillStyle = '#ffffff';
+                    for (var i = 0; i < meta.data.length; i++) {
+                        var el = meta.data[i];
+                        var lab = chart.data.labels[i];
+                        if (!el || !lab || el.startAngle === void 0 || el.endAngle === void 0) continue;
+                        if (el.x === void 0 || el.y === void 0 || isNaN(el.startAngle)) continue;
+                        if (el.hidden) continue;
+                        if (Math.abs(el.endAngle - el.startAngle) < 0.05) continue;
+                        ctx.fillText(lab, el.x + Math.cos((el.startAngle + el.endAngle) / 2) * ((el.outerRadius + (el.innerRadius || 0)) / 2 * 0.65), el.y + Math.sin((el.startAngle + el.endAngle) / 2) * ((el.outerRadius + (el.innerRadius || 0)) / 2 * 0.65));
+                    }
+                    ctx.restore();
+                } catch(e) {}
+            }
+        }];
+    </script>
 
     @script
     <script>
-        Livewire.on('chart-clicked', (event) => {
-            $wire.showChartDetail(
-                event.chart,
-                event.label,
-                event.value,
-                event.datasetLabel || '',
-                event.index || 0
-            );
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'marketing-overall-btn' || e.target.closest('#marketing-overall-btn')) {
+                $wire.showMarketingOverall();
+            }
         });
 
-        Livewire.on('chart-overall-clicked', (event) => {
-            $wire.showMarketingOverall();
+        window.addEventListener('chart-clicked', function(e) {
+            var d = e.detail;
+            $wire.showChartDetail(
+                d.chart,
+                d.label,
+                d.value,
+                d.datasetLabel || '',
+                d.index || 0
+            );
         });
     </script>
     @endscript

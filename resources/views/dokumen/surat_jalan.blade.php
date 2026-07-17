@@ -431,6 +431,13 @@
             </tfoot>
         </table>
 
+        @if($pesanan->keterangan_logistik)
+        <div style="margin-top: 8px; font-size: 11pt;">
+            <strong>Keterangan Logistik:</strong>
+            <div style="margin-top: 2px; line-height: 1.5;">{{ $pesanan->keterangan_logistik }}</div>
+        </div>
+        @endif
+
         <!-- ── TANDA TANGAN ── -->
         <table class="ttd-table">
             <tr class="ttd-header">

@@ -78,6 +78,11 @@ class DetailPesananViewAction extends ViewAction
                     ->label('Alamat Pengiriman')
                     ->disabled(),
 
+                Textarea::make('keterangan_logistik')
+                    ->label('Keterangan Logistik')
+                    ->disabled()
+                    ->columnSpanFull(),
+
                 Repeater::make('dokumen_penagihan')
                     ->label('Detail Pesanan, dan Tagihan')
                     ->schema([

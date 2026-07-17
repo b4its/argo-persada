@@ -43,7 +43,8 @@ class Pesanan extends Model
         'pesanan_status',
         'status_perilisan_dana',
         'file_invoice',
-        'file_do'
+        'file_do',
+        'keterangan_logistik'
     ];
 
     public function user(): BelongsTo

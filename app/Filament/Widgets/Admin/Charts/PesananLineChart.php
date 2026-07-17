@@ -37,7 +37,7 @@ class PesananLineChart extends ChartWidget
                         let index = elements[0].index;
                         let label = this.data.labels[index];
                         let value = this.data.datasets[0].data[index];
-                        Livewire.dispatch('chart-clicked', { chart: 'pesanan-line', label: label, value: value, datasetLabel: '', index: index });
+                        window.dispatchEvent(new CustomEvent('chart-clicked', { detail: { chart: 'pesanan-line', label: label, value: value, datasetLabel: '', index: index } }));
                     }
                 }
             }

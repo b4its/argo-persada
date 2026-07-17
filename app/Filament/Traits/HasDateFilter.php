@@ -6,6 +6,14 @@ use Carbon\Carbon;
 
 trait HasDateFilter
 {
+    public function getListeners(): array
+    {
+        return array_merge(
+            (array) ($this->listeners ?? []),
+            ['dashboard-filter-changed' => '$refresh']
+        );
+    }
+
     public function getFilteredDateRange(): ?array
     {
         $startDate = session('dashboard_filter_start_date');
