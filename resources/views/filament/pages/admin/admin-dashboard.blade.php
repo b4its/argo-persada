@@ -2,6 +2,24 @@
 
     <div class="space-y-6">
 
+        {{-- ── BACKUP / IMPORT DATABASE ── --}}
+        <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Database</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Backup atau import database (.sql)</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <x-filament::button color="warning" icon="heroicon-m-arrow-down-tray" tag="a" href="/tool-backup" target="_blank">
+                        Download Backup
+                    </x-filament::button>
+                    <x-filament::button color="danger" icon="heroicon-m-arrow-up-tray" tag="a" href="/tool-import">
+                        Import SQL
+                    </x-filament::button>
+                </div>
+            </div>
+        </div>
+
         {{-- ── ROLE PROGRESS SECTION ── --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             @foreach($roleProgressData as $data)

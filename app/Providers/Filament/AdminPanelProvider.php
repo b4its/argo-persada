@@ -32,6 +32,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Navigation\MenuItem;
+use Filament\Navigation\NavigationItem;
 use Illuminate\Support\Facades\Blade;
 use Livewire\Livewire;
 
@@ -102,6 +103,14 @@ class AdminPanelProvider extends PanelProvider
                         ...AdminPemesananResource::getNavigationItems(),
                         ...AdminAkunKeuanganResource::getNavigationItems(),
                         ...AdminKasHarianResource::getNavigationItems(),
+                        NavigationItem::make('Backup Database')
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->url('/tool-backup')
+                            ->sort(7),
+                        NavigationItem::make('Import SQL')
+                            ->icon('heroicon-o-arrow-up-tray')
+                            ->url('/tool-import')
+                            ->sort(8),
                     ]);
                     
             })
