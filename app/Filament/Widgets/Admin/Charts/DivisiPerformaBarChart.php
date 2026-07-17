@@ -16,7 +16,7 @@ class DivisiPerformaBarChart extends ChartWidget
 
     public function getDescription(): ?string
     {
-        return 'Tugas diselesaikan, terlambat, tidak dikerjakan, dan dalam proses berdasarkan batas waktu 2x24 jam';
+        return 'Tugas diselesaikan, terlambat, dan dalam proses berdasarkan batas waktu 2x24 jam';
     }
 
     protected function getOptions(): RawJs
@@ -56,7 +56,6 @@ class DivisiPerformaBarChart extends ChartWidget
 
         $diselesaikan = [];
         $terlambat = [];
-        $tidakDikerjakan = [];
         $dalamProses = [];
 
         $now = Carbon::now();
@@ -68,7 +67,6 @@ class DivisiPerformaBarChart extends ChartWidget
 
             $onTime = 0;
             $late = 0;
-            $overdue = 0;
             $inProgress = 0;
 
             foreach ($tasks as $task) {
@@ -81,44 +79,45 @@ class DivisiPerformaBarChart extends ChartWidget
                     } else {
                         $late++;
                     }
-                } else {
-                    if ($hoursSinceCreation > 48) {
-                        $overdue++;
-                    } else {
+                } elseif ($task->status === 1) {
+                    if ($hoursSinceCreation <= 48) {
                         $inProgress++;
+                    } else {
+                        $late++;
                     }
+                } else {
+                    $inProgress++;
                 }
             }
 
             $diselesaikan[] = $onTime;
             $terlambat[] = $late;
-            $tidakDikerjakan[] = $overdue;
             $dalamProses[] = $inProgress;
         }
 
-        return [
-            'datasets' => [
-                [
-                    'label' => 'Diselesaikan',
-                    'data' => $diselesaikan,
-                    'backgroundColor' => '#10b981',
-                ],
-                [
-                    'label' => 'Terlambat',
-                    'data' => $terlambat,
-                    'backgroundColor' => '#f59e0b',
-                ],
-                [
-                    'label' => 'Tidak Dikerjakan',
-                    'data' => $tidakDikerjakan,
-                    'backgroundColor' => '#ef4444',
-                ],
-                [
-                    'label' => 'Dalam Proses',
-                    'data' => $dalamProses,
-                    'backgroundColor' => '#3b82f6',
-                ],
+        $datasets = [
+            [
+                'label' => 'Diselesaikan',
+                'data' => $diselesaikan,
+                'backgroundColor' => '#10b981',
             ],
+            [
+                'label' => 'Terlambat',
+                'data' => $terlambat,
+                'backgroundColor' => '#f59e0b',
+            ],
+        ];
+
+        if (array_sum($dalamProses) > 0) {
+            $datasets[] = [
+                'label' => 'Dalam Proses',
+                'data' => $dalamProses,
+                'backgroundColor' => '#3b82f6',
+            ];
+        }
+
+        return [
+            'datasets' => $datasets,
             'labels' => $labels,
         ];
     }

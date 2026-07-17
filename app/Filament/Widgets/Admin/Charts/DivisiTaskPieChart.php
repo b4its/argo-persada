@@ -55,18 +55,16 @@ class DivisiTaskPieChart extends ChartWidget
 
         $roleStatuses = [
             'marketing' => [
-                0 => ['label' => 'Marketing Dibuat', 'color' => '#3b82f6'],
-                1 => ['label' => 'Marketing Pending', 'color' => '#f59e0b'],
+                0 => ['label' => 'Marketing Buat Pesanan', 'color' => '#3b82f6'],
+                1 => ['label' => 'Marketing Cetak Surat Requisition', 'color' => '#f59e0b'],
             ],
             'finance' => [
                 2 => ['label' => 'Finance Rilis Dana', 'color' => '#f97316'],
-                3 => ['label' => 'Finance Cetak Invoice', 'color' => '#8b5cf6'],
-                4 => ['label' => 'Finance Penagihan', 'color' => '#ef4444'],
-                5 => ['label' => 'Finance Lunas', 'color' => '#10b981'],
+                5 => ['label' => 'Finance Tandai Pesanan Lunas', 'color' => '#10b981'],
             ],
             'logistik' => [
-                6 => ['label' => 'Logistik Cetak SJ', 'color' => '#f59e0b'],
-                7 => ['label' => 'Logistik Selesai Kirim', 'color' => '#10b981'],
+                6 => ['label' => 'Logistik Cetak Surat Jalan', 'color' => '#f59e0b'],
+                7 => ['label' => 'Logistik Tandai Selesai Dikirim', 'color' => '#10b981'],
             ],
         ];
 

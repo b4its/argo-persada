@@ -736,14 +736,12 @@ class AdminDashboard extends Page
 
             case 'divisi-task-status':
                 $labelMap = [
-                    'Marketing Dibuat' => ['role' => 'marketing', 'status' => 0],
-                    'Marketing Pending' => ['role' => 'marketing', 'status' => 1],
+                    'Marketing Buat Pesanan' => ['role' => 'marketing', 'status' => 0],
+                    'Marketing Cetak Surat Requisition' => ['role' => 'marketing', 'status' => 1],
                     'Finance Rilis Dana' => ['role' => 'finance', 'status' => 2],
-                    'Finance Cetak Invoice' => ['role' => 'finance', 'status' => 3],
-                    'Finance Penagihan' => ['role' => 'finance', 'status' => 4],
-                    'Finance Lunas' => ['role' => 'finance', 'status' => 5],
-                    'Logistik Cetak SJ' => ['role' => 'logistik', 'status' => 6],
-                    'Logistik Selesai Kirim' => ['role' => 'logistik', 'status' => 7],
+                    'Finance Tandai Pesanan Lunas' => ['role' => 'finance', 'status' => 5],
+                    'Logistik Cetak Surat Jalan' => ['role' => 'logistik', 'status' => 6],
+                    'Logistik Tandai Selesai Dikirim' => ['role' => 'logistik', 'status' => 7],
                 ];
                 $mapped = $labelMap[$label] ?? null;
                 if ($mapped) {
