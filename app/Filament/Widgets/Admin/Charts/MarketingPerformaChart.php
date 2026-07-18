@@ -2,9 +2,9 @@
 
 namespace App\Filament\Widgets\Admin\Charts;
 
+use App\Filament\Traits\HasDateFilter;
 use App\Models\Pesanan;
 use App\Models\User;
-use App\Filament\Traits\HasDateFilter;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Contracts\Support\Htmlable;
@@ -19,12 +19,12 @@ class MarketingPerformaChart extends ChartWidget
     public function getHeading(): string|Htmlable|null
     {
         return new HtmlString(
-            '<div class="flex items-center justify-between w-full gap-4">' .
-            '<span>Performa Marketing</span>' .
-            '<button type="button" id="marketing-overall-btn" ' .
-            'class="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-500 rounded-lg px-3 py-1.5 transition shadow-sm">' .
-            '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>' .
-            'Lihat Keseluruhan</button>' .
+            '<div class="flex items-center justify-between w-full gap-4">'.
+            '<span>Performa Marketing</span>'.
+            '<button type="button" id="marketing-overall-btn" '.
+            'class="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-500 rounded-lg px-3 py-1.5 transition shadow-sm">'.
+            '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>'.
+            'Lihat Keseluruhan</button>'.
             '</div>'
         );
     }
@@ -42,12 +42,20 @@ class MarketingPerformaChart extends ChartWidget
                     tooltip: {
                         callbacks: {
                             label: function(context) {
+                                if (context.dataset.isEmpty) {
+                                    return context.label;
+                                }
+
                                 let label = context.label || '';
                                 let value = context.parsed || 0;
                                 let formatted = 'Rp ' + value.toLocaleString('id-ID');
                                 return label + ': ' + formatted;
                             },
                             afterLabel: function(context) {
+                                if (context.dataset.isEmpty) {
+                                    return '';
+                                }
+
                                 let index = context.dataIndex;
                                 let orders = context.dataset.orderCount ? context.dataset.orderCount[index] : 0;
                                 let avgDays = context.dataset.avgProcessingDays ? context.dataset.avgProcessingDays[index] : 0;
@@ -61,7 +69,7 @@ class MarketingPerformaChart extends ChartWidget
                         }
                     },
                     legend: {
-                        position: 'right',
+                        position: 'bottom',
                         labels: {
                             boxWidth: 12,
                             padding: 8,
@@ -69,7 +77,9 @@ class MarketingPerformaChart extends ChartWidget
                         }
                     },
                     datalabels: {
-                        display: true,
+                        display: function(context) {
+                            return !context.dataset.isEmpty;
+                        },
                         color: '#fff',
                         font: {
                             weight: 'bold',
@@ -83,7 +93,7 @@ class MarketingPerformaChart extends ChartWidget
                     }
                 },
                 onClick: function(event, elements) {
-                    if (elements.length > 0) {
+                    if (!this.data.datasets[0].isEmpty && elements.length > 0) {
                         let index = elements[0].index;
                         let label = this.data.labels[index];
                         let value = this.data.datasets[0].data[index];
@@ -95,7 +105,9 @@ class MarketingPerformaChart extends ChartWidget
     }
 
     protected static ?int $sort = 4;
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
+
     protected ?string $maxHeight = '300px';
 
     protected function getData(): array
@@ -105,7 +117,7 @@ class MarketingPerformaChart extends ChartWidget
 
         $colors = [
             '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-            '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1'
+            '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1',
         ];
 
         $labels = [];
@@ -120,7 +132,7 @@ class MarketingPerformaChart extends ChartWidget
             $pesananIds = Pesanan::where('user_id', $user->id)
                 ->where(function ($q) {
                     $q->where('status_pesanan', 5)
-                      ->orWhere('status_pesanan', 8);
+                        ->orWhere('status_pesanan', 8);
                 })
                 ->whereHas('kasHarian', function ($q) {
                     $q->where('debet', '>', 0);
@@ -136,7 +148,7 @@ class MarketingPerformaChart extends ChartWidget
                 $orders = Pesanan::where('user_id', $user->id)
                     ->where(function ($q) {
                         $q->where('status_pesanan', 5)
-                          ->orWhere('status_pesanan', 8);
+                            ->orWhere('status_pesanan', 8);
                     })
                     ->whereHas('kasHarian', function ($q) {
                         $q->where('debet', '>', 0);
@@ -166,9 +178,25 @@ class MarketingPerformaChart extends ChartWidget
                 $bgColors[] = $colors[$colorIndex % count($colors)];
                 $orderCounts[] = $count;
                 $avgProcessingDays[] = $count > 0 ? round($totalDays / $count, 1) : 0;
-                $slaStatuses[] = $count > 0 ? round(($withinSla / $count) * 100) . '%' : '0%';
+                $slaStatuses[] = $count > 0 ? round(($withinSla / $count) * 100).'%' : '0%';
                 $colorIndex++;
             }
+        }
+
+        if (empty($data)) {
+            return [
+                'datasets' => [
+                    [
+                        'data' => [1],
+                        'backgroundColor' => ['#e5e7eb'],
+                        'orderCount' => [0],
+                        'avgProcessingDays' => [0],
+                        'slaStatus' => ['-'],
+                        'isEmpty' => true,
+                    ],
+                ],
+                'labels' => ['Belum ada pendapatan marketing untuk periode ini'],
+            ];
         }
 
         return [
@@ -179,6 +207,7 @@ class MarketingPerformaChart extends ChartWidget
                     'orderCount' => $orderCounts,
                     'avgProcessingDays' => $avgProcessingDays,
                     'slaStatus' => $slaStatuses,
+                    'isEmpty' => false,
                 ],
             ],
             'labels' => $labels,
