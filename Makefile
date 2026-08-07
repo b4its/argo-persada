@@ -23,16 +23,19 @@ clear:
 # 3. DEPLOY PRODUCTION VIA NGROK (hosting, domain default ngrok)
 # File terpisah dari docker-compose.yml agar tidak campur dengan lokal
 ngrok-up:
-	docker compose -f docker-compose.ngrok.yml up -d --build
+	docker compose -f docker-compose.ngrok.yml up -d --build --force-recreate
 	@echo "🚀 Menunggu tunnel ngrok aktif..."
-	@echo "📡 URL domain bisa dilihat dengan: make ngrok-url"
+	@sleep 3
+	@make ngrok-url
 
 ngrok-down:
 	docker compose -f docker-compose.ngrok.yml down
 
 ngrok-url:
-	@docker logs $(CONTAINER_NGROK) 2>&1 | grep -oE "(https?://)?[a-zA-Z0-9-]+\.ngrok(-free)?\.app" | head -1
-	@echo "🌐 Atau jalankan: make ngrok-logs"
+	@echo "📡 URL aktif:"
+	@curl -s http://localhost:4040/api/tunnels | grep -oE 'https://[a-zA-Z0-9.-]+\.ngrok[a-z.-]*\.app' | head -1 || \
+		docker logs $(CONTAINER_NGROK) 2>&1 | grep -oE "(https?://)?[a-zA-Z0-9-]+\.ngrok(-free)?\.app" | head -1
+	@echo "🌐 Atau lihat log: make ngrok-logs"
 
 ngrok-logs:
 	docker compose -f docker-compose.ngrok.yml logs -f ngrok
@@ -58,6 +61,12 @@ ngrok-clear:
 ngrok-migrate:
 	docker exec $(CONTAINER_PHP_PROD) php artisan migrate
 	@echo "✅ Migrasi database produksi selesai!"
+
+ngrok-build:
+	@echo "📦 Compile asset Vite (public/build/manifest.json) di container produksi..."
+	docker exec $(CONTAINER_PHP_PROD) npm install
+	docker exec $(CONTAINER_PHP_PROD) npm run build
+	@echo "✅ Asset selesai dibuild!"
 
 ngrok-db:
 	docker exec -it $(CONTAINER_DB_PROD) mysql -u root

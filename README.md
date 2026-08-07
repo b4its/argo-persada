@@ -118,9 +118,10 @@ make ngrok-url
 # lihat log tunnel ngrok
 make ngrok-logs
 
-# permission, install dependency, migrate, & clear cache produksi
+# permission, install dependency, compile asset, migrate, & clear cache produksi
 make ngrok-perm
 make ngrok-install
+make ngrok-build
 make ngrok-migrate
 make ngrok-clear
 

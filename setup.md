@@ -142,6 +142,7 @@ make ngrok-clear   # atau docker exec -it argo-prod-php-fpm php artisan optimize
 ```bash
 make ngrok-install   # composer install + key:generate (vendor/ tidak ada)
 make ngrok-perm      # permission folder (storage, bootstrap/cache, public)
+make ngrok-build     # compile asset Vite → public/build/manifest.json (wajib buat production)
 make ngrok-migrate   # jalankan migrasi database produksi (sekali sebelum dipakai)
 make ngrok-clear     # clear cache produksi
 make ngrok-logs      # ikuti log tunnel ngrok (CTRL+C untuk keluar)

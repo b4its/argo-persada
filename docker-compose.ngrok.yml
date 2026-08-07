@@ -1,6 +1,6 @@
 # ============================================================
 # PRODUCTION / HOSTING VIA NGROK
-# Jalankan: docker compose -f docker-compose.ngrok.yml up -d --build
+# Jalankan: make ngrok-up
 # DB + Nginx + PHP-FPM + Ngrok tunnel (domain default ngrok)
 # ============================================================
 services:
@@ -41,9 +41,11 @@ services:
   ngrok:
     image: ngrok/ngrok:latest
     container_name: argo-prod-ngrok
-    command: http http://nginx:80
+    command: http --log=stdout http://nginx:80
     environment:
-      - NGROK_AUTHTOKEN=3HZDiJ7rSHXNhr9I3bgeCgGljGl_XcHz3hoGrHH6MboApb2g
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-3HZDiJ7rSHXNhr9I3bgeCgGljGl_XcHz3hoGrHH6MboApb2g}
+    ports:
+      - "4040:4040" # Web interface ngrok (untuk ambil URL via API)
     depends_on:
       - nginx
     networks:
