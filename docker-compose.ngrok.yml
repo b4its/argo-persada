@@ -6,7 +6,7 @@
 services:
   db:
     image: mysql:8.4
-    container_name: argo-db
+    container_name: argo-prod-db
     environment:
       MYSQL_DATABASE: argopersada
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: ./docker-nginx/Dockerfile
-    container_name: argo-php-fpm
+    container_name: argo-prod-php-fpm
     volumes:
       - .:/var/www/html
     networks:
@@ -27,7 +27,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: argo-nginx
+    container_name: argo-prod-nginx
     ports:
       - "8000:80"
     volumes:
@@ -40,7 +40,7 @@ services:
 
   ngrok:
     image: ngrok/ngrok:latest
-    container_name: argo-ngrok
+    container_name: argo-prod-ngrok
     command: http http://nginx:80
     environment:
       - NGROK_AUTHTOKEN=cr_3HZBtcWCX7No6tysdEqgKOzmz1L

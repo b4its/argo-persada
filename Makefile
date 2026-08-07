@@ -1,5 +1,8 @@
 # Variabel - Sesuaikan jika nama container berubah
 CONTAINER_PHP=argo-php-fpm
+CONTAINER_PHP_PROD=argo-prod-php-fpm
+CONTAINER_NGROK=argo-prod-ngrok
+CONTAINER_DB_PROD=argo-prod-db
 
 .PHONY: perm fix-cache clear
 
@@ -28,8 +31,21 @@ ngrok-down:
 	docker compose -f docker-compose.ngrok.yml down
 
 ngrok-url:
-	@docker logs argo-ngrok 2>&1 | grep -oE "(https?://)?[a-zA-Z0-9-]+\.ngrok(-free)?\.app" | head -1
+	@docker logs $(CONTAINER_NGROK) 2>&1 | grep -oE "(https?://)?[a-zA-Z0-9-]+\.ngrok(-free)?\.app" | head -1
 	@echo "🌐 Atau jalankan: make ngrok-logs"
 
 ngrok-logs:
 	docker compose -f docker-compose.ngrok.yml logs -f ngrok
+
+ngrok-perm:
+	@echo "🔵 Mengatur permission folder writable di dalam container produksi..."
+	docker exec $(CONTAINER_PHP_PROD) chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
+	docker exec $(CONTAINER_PHP_PROD) chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
+	@echo "✅ Selesai!"
+
+ngrok-clear:
+	docker exec $(CONTAINER_PHP_PROD) php artisan optimize:clear
+	@echo "🧹 Cache produksi cleared!"
+
+ngrok-db:
+	docker exec -it $(CONTAINER_DB_PROD) mysql -u root

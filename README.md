@@ -112,11 +112,18 @@ Setup produksi terpisah dari lokal, file: `docker-compose.ngrok.yml` (DB + Nginx
 # deploy produksi via ngrok
 make ngrok-up
 
-# lihat domain .ngrok-free.app yang aktif
+# domain aktif
 make ngrok-url
 
 # lihat log tunnel ngrok
 make ngrok-logs
+
+# permission & clear cache produksi
+make ngrok-perm
+make ngrok-clear
+
+# masuk terminal mysql produksi
+make ngrok-db
 
 # matikan produksi
 make ngrok-down
@@ -126,7 +133,7 @@ atau manual tanpa Makefile:
 
 ```bash
 docker compose -f docker-compose.ngrok.yml up -d --build
-docker logs argo-ngrok   # domain ngrok muncul di sini
+docker logs argo-prod-ngrok   # domain ngrok muncul di sini
 docker compose -f docker-compose.ngrok.yml down
 ```
 

@@ -114,7 +114,7 @@ Service yang jalan: `db` (mysql), `php-fpm`, `nginx`, `ngrok`.
 ```bash
 make ngrok-url
 # atau
-docker logs argo-ngrok
+docker logs argo-prod-ngrok
 ```
 
 Log akan menampilkan URL tunnel, contoh: `Forwarding https://abc-123.ngrok-free.app -> http://nginx:80`.
@@ -130,7 +130,7 @@ APP_ENV=production
 APP_DEBUG=false
 
 # lalu:
-make clear   # atau docker exec -it argo-php-fpm php artisan optimize:clear
+make ngrok-clear   # atau docker exec -it argo-prod-php-fpm php artisan optimize:clear
 ```
 
 > **Catatan:** dengan domain default ngrok, URL berubah setiap container ngrok restart.
@@ -141,18 +141,23 @@ make clear   # atau docker exec -it argo-php-fpm php artisan optimize:clear
 
 ```bash
 make ngrok-logs    # ikuti log tunnel ngrok (CTRL+C untuk keluar)
+make ngrok-perm    # permission produksi (storage, bootstrap/cache, public)
+make ngrok-clear   # clear cache produksi
+make ngrok-db      # masuk terminal mysql produksi
 make ngrok-down    # hentikan produksi
 docker compose -f docker-compose.ngrok.yml ps   # cek status container
 ```
 
 ### 2.6. Import/Export database produksi
 
+Container DB produksi bernama `argo-prod-db`:
+
 ```bash
 # import
-docker exec -i argo-db mysql -u root argopersada < file.sql
+docker exec -i argo-prod-db mysql -u root argopersada < file.sql
 
 # export
-docker exec argo-db mysqldump -u root argopersada > backup.sql
+docker exec argo-prod-db mysqldump -u root argopersada > backup.sql
 ```
 
 ---
@@ -161,8 +166,9 @@ docker exec argo-db mysqldump -u root argopersada > backup.sql
 
 | Masalah | Solusi |
 |---------|--------|
-| 403 / file tidak ketemu | `make perm` lalu `make clear` |
+| 403 / file tidak ketemu | `make perm` (lokal) / `make ngrok-perm` (produksi) lalu clear cache |
 | Port 8000 sudah dipakai | ganti port di compose file (`"8000:80"` → `"8001:80"`) |
 | Ngrok `ERR_NGROK_401` / authtoken invalid | cek token di dashboard ngrok, update `NGROK_AUTHTOKEN`, `make ngrok-down && make ngrok-up` |
-| Cache lama tidak update | `make clear` |
-| Permission denied di storage | `make perm` |
+| Cache lama tidak update | `make clear` (lokal) / `make ngrok-clear` (produksi) |
+| Permission denied di storage | `make perm` (lokal) / `make ngrok-perm` (produksi) |
+| Conflict nama container (`/argo-*` already in use) | nama container produksi sudah di-prefix `-prod`, jangan jalankan lokal & produksi barengan, atau bongkar container lama dulu |
