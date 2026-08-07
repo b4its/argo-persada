@@ -1,0 +1,57 @@
+# ============================================================
+# PRODUCTION / HOSTING VIA NGROK
+# Jalankan: docker compose -f docker-compose.ngrok.yml up -d --build
+# DB + Nginx + PHP-FPM + Ngrok tunnel (domain default ngrok)
+# ============================================================
+services:
+  db:
+    image: mysql:8.4
+    container_name: argo-db
+    environment:
+      MYSQL_DATABASE: argopersada
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - argo-network
+
+  php-fpm:
+    build:
+      context: .
+      dockerfile: ./docker-nginx/Dockerfile
+    container_name: argo-php-fpm
+    volumes:
+      - .:/var/www/html
+    networks:
+      - argo-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: argo-nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker-nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php-fpm
+    networks:
+      - argo-network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: argo-ngrok
+    command: http http://nginx:80
+    environment:
+      - NGROK_AUTHTOKEN=cr_3HZBtcWCX7No6tysdEqgKOzmz1L
+    depends_on:
+      - nginx
+    networks:
+      - argo-network
+
+networks:
+  argo-network:
+    driver: bridge
+
+volumes:
+  mysql_data:

@@ -103,5 +103,32 @@ docker exec -i <nama_container_mysql> mysql -u <username_db> -p<password_db> <na
 docker exec <nama_container_mysql> mysqldump -u <username_db> -p<password_db> <nama_database> > hasil_export.sql
 
 ```
+
+## Deploy via Ngrok (Hosting)
+
+Setup produksi terpisah dari lokal, file: `docker-compose.ngrok.yml` (DB + Nginx + PHP-FPM + Ngrok, domain default ngrok). Dokumentasi lengkap: [setup.md](setup.md).
+
+```bash
+# deploy produksi via ngrok
+make ngrok-up
+
+# lihat domain .ngrok-free.app yang aktif
+make ngrok-url
+
+# lihat log tunnel ngrok
+make ngrok-logs
+
+# matikan produksi
+make ngrok-down
+```
+
+atau manual tanpa Makefile:
+
+```bash
+docker compose -f docker-compose.ngrok.yml up -d --build
+docker logs argo-ngrok   # domain ngrok muncul di sini
+docker compose -f docker-compose.ngrok.yml down
+```
+
 ## License
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

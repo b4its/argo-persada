@@ -16,3 +16,20 @@ perm:
 clear:
 	docker exec $(CONTAINER_PHP) php artisan optimize:clear
 	@echo "🧹 Cache cleared!"
+
+# 3. DEPLOY PRODUCTION VIA NGROK (hosting, domain default ngrok)
+# File terpisah dari docker-compose.yml agar tidak campur dengan lokal
+ngrok-up:
+	docker compose -f docker-compose.ngrok.yml up -d --build
+	@echo "🚀 Menunggu tunnel ngrok aktif..."
+	@echo "📡 URL domain bisa dilihat dengan: make ngrok-url"
+
+ngrok-down:
+	docker compose -f docker-compose.ngrok.yml down
+
+ngrok-url:
+	@docker logs argo-ngrok 2>&1 | grep -oE "(https?://)?[a-zA-Z0-9-]+\.ngrok(-free)?\.app" | head -1
+	@echo "🌐 Atau jalankan: make ngrok-logs"
+
+ngrok-logs:
+	docker compose -f docker-compose.ngrok.yml logs -f ngrok
