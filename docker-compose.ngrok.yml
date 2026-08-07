@@ -43,7 +43,7 @@ services:
     container_name: argo-prod-ngrok
     command: http http://nginx:80
     environment:
-      - NGROK_AUTHTOKEN=cr_3HZBtcWCX7No6tysdEqgKOzmz1L
+      - NGROK_AUTHTOKEN=3HZDiJ7rSHXNhr9I3bgeCgGljGl_XcHz3hoGrHH6MboApb2g
     depends_on:
       - nginx
     networks:

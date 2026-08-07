@@ -118,8 +118,10 @@ make ngrok-url
 # lihat log tunnel ngrok
 make ngrok-logs
 
-# permission & clear cache produksi
+# permission, install dependency, migrate, & clear cache produksi
 make ngrok-perm
+make ngrok-install
+make ngrok-migrate
 make ngrok-clear
 
 # masuk terminal mysql produksi

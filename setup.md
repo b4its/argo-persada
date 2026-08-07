@@ -137,14 +137,17 @@ make ngrok-clear   # atau docker exec -it argo-prod-php-fpm php artisan optimize
 > Setiap restart, ulangi langkah 2.3–2.4. Kalau mau URL tetap, reserve custom domain
 > di dashboard ngrok lalu tambahkan argumen `--domain=namadomain.ngrok-free.app` di `command` service ngrok.
 
-### 2.5. Monitoring
+### 2.5. Install dependency & monitoring
 
 ```bash
-make ngrok-logs    # ikuti log tunnel ngrok (CTRL+C untuk keluar)
-make ngrok-perm    # permission produksi (storage, bootstrap/cache, public)
-make ngrok-clear   # clear cache produksi
-make ngrok-db      # masuk terminal mysql produksi
-make ngrok-down    # hentikan produksi
+make ngrok-install   # composer install + key:generate (vendor/ tidak ada)
+make ngrok-perm      # permission folder (storage, bootstrap/cache, public)
+make ngrok-migrate   # jalankan migrasi database produksi (sekali sebelum dipakai)
+make ngrok-clear     # clear cache produksi
+make ngrok-logs      # ikuti log tunnel ngrok (CTRL+C untuk keluar)
+make ngrok-db        # masuk terminal mysql produksi
+make ngrok-php       # masuk bash container php-fpm produksi
+make ngrok-down      # hentikan produksi
 docker compose -f docker-compose.ngrok.yml ps   # cek status container
 ```
 

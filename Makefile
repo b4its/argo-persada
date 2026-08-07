@@ -43,9 +43,24 @@ ngrok-perm:
 	docker exec $(CONTAINER_PHP_PROD) chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
 	@echo "✅ Selesai!"
 
+ngrok-install:
+	@echo "📦 Menyiapkan .env (jika belum ada) & menginstall dependency composer di container produksi..."
+	@test -f .env || cp .env.example .env
+	@grep -q "DB_HOST=db" .env || sed -i "s/^DB_HOST=.*/DB_HOST=db/" .env
+	docker exec $(CONTAINER_PHP_PROD) composer install
+	docker exec $(CONTAINER_PHP_PROD) php artisan key:generate
+	@echo "✅ Dependency terinstall!"
+
 ngrok-clear:
 	docker exec $(CONTAINER_PHP_PROD) php artisan optimize:clear
 	@echo "🧹 Cache produksi cleared!"
 
+ngrok-migrate:
+	docker exec $(CONTAINER_PHP_PROD) php artisan migrate
+	@echo "✅ Migrasi database produksi selesai!"
+
 ngrok-db:
 	docker exec -it $(CONTAINER_DB_PROD) mysql -u root
+
+ngrok-php:
+	docker exec -it $(CONTAINER_PHP_PROD) bash
