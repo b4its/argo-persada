@@ -173,8 +173,7 @@ class AdminDashboard extends Page
             AdminMarketingTaskStatsOverview::class,
             AdminFinanceTaskStatsOverview::class,
             AdminLogistikTaskStatsOverview::class,
-            PesananLineChart::class,
-            MarketingPerformaChart::class,
+            AdminTaskTables::class,
         ];
     }
 
@@ -186,7 +185,8 @@ class AdminDashboard extends Page
             PesananStatusPieChart::class,
             TipePesananPieChart::class,
             PendapatanBarChart::class,
-            AdminTaskTables::class,
+            PesananLineChart::class,
+            MarketingPerformaChart::class,
         ];
     }
 

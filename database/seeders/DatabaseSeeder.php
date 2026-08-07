@@ -10,14 +10,14 @@ use Carbon\Carbon;
 class DatabaseSeeder extends Seeder
 {
     const ROLES = ['admin', 'marketing', 'finance', 'logistik', 'guest'];
-    const ROLE_COUNTS = [5, 30, 20, 30, 15];
+    const ROLE_COUNTS = [5, 5, 20, 30, 15];
     const BANK_NAMES = ['BCA', 'Mandiri', 'BNI', 'BRI', 'CIMB Niaga', 'Danamon', 'Permata', 'BTN'];
     const SUPPLIERS = ['PT. Sumber Makmur', 'CV. Jaya Abadi', 'UD. Berkah', 'PT. Indah Jaya', 'CV. Karya Mandiri', 'UD. Sejahtera', 'PT. Bumi Sentosa', 'CV. Agung Perkasa'];
     const ITEM_NAMES = ['Besi Beton 12mm', 'Semen 50kg', 'Pasir Bangka', 'Bata Merah', 'Cat Tembok 5kg', 'Paku 10cm', 'Kayu Balok 6x12', 'Pipa PVC 4 inch', 'Kabel Listrik 2.5mm', 'Lampu LED 20W', 'Keramik 60x60', 'Triplek 18mm', 'Atap Spandek', 'Gypsum Board 9mm', 'Hollow Baja Ringan'];
 
     public function run(): void
     {
-        $this->command->info('Seeding 100 users + 200 pesanan with workflow...');
+        $this->command->info('Seeding ' . array_sum(self::ROLE_COUNTS) . ' users + 200 pesanan with workflow...');
         $start = microtime(true);
 
         $userIdMap = $this->seedUsers();
@@ -47,10 +47,14 @@ class DatabaseSeeder extends Seeder
 
     protected function seedUsers(): array
     {
-        $this->command->info('  Membuat 100 users...');
+        $this->command->info('  Membuat ' . array_sum(self::ROLE_COUNTS) . ' users...');
         $users = [];
         $now = now();
-        $id = 1;
+
+        // Mulai dari id setelah nilai tertinggi yang sudah ada,
+        // agar tidak tabrakan dengan user lama (contoh: admin dari make:filament-user).
+        $existingMax = (int) DB::table('users')->max('id');
+        $id = $existingMax + 1;
 
         foreach (self::ROLES as $i => $role) {
             for ($j = 0; $j < self::ROLE_COUNTS[$i]; $j++) {
@@ -71,8 +75,8 @@ class DatabaseSeeder extends Seeder
         }
 
         DB::table('users')->insert($users);
-        $this->command->info('    -> ' . ($id - 1) . ' users created (0 superadmin)');
-        return DB::table('users')->pluck('id')->toArray();
+        $this->command->info('    -> ' . ($id - 1 - $existingMax) . ' users created (0 superadmin)');
+        return collect($users)->pluck('id')->toArray();
     }
 
     protected function seedProfiles(array $userIds): void
@@ -161,25 +165,27 @@ class DatabaseSeeder extends Seeder
 
             $mutId = $i + 1;
             $saldoAwal = fake()->randomFloat(2, 0, 10000000);
+            $saldoAkhir = $saldoAwal;
             $mutasiData[] = [
                 'id_buku_Besar' => $bbId,
                 'code' => 'MUT-' . str_pad($mutId, 4, '0', STR_PAD_LEFT),
                 'name' => fake()->sentence(3),
                 'saldo_awal' => $saldoAwal,
-                'saldo_akhir' => $saldoAwal + fake()->randomFloat(2, -5000000, 5000000),
+                'saldo_akhir' => $saldoAkhir,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
 
             $debet = fake()->randomFloat(2, 0, 5000000);
-            $kredit = fake()->randomFloat(2, 0, 5000000);
+            // Kredit dibatasi agar saldo tidak pernah minus: kredit <= saldo awal + debet.
+            $kredit = fake()->randomFloat(2, 0, $saldoAwal + $debet);
             $mutasiItemData[] = [
                 'id_mutasi' => $mutId,
                 'no_ref' => 'REF-' . fake()->bothify('####/??/###'),
                 'keterangan' => fake()->sentence(5),
                 'debet' => $debet,
                 'kredit' => $kredit,
-                'saldo' => $debet - $kredit,
+                'saldo' => $saldoAwal + $debet - $kredit,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -442,24 +448,36 @@ class DatabaseSeeder extends Seeder
     {
         $entries = [];
         $baseDate = Carbon::parse('2026-01-01');
+        // Saldo estafet per akun, dimulai dari 0 (selaras dengan recalculateBalances).
+        $runningPerAkun = array_fill_keys($akunIds, 0);
+        $lastDatePerAkun = array_fill_keys($akunIds, Carbon::parse('2026-01-01'));
 
-        for ($i = 1; $i <= 100; $i++) {
-            $createdAt = $baseDate->copy()->addDays(fake()->numberBetween(0, 190));
+        for ($i = 0; $i < 100; $i++) {
+            $akunId = $akunIds[array_rand($akunIds)];
+
+            // Pastikan tanggal terus bertambah per akun agar urutan created_at sesuai estafet.
+            $lastDatePerAkun[$akunId] = $lastDatePerAkun[$akunId]->copy()->addHours(fake()->numberBetween(1, 48));
+            $createdAt = $lastDatePerAkun[$akunId];
+
             $debet = fake()->randomFloat(2, 0, 10000000);
-            $kredit = fake()->randomFloat(2, 0, 10000000);
-            $saldoAwal = fake()->randomFloat(2, 1000000, 50000000);
+            // Kredit tidak boleh membuat saldo akun ini menjadi minus.
+            $kredit = fake()->randomFloat(2, 0, max(0, $runningPerAkun[$akunId]));
+
+            $saldoAwal = $runningPerAkun[$akunId];
+            $saldoAkhir = $saldoAwal + $debet - $kredit;
+            $runningPerAkun[$akunId] = $saldoAkhir;
 
             $entries[] = [
                 'company_internal_id' => $companyIds[array_rand($companyIds)],
                 'user_id' => $userIds[array_rand($userIds)],
                 'pesanan_id' => $pesananIds[array_rand($pesananIds)],
-                'akun_keuangan_id' => $akunIds[array_rand($akunIds)],
+                'akun_keuangan_id' => $akunId,
                 'kategori' => fake()->randomElement([1, 2, 3, 4]),
                 'toko' => fake('id_ID')->company(),
                 'saldo_awal' => $saldoAwal,
                 'debet' => $debet,
                 'kredit' => $kredit,
-                'saldo_akhir' => $saldoAwal + $debet - $kredit,
+                'saldo_akhir' => $saldoAkhir,
                 'keterangan' => fake()->sentence(4),
                 'created_at' => $createdAt,
                 'updated_at' => $createdAt,
@@ -467,6 +485,6 @@ class DatabaseSeeder extends Seeder
         }
 
         DB::table('kas_harian')->insert($entries);
-        $this->command->info('    -> ' . count($entries) . ' kas_harian');
+        $this->command->info('    -> ' . count($entries) . ' kas_harian (estafet non-negatif per akun)');
     }
 }

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class KasHarian extends Model
 {
@@ -30,9 +32,29 @@ class KasHarian extends Model
      */
     protected static function booted(): void
     {
+        // Cegah transaksi/baris yang membuat saldo terkini menjadi negatif (sebelum simpan).
+        static::saving(fn (KasHarian $kas) => static::assertSaldoNotMinus($kas));
+
         // Setiap kali data dibuat, diupdate, atau dihapus, hitung ulang saldo.
         static::saved(fn (KasHarian $kas) => static::recalculateBalances($kas->akun_keuangan_id));
         static::deleted(fn (KasHarian $kas) => static::recalculateBalances($kas->akun_keuangan_id));
+    }
+
+    /**
+     * Pastikan kredit (uang keluar) tidak melebihi saldo yang tersedia,
+     * sehingga saldo terkini tidak pernah negatif.
+     */
+    protected static function assertSaldoNotMinus(KasHarian $kas): void
+    {
+        $saldoAwal = (float) $kas->saldo_awal;
+        $debet = (float) $kas->debet;
+        $kredit = (float) $kas->kredit;
+
+        if (($saldoAwal + $debet - $kredit) < 0) {
+            throw ValidationException::withMessages([
+                'kredit' => "Kredit (Rp " . number_format($kredit, 0, ',', '.') . ") melebihi saldo yang tersedia (Rp " . number_format($saldoAwal + $debet, 0, ',', '.') . "). Saldo tidak boleh minus.",
+            ]);
+        }
     }
 
     /*
@@ -85,6 +107,13 @@ class KasHarian extends Model
             foreach ($transactions as $transaction) {
                 $saldoAwal = $runningBalance;
                 $saldoAkhir = $saldoAwal + (float)$transaction->debet - (float)$transaction->kredit;
+
+                // Saldo tidak boleh minus: jika ada, batalkan seluruh rekalkulasi (rollback).
+                if ($saldoAkhir < 0) {
+                    throw ValidationException::withMessages([
+                        'kredit' => 'Saldo terkini tidak boleh minus. Periksa kembali transaksi pada akun ini.',
+                    ]);
+                }
 
                 // HANYA LAKUKAN UPDATE JIKA ADA PERUBAHAN SALDO
                 // Ini menghemat pemakaian resource database secara masif

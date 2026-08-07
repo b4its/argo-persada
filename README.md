@@ -109,11 +109,12 @@ docker exec <nama_container_mysql> mysqldump -u <username_db> -p<password_db> <n
 Setup produksi terpisah dari lokal, file: `docker-compose.ngrok.yml` (DB + Nginx + PHP-FPM + Ngrok, domain default ngrok). Dokumentasi lengkap: [setup.md](setup.md).
 
 ```bash
-# deploy produksi via ngrok
+# deploy produksi via ngrok (otomatis set APP_URL sesuai domain aktif)
 make ngrok-up
 
-# domain aktif
+# cek domain & APP_URL (kalau domain berubah / manual)
 make ngrok-url
+make ngrok-env
 
 # lihat log tunnel ngrok
 make ngrok-logs
@@ -122,8 +123,13 @@ make ngrok-logs
 make ngrok-perm
 make ngrok-install
 make ngrok-build
+make ngrok-filament
 make ngrok-migrate
 make ngrok-clear
+
+# jalankan seeder produksi (semua / seeder tertentu)
+make ngrok-seed                     # php artisan db:seed
+make ngrok-seed UserSeeder          # php artisan db:seed --class=UserSeeder
 
 # masuk terminal mysql produksi
 make ngrok-db

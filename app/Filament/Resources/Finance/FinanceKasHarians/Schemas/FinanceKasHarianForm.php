@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Finance\FinanceKasHarians\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\RawJs;
 
@@ -61,6 +62,8 @@ class FinanceKasHarianForm
                     // Gunakan mask untuk tampilan ribuan yang cantik
                     ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
                     ->stripCharacters('.')
+                    ->numeric()
+                    ->minValue(0)
                     ->required()
                     ->live(onBlur: true),
                 TextInput::make('debet')
@@ -69,6 +72,8 @@ class FinanceKasHarianForm
                     // Gunakan mask untuk tampilan ribuan yang cantik
                     ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
                     ->stripCharacters('.')
+                    ->numeric()
+                    ->minValue(0)
                     ->required()
                     ->live(onBlur: true),
                     
@@ -78,8 +83,24 @@ class FinanceKasHarianForm
                     // Gunakan mask untuk tampilan ribuan yang cantik
                     ->mask(RawJs::make('$money($input, \',\', \'.\', 0)'))
                     ->stripCharacters('.')
+                    ->numeric()
+                    ->minValue(0)
                     ->required()
-                    ->live(onBlur: true),
+                    ->live(onBlur: true)
+                    // Kredit (uang keluar) tidak boleh melebihi saldo yang tersedia
+                    ->rules([
+                        function (Get $get) {
+                            return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                $saldoAwal = (float) ($get('saldo_awal') ?? 0);
+                                $debet = (float) ($get('debet') ?? 0);
+                                $kredit = (float) $value;
+
+                                if (($saldoAwal + $debet - $kredit) < 0) {
+                                    $fail("Kredit (Rp " . number_format($kredit, 0, ',', '.') . ") melebihi saldo yang tersedia (Rp " . number_format($saldoAwal + $debet, 0, ',', '.') . "). Saldo tidak boleh minus.");
+                                }
+                            };
+                        },
+                    ]),
 
                 
                 Select::make('metode_pembayaran')

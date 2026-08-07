@@ -6,7 +6,7 @@ services:
       MYSQL_DATABASE: argopersada
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data_local:/var/lib/mysql
     networks:
       - argo-network
 
@@ -56,4 +56,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_data:
+  mysql_data_local:

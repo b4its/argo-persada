@@ -11,7 +11,13 @@ services:
       MYSQL_DATABASE: argopersada
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data_prod:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
     networks:
       - argo-network
 
@@ -22,6 +28,9 @@ services:
     container_name: argo-prod-php-fpm
     volumes:
       - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - argo-network
 
@@ -56,4 +65,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_data:
+  mysql_data_prod:

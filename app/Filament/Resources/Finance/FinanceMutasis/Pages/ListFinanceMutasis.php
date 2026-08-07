@@ -43,7 +43,14 @@ class ListFinanceMutasis extends ListRecords
                             
                             // Kalkulasi saldo berjalan: Saldo saat ini + debet - kredit
                             $currentSaldo = $currentSaldo + $debet - $kredit;
-                            
+
+                            // Saldo tidak boleh minus.
+                            if ($currentSaldo < 0) {
+                                throw \Illuminate\Validation\ValidationException::withMessages([
+                                    'mutasis' => "Saldo akun {$mutasi->name} tidak boleh minus. Kredit melebihi saldo yang tersedia.",
+                                ]);
+                            }
+
                             // Simpan nilai saldo ke tabel mutasi_item
                             $item->update(['saldo' => $currentSaldo]);
                         }

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -14,6 +15,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Saat APP_URL berupa https:// (mode produksi ngrok), paksa semua URL
+        // aset/route memakai https agar tidak mixed-content. Di lokal (APP_URL
+        // http://) biarkan mengikuti skema request biasa.
+        if (str_starts_with(config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
+
         Route::middleware(['web', 'auth'])->group(function () {
             Route::get('/tool-backup', function () {
                 $db = config('database.connections.mysql');

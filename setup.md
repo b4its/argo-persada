@@ -121,21 +121,27 @@ Log akan menampilkan URL tunnel, contoh: `Forwarding https://abc-123.ngrok-free.
 
 ### 2.4. Sesuaikan `.env` produksi
 
-Setelah dapat URL, perbarui `.env` lalu clear cache:
+`make ngrok-up` otomatis menyinkronkan `APP_URL` ke domain ngrok aktif
+dan clear cache (lewat `ngrok-env`). Kalau domain berubah (restart),
+jalankan manual:
 
 ```bash
-# di .env
-APP_URL=https://abc-123.ngrok-free.app
-APP_ENV=production
-APP_DEBUG=false
-
-# lalu:
-make ngrok-clear   # atau docker exec -it argo-prod-php-fpm php artisan optimize:clear
+make ngrok-url      # cek domain aktif
+make ngrok-env      # update APP_URL di .env + clear cache
 ```
 
-> **Catatan:** dengan domain default ngrok, URL berubah setiap container ngrok restart.
-> Setiap restart, ulangi langkah 2.3–2.4. Kalau mau URL tetap, reserve custom domain
-> di dashboard ngrok lalu tambahkan argumen `--domain=namadomain.ngrok-free.app` di `command` service ngrok.
+Setelan yang sudah benar saat produksi:
+
+```
+APP_URL=<domain ngrok aktif - diatur otomatis>
+APP_ENV=production
+APP_DEBUG=false
+```
+
+> **Penting:** karena memakai domain default ngrok, URL berubah setiap
+> container ngrok restart. Selalu jalankan `make ngrok-env` setelah restart.
+> Kalau mau URL tetap, reserve custom domain di dashboard ngrok lalu tambahkan
+> argumen `--domain=namadomain.ngrok-free.app` di `command` service ngrok.
 
 ### 2.5. Install dependency & monitoring
 
@@ -143,11 +149,15 @@ make ngrok-clear   # atau docker exec -it argo-prod-php-fpm php artisan optimize
 make ngrok-install   # composer install + key:generate (vendor/ tidak ada)
 make ngrok-perm      # permission folder (storage, bootstrap/cache, public)
 make ngrok-build     # compile asset Vite → public/build/manifest.json (wajib buat production)
+make ngrok-filament  # publish asset Filament → public/vendor/filament (CSS/JS panel)
 make ngrok-migrate   # jalankan migrasi database produksi (sekali sebelum dipakai)
+make ngrok-seed      # jalankan semua seeder (db:seed)
+make ngrok-seed UserSeeder   # jalankan seeder spesifik (db:seed --class=UserSeeder)
 make ngrok-clear     # clear cache produksi
 make ngrok-logs      # ikuti log tunnel ngrok (CTRL+C untuk keluar)
 make ngrok-db        # masuk terminal mysql produksi
 make ngrok-php       # masuk bash container php-fpm produksi
+make ngrok-user      # buat user Filament (interaktif: nama, email, password)
 make ngrok-down      # hentikan produksi
 docker compose -f docker-compose.ngrok.yml ps   # cek status container
 ```
@@ -176,3 +186,5 @@ docker exec argo-prod-db mysqldump -u root argopersada > backup.sql
 | Cache lama tidak update | `make clear` (lokal) / `make ngrok-clear` (produksi) |
 | Permission denied di storage | `make perm` (lokal) / `make ngrok-perm` (produksi) |
 | Conflict nama container (`/argo-*` already in use) | nama container produksi sudah di-prefix `-prod`, jangan jalankan lokal & produksi barengan, atau bongkar container lama dulu |
+| Data (sakit) tiba-tiba hilang dari DB | Volume dipisah: lokal = `mysql_data_local`, produksi = `mysql_data_prod`. Sebelumnya keduanya memakai volume bersama `mysql_data` sehingga `docker compose ... down -v` menghapus data kedua-duanya. Terapkan kebiasaan: export/backup dulu sebelum menjalankan perintah berakhiran `-v`. |
+| Asset Filament/CSS/JS tidak muncul padahal HTTP 200 (mixed content) | ngrok selalu HTTPS ke luar, tapi nginx di dalam menerima HTTP biasa. Laravel jadi generate URL asset `http://...` dan diblokir browser karena halaman `https://...` (mixed content). Sudah diperbaiki lewat `bootstrap/app.php` (`trustProxies`) + `AppServiceProvider` (`URL::forceScheme('https')` saat `APP_URL` https). Kalau masih terjadi, jalankan `make ngrok-clear` lagi setelah pull kode terbaru |

@@ -80,6 +80,14 @@ class FinanceMutasisTable
                                 $debet = $item->debet ?? 0;
                                 $kredit = $item->kredit ?? 0;
                                 $currentSaldo = $currentSaldo + $debet - $kredit;
+
+                                // Saldo tidak boleh minus.
+                                if ($currentSaldo < 0) {
+                                    throw \Illuminate\Validation\ValidationException::withMessages([
+                                        'mutasiItems' => "Saldo selama transaksi tidak boleh minus (saat nominal debet terkecil kredit). Periksa kembali akun {$mutasi->name}.",
+                                    ]);
+                                }
+
                                 $item->update(['saldo' => $currentSaldo]);
                             }
 
@@ -173,6 +181,13 @@ class FinanceMutasisTable
                                 
                                 // Kalkulasi saldo berjalan
                                 $currentSaldo = $currentSaldo + $debet - $kredit;
+
+                                // Saldo tidak boleh minus.
+                                if ($currentSaldo < 0) {
+                                    throw \Illuminate\Validation\ValidationException::withMessages([
+                                        'mutasiItems' => "Saldo akun {$data['code']} tidak boleh minus. Kredit melebihi saldo yang tersedia.",
+                                    ]);
+                                }
 
                                 // 3. Simpan Mutasi Item
                                 $mutasi->mutasiItems()->create([
