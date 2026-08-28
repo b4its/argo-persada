@@ -23,6 +23,16 @@ clear:
 # 3. DEPLOY PRODUCTION VIA NGROK (hosting, domain default ngrok)
 # File terpisah dari docker-compose.yml agar tidak campur dengan lokal
 ngrok-up:
+	@echo "🔍 Membersihkan semua container lama yang mungkin masih stuck..."
+	docker compose -f docker-compose.ngrok.yml down --remove-orphans 2>/dev/null || true
+	@echo ""
+	@echo "🔍 Mengecek dan mematikan proses yang menggunakan port 9000 atau 4040..."
+	lsof -t -i:9000 2>/dev/null | xargs -r kill -9 || true
+	lsof -t -i:4040 2>/dev/null | xargs -r kill -9 || true
+	fuser -k 9000/tcp 2>/dev/null || true
+	fuser -k 4040/tcp 2>/dev/null || true
+	sleep 2
+	@echo "✅ Semua port sudah bersih!"
 	docker compose -f docker-compose.ngrok.yml up -d --build --force-recreate
 	@echo "🚀 Menunggu tunnel ngrok aktif..."
 	@$(MAKE) ngrok-env
@@ -54,10 +64,10 @@ ngrok-env:
 # Jalankan ini sebelum memakai docker compose --profile nginx/apache.
 env-local:
 	@if [ -f .env ]; then \
-		if grep -q "^APP_URL=" .env; then sed -i "s|^APP_URL=.*|APP_URL=http://localhost:8000|" .env; else echo "APP_URL=http://localhost:8000" >> .env; fi; \
+		if grep -q "^APP_URL=" .env; then sed -i "s|^APP_URL=.*|APP_URL=http://localhost:9000|" .env; else echo "APP_URL=http://localhost:9000" >> .env; fi; \
 		if grep -q "^APP_ENV=" .env; then sed -i "s|^APP_ENV=.*|APP_ENV=local|" .env; else echo "APP_ENV=local" >> .env; fi; \
 		if grep -q "^APP_DEBUG=" .env; then sed -i "s|^APP_DEBUG=.*|APP_DEBUG=true|" .env; else echo "APP_DEBUG=true" >> .env; fi; \
-		echo "✅ .env mode lokal -> APP_URL=http://localhost:8000, APP_ENV=local"; \
+		echo "✅ .env mode lokal -> APP_URL=http://localhost:9000, APP_ENV=local"; \
 	else \
 		echo "⚠️  .env tidak ditemukan, jalankan 'make ngrok-install' dulu."; \
 	fi
@@ -91,6 +101,7 @@ ngrok-install:
 
 ngrok-clear:
 	@echo "⌛ Menunggu database produksi siap..."
+	
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do \
 		if docker exec $(CONTAINER_DB_PROD) mysqladmin ping -h 127.0.0.1 -uroot --silent 2>/dev/null; then break; fi; \
 		sleep 1; \
@@ -111,8 +122,8 @@ ngrok-migrate:
 
 ngrok-seed:
 	@[ -z "$(filter-out ngrok-seed,$(MAKECMDGOALS))" ] && \
-		docker exec $(CONTAINER_PHP_PROD) php artisan db:seed || \
-		docker exec $(CONTAINER_PHP_PROD) php artisan db:seed --class=$(filter-out ngrok-seed,$(MAKECMDGOALS))
+		docker exec $(CONTAINER_PHP_PROD) php artisan db:seed --force || \
+		docker exec $(CONTAINER_PHP_PROD) php artisan db:seed --class=$(filter-out ngrok-seed,$(MAKECMDGOALS)) --force
 	@echo "✅ Seeder produksi selesai dijalankan!"
 
 # Target catch-all: menyerap argumen tambahan (mis. nama seeder) agar
@@ -140,3 +151,10 @@ ngrok-php:
 
 ngrok-user:
 	docker exec -it $(CONTAINER_PHP_PROD) php artisan make:filament-user
+
+# Start ngrok tunnel secara manual (untuk debugging atau run terpisah)
+ngrok:
+	@./ngrok-start.sh
+
+%:
+	@:
