@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Seeding ' . array_sum(self::ROLE_COUNTS) . ' users + 200 pesanan with workflow...');
         $start = microtime(true);
 
+        $this->truncate();
+
         $userIdMap = $this->seedUsers();
         $this->seedProfiles($userIdMap);
         $companyIds = $this->seedCompanyInternal();
@@ -33,6 +35,21 @@ class DatabaseSeeder extends Seeder
 
         $elapsed = round(microtime(true) - $start, 2);
         $this->command->info("Seeding selesai dalam {$elapsed} detik!");
+    }
+
+    protected function truncate(): void
+    {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $tables = [
+            'users', 'profile', 'buku_besar', 'mutasi', 'mutasi_item',
+            'keranjang', 'queue_keranjang', 'pesanan', 'task',
+            'task_activity', 'log_activities', 'kas_harian',
+            'company_internal', 'akun_keuangan',
+        ];
+        foreach ($tables as $table) {
+            DB::table($table)->truncate();
+        }
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     protected function getUsersByRole(array $userIds): array
