@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -96,6 +97,31 @@ class AdminPemesanansTable
                     ->formatStateUsing(fn (int $state): string => match ($state) { 0 => 'Pending', 1 => 'Proses', 2 => 'Selesai', default => '-' })
                     ->color(fn (int $state): string => match ($state) { 0 => 'gray', 1 => 'warning', 2 => 'success', default => 'gray' }),
 
+                TextColumn::make('status_perilisan_dana')
+                    ->label('Persetujuan Rilis Dana')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ((int) $state) {
+                        0 => 'Belum Diajukan',
+                        1 => 'Menunggu Persetujuan',
+                        2 => 'Ditolak',
+                        3 => 'Disetujui',
+                        default => '-',
+                    })
+                    ->color(fn ($state) => match ((int) $state) {
+                        0 => 'gray',
+                        1 => 'warning',
+                        2 => 'danger',
+                        3 => 'success',
+                        default => 'gray',
+                    })
+                    ->icon(fn ($state) => match ((int) $state) {
+                        0 => 'heroicon-m-minus-circle',
+                        1 => 'heroicon-m-clock',
+                        2 => 'heroicon-m-x-circle',
+                        3 => 'heroicon-m-check-circle',
+                        default => 'heroicon-m-minus-circle',
+                    }),
+
                 TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->date('d/m/Y')
@@ -179,30 +205,109 @@ class AdminPemesanansTable
                     }),
 
                     Action::make('terima_rilis_dana')
-                        ->label('Validasi Rilis Dana')
+                        ->label('Setujui Rilis Dana')
                         ->icon('heroicon-o-check-badge')
                         ->color('success')
-                        // Muncul jika invoice sudah ada dan belum dilunasi
-                        ->hidden(fn (Pesanan $record): bool => in_array($record->status_perilisan_dana, [2, 3]) || $record -> status_perilisan_dana === 0)
+                        ->visible(fn (Pesanan $record): bool => $record->status_perilisan_dana === 1)
                         ->requiresConfirmation()
-                        ->modalHeading('Validasi Rilis Dana')
+                        ->modalHeading('Persetujuan Rilis Dana (Admin)')
                         ->modalDescription(fn (Pesanan $record) => new HtmlString(
-                            "Rilis dana untuk pesanan <strong>{$record->code}</strong>.<br><br>Apakah anda ingin menyetujui perilisan dana untuk pesanan ini?"
+                            "Rilis dana untuk pesanan <strong>{$record->code}</strong>.<br>Total Tagihan: <strong>Rp " . number_format($record->total_harga, 0, ',', '.') . "</strong><br><br>Apakah Anda menyetujui perilisan dana untuk pesanan ini?"
                         ))
-                        
-                        ->modalSubmitActionLabel('Ya, Setuju') 
+                        ->modalSubmitActionLabel('Ya, Setujui') 
                         ->modalCancelActionLabel('Batal')
                         ->action(function (Pesanan $record) {
+                            $currentUserId = auth()->id();
 
-                        // 1. Update Pesanan
-                        $record->update(['status_perilisan_dana' => 3, 'status_pesanan' => 1]);
+                            $record->update(['status_perilisan_dana' => 3, 'status_pesanan' => 1]);
 
-                        Notification::make()
-                            ->success()
-                            ->title('Validasi Rilis Dana')
-                            ->body('Pesanan telah disetujui untuk perilisan dana.')
-                            ->send();
-                    }),
+                            $task = Task::where('pesanan_id', $record->id)
+                                ->where('role', 'finance')
+                                ->latest()
+                                ->first();
+
+                            if ($task) {
+                                TaskActivity::create([
+                                    'created_user_id' => $currentUserId,
+                                    'updated_user_id' => $currentUserId,
+                                    'task_id' => $task->id,
+                                    'note' => 'Admin menyetujui pengajuan rilis dana pesanan ' . $record->code . '.',
+                                    'pesanan_status' => 2,
+                                ]);
+                            }
+
+                            LogActivities::create([
+                                'user_id' => $currentUserId,
+                                'action' => 'Admin Approve Rilis Dana',
+                                'description' => 'Admin menyetujui perilisan dana untuk pesanan ' . $record->code,
+                                'oldData' => json_encode(['status_perilisan_dana' => 1]),
+                                'newData' => json_encode(['status_perilisan_dana' => 3]),
+                                'ip_address' => request()->ip(),
+                                'user_agent' => request()->userAgent(),
+                            ]);
+
+                            Notification::make()
+                                ->success()
+                                ->title('Persetujuan Berhasil')
+                                ->body('Pesanan telah disetujui untuk perilisan dana.')
+                                ->send();
+                        }),
+
+                    Action::make('tolak_rilis_dana')
+                        ->label('Tolak Rilis Dana')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn (Pesanan $record): bool => $record->status_perilisan_dana === 1)
+                        ->form([
+                            Textarea::make('alasan_penolakan')
+                                ->label('Alasan Penolakan')
+                                ->placeholder('Masukkan alasan penolakan rilis dana...')
+                                ->required()
+                                ->rows(3),
+                        ])
+                        ->modalHeading('Tolak Pengeluaran Dana (Admin)')
+                        ->modalDescription(fn (Pesanan $record) => new HtmlString(
+                            "Pengajuan rilis dana untuk pesanan <strong>{$record->code}</strong> akan ditolak."
+                        ))
+                        ->modalSubmitActionLabel('Tolak Pengajuan')
+                        ->modalCancelActionLabel('Batal')
+                        ->action(function (Pesanan $record, array $data) {
+                            $currentUserId = auth()->id();
+                            $alasan = $data['alasan_penolakan'] ?? 'Tidak ada alasan';
+
+                            $record->update(['status_perilisan_dana' => 2]);
+
+                            $task = Task::where('pesanan_id', $record->id)
+                                ->where('role', 'finance')
+                                ->latest()
+                                ->first();
+
+                            if ($task) {
+                                TaskActivity::create([
+                                    'created_user_id' => $currentUserId,
+                                    'updated_user_id' => $currentUserId,
+                                    'task_id' => $task->id,
+                                    'note' => 'Pengajuan rilis dana DITOLAK oleh Admin: ' . $alasan,
+                                    'pesanan_status' => 1,
+                                ]);
+                            }
+
+                            LogActivities::create([
+                                'user_id' => $currentUserId,
+                                'action' => 'Admin Tolak Rilis Dana',
+                                'description' => 'Admin menolak rilis dana untuk pesanan ' . $record->code . '. Alasan: ' . $alasan,
+                                'oldData' => json_encode(['status_perilisan_dana' => 1]),
+                                'newData' => json_encode(['status_perilisan_dana' => 2, 'alasan' => $alasan]),
+                                'ip_address' => request()->ip(),
+                                'user_agent' => request()->userAgent(),
+                            ]);
+
+                            Notification::make()
+                                ->warning()
+                                ->title('Rilis Dana Ditolak')
+                                ->body('Pengajuan rilis dana telah ditolak.')
+                                ->send();
+                        }),
 
             ])
             ->toolbarActions([
