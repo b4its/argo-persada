@@ -42,37 +42,38 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### 1.2. Jalankan (pilih salah satu)
+### 1.2. Jalankan Server Lokal & Akses Jaringan (LAN / Wi-Fi)
+
+Cukup jalankan satu perintah Makefile:
 
 ```bash
-# Pakai Nginx + PHP-FPM (disarankan)
-docker compose --profile nginx up -d --build
-
-# atau pakai Apache
-docker compose --profile apache up -d --build
+make local
+# atau
+make local-up
 ```
 
-Akses di `http://localhost:8000`.
+Perintah di atas secara otomatis:
+1. Mendeteksi IP jaringan lokal (LAN / Wi-Fi) host (contoh: `http://192.168.101.8:8000`).
+2. Menyesuaikan `APP_URL=http://<IP_LAN>:8000` di `.env` agar seluruh aset (CSS/JS), font, Livewire endpoint, dan redirect Filament dapat diakses secara **konsisten tanpa CORS error** oleh perangkat lain di jaringan yang sama.
+3. Menjalankan container Docker (Nginx, PHP-FPM, MySQL).
+4. Menjalankan migrasi database & membersihkan cache Laravel.
+5. Menampilkan banner informasi URL untuk akses di laptop host maupun device lain di jaringan Wi-Fi/LAN yang sama.
 
-### 1.3. Setup permission & cache
+### 1.3. Perintah Tambahan Lokal (Makefile)
 
-```bash
-make perm     # kepemilikan file + folder writable (storage, bootstrap/cache, public)
-make clear    # optimize:clear (jalankan setiap ada error cache)
-```
-
-### 1.4. Migrasi database
-
-```bash
-docker exec -it argo-php-fpm php artisan migrate --seed
-```
-
-### 1.5. Berhenti
-
-```bash
-docker compose down          # berhenti + hapus container (data mysql tersimpan di volume)
-docker compose down -v       # reset total, hapus juga volume mysql
-```
+| Command | Kegunaan |
+|---|---|
+| `make local` / `make local-up` | Jalankan server lokal + sinkronisasi IP LAN |
+| `make local-ip` | Cek IP LAN aktif & update `.env` jika IP berubah |
+| `make local-down` | Hentikan container lokal |
+| `make local-restart` | Restart server lokal & perbarui IP LAN |
+| `make local-clear` | Bersihkan cache config, route, view, filament |
+| `make local-migrate` | Jalankan migrasi database lokal |
+| `make local-seed` | Jalankan seeder database lokal (`make local-seed [NamaSeeder]`) |
+| `make local-logs` | Lihat log realtime container lokal |
+| `make local-perm` | Atur permission writable storage, cache, public |
+| `make local-php` | Masuk shell bash ke container PHP lokal |
+| `make local-db` | Masuk console MySQL ke container DB lokal |
 
 ---
 

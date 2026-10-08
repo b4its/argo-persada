@@ -7,6 +7,12 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     volumes:
       - mysql_data_local:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
     networks:
       - argo-network
 
@@ -26,6 +32,7 @@ services:
 
   # GRUP NGINX (Terdiri dari Nginx + PHP-FPM)
   php-fpm:
+    image: agropersada-php-fpm:latest
     build:
       context: .
       dockerfile: ./docker-nginx/Dockerfile
@@ -33,6 +40,9 @@ services:
     profiles: ["nginx"] # <--- Ikut grup nginx
     volumes:
       - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - argo-network
 

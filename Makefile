@@ -1,27 +1,140 @@
 # Variabel - Sesuaikan jika nama container berubah
 CONTAINER_PHP=argo-php-fpm
+CONTAINER_DB=argo-db
+CONTAINER_NGINX=argo-nginx
+LOCAL_PORT?=8000
+
 CONTAINER_PHP_PROD=argo-prod-php-fpm
 CONTAINER_NGROK=argo-prod-ngrok
 CONTAINER_DB_PROD=argo-prod-db
 
-.PHONY: perm fix-cache clear ngrok-seed
+.PHONY: perm fix-cache clear local local-up local-down local-restart local-ip local-env local-clear local-migrate local-seed local-logs local-perm local-php local-db dev env-local ngrok-up ngrok-down ngrok-env ngrok-url ngrok-logs ngrok-perm ngrok-install ngrok-clear ngrok-migrate ngrok-seed ngrok-build ngrok-filament ngrok-db ngrok-php ngrok-user ngrok
 
-# 1. Menyatukan semua urusan permission
+# ============================================================
+# 1. DEVELOPMENT LOKAL & AKSES JARINGAN (LAN / WI-FI)
+# ============================================================
+
+# Alias praktis untuk menjalankan server lokal
+local: local-up
+dev: local-up
+
+# Menjalankan aplikasi secara lokal dan sinkronisasi IP LAN agar konsisten diakses device lain
+local-up:
+	@echo "🔍 Memeriksa port $(LOCAL_PORT)..."
+	@fuser -k $(LOCAL_PORT)/tcp 2>/dev/null || true
+	@$(MAKE) local-env
+	@echo "🚀 Menjalankan container lokal (Nginx + PHP-FPM + MySQL)..."
+	docker compose --profile nginx up -d
+	@echo "⌛ Menunggu database lokal siap..."
+	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do \
+		if docker exec $(CONTAINER_DB) mysqladmin ping -h 127.0.0.1 -uroot --silent 2>/dev/null; then break; fi; \
+		sleep 1; \
+	done
+	@echo "✅ Database lokal siap!"
+	@echo "🔄 Menjalankan migrasi database..."
+	docker exec $(CONTAINER_PHP) php artisan migrate --force
+	@echo "🧹 Membersihkan cache aplikasi..."
+	docker exec $(CONTAINER_PHP) php artisan optimize:clear
+	@$(MAKE) local-perm
+	@$(MAKE) local-ip
+
+# Menghentikan container lokal
+local-down:
+	@echo "🛑 Menghentikan container lokal..."
+	docker compose --profile nginx down
+	@echo "✅ Container lokal telah dimatikan."
+
+# Restart container lokal dengan refresh IP LAN
+local-restart: local-down local-up
+
+# Deteksi IP lokal (LAN / Wi-Fi) dan sesuaikan konfigurasi .env
+local-env:
+	@echo "🌐 Mendeteksi IP jaringan lokal (LAN / Wi-Fi)..."
+	@ip=$$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($$i=="src") print $$(i+1)}'); \
+	if [ -z "$$ip" ]; then \
+		ip=$$(ip -4 addr show scope global 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^172\.' | head -n 1); \
+	fi; \
+	if [ -z "$$ip" ]; then ip="localhost"; fi; \
+	url="http://$$ip:$(LOCAL_PORT)"; \
+	test -f .env || cp .env.example .env; \
+	if grep -q "^APP_URL=" .env; then sed -i "s|^APP_URL=.*|APP_URL=$$url|" .env; else echo "APP_URL=$$url" >> .env; fi; \
+	if grep -q "^APP_ENV=" .env; then sed -i "s|^APP_ENV=.*|APP_ENV=local|" .env; else echo "APP_ENV=local" >> .env; fi; \
+	if grep -q "^APP_DEBUG=" .env; then sed -i "s|^APP_DEBUG=.*|APP_DEBUG=true|" .env; else echo "APP_DEBUG=true" >> .env; fi; \
+	if grep -q "^DB_HOST=" .env; then sed -i "s|^DB_HOST=.*|DB_HOST=db|" .env; else echo "DB_HOST=db" >> .env; fi; \
+	echo "✅ .env disinkronkan ke IP LAN: $$url (APP_ENV=local, APP_DEBUG=true, DB_HOST=db)"
+
+# Tampilkan informasi alamat IP dan petunjuk akses untuk device lain di jaringan yang sama
+local-ip:
+	@ip=$$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($$i=="src") print $$(i+1)}'); \
+	if [ -z "$$ip" ]; then \
+		ip=$$(ip -4 addr show scope global 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^172\.' | head -n 1); \
+	fi; \
+	if [ -z "$$ip" ]; then ip="localhost"; fi; \
+	echo ""; \
+	echo "============================================================"; \
+	echo "  🌐 INFORMASI AKSES JARINGAN LOKAL (LAN / SATU WI-FI)"; \
+	echo "============================================================"; \
+	echo "  💻 Akses di Komputer ini (Host) : http://localhost:$(LOCAL_PORT)"; \
+	echo "                                   http://$$ip:$(LOCAL_PORT)"; \
+	echo "  📱 Akses di HP / Device Lain    : http://$$ip:$(LOCAL_PORT)"; \
+	echo "------------------------------------------------------------"; \
+	echo "  ℹ️  Pastikan perangkat lain terhubung ke Wi-Fi / LAN yang sama."; \
+	echo "============================================================"; \
+	echo ""
+
+# Bersihkan cache di container lokal
+local-clear:
+	@echo "🧹 Membersihkan cache lokal..."
+	docker exec $(CONTAINER_PHP) php artisan optimize:clear
+	@echo "✅ Cache lokal cleared!"
+
+# Jalankan migrasi di container lokal
+local-migrate:
+	docker exec $(CONTAINER_PHP) php artisan migrate --force
+	@echo "✅ Migrasi database lokal selesai!"
+
+# Jalankan database seeder di container lokal
+local-seed:
+	@[ -z "$(filter-out local-seed,$(MAKECMDGOALS))" ] && \
+		docker exec $(CONTAINER_PHP) php artisan db:seed --force || \
+		docker exec $(CONTAINER_PHP) php artisan db:seed --class=$(filter-out local-seed,$(MAKECMDGOALS)) --force
+	@echo "✅ Seeder lokal selesai dijalankan!"
+
+# Lihat realtime logs container lokal
+local-logs:
+	docker compose --profile nginx logs -f
+
+# Atur permission storage, cache, public di container lokal
+local-perm:
+	@echo "🔵 Mengatur permission folder writable di dalam container lokal..."
+	@docker exec $(CONTAINER_PHP) chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public 2>/dev/null || true
+	@docker exec $(CONTAINER_PHP) chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public 2>/dev/null || true
+	@echo "✅ Permission lokal siap!"
+
+# Masuk shell bash ke container PHP lokal
+local-php:
+	docker exec -it $(CONTAINER_PHP) bash
+
+# Masuk mysql shell ke container DB lokal
+local-db:
+	docker exec -it $(CONTAINER_DB) mysql -u root
+
+# Kembalikan .env ke mode lokal
+env-local: local-env local-clear
+
+# Urusan permission host
 perm:
 	@echo "🟢 Mengatur kepemilikan file ke user host ($$USER)..."
 	sudo chown -R $$(id -u):$$(id -g) .
-	@echo "🔵 Mengatur permission folder writable di dalam container..."
-	docker exec $(CONTAINER_PHP) chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
-	docker exec $(CONTAINER_PHP) chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
+	@$(MAKE) local-perm
 	@echo "✅ Selesai! Kamu bisa hapus folder dan PHP bisa nulis file."
 
-# 2. Bonus: Membersihkan cache Laravel yang sering bikin error di Docker
-clear:
-	docker exec $(CONTAINER_PHP) php artisan optimize:clear
-	@echo "🧹 Cache cleared!"
+# Membersihkan cache Laravel yang sering bikin error di Docker
+clear: local-clear
 
-# 3. DEPLOY PRODUCTION VIA NGROK (hosting, domain default ngrok)
-# File terpisah dari docker-compose.yml agar tidak campur dengan lokal
+# ============================================================
+# 2. DEPLOY PRODUCTION VIA NGROK (hosting, domain default ngrok)
+# ============================================================
 ngrok-up:
 	@echo "🔍 Membersihkan semua container lama yang mungkin masih stuck..."
 	docker compose -f docker-compose.ngrok.yml down --remove-orphans 2>/dev/null || true
@@ -60,19 +173,6 @@ ngrok-env:
 	fi
 	@echo "ℹ️  Lanjutkan dengan: make ngrok-migrate lalu make ngrok-clear"
 
-# Kembalikan .env ke mode lokal (APP_URL http + APP_ENV local).
-# Jalankan ini sebelum memakai docker compose --profile nginx/apache.
-env-local:
-	@if [ -f .env ]; then \
-		if grep -q "^APP_URL=" .env; then sed -i "s|^APP_URL=.*|APP_URL=http://localhost:9000|" .env; else echo "APP_URL=http://localhost:9000" >> .env; fi; \
-		if grep -q "^APP_ENV=" .env; then sed -i "s|^APP_ENV=.*|APP_ENV=local|" .env; else echo "APP_ENV=local" >> .env; fi; \
-		if grep -q "^APP_DEBUG=" .env; then sed -i "s|^APP_DEBUG=.*|APP_DEBUG=true|" .env; else echo "APP_DEBUG=true" >> .env; fi; \
-		echo "✅ .env mode lokal -> APP_URL=http://localhost:9000, APP_ENV=local"; \
-	else \
-		echo "⚠️  .env tidak ditemukan, jalankan 'make ngrok-install' dulu."; \
-	fi
-	@$(MAKE) clear
-
 ngrok-down:
 	docker compose -f docker-compose.ngrok.yml down
 
@@ -101,7 +201,6 @@ ngrok-install:
 
 ngrok-clear:
 	@echo "⌛ Menunggu database produksi siap..."
-	
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do \
 		if docker exec $(CONTAINER_DB_PROD) mysqladmin ping -h 127.0.0.1 -uroot --silent 2>/dev/null; then break; fi; \
 		sleep 1; \
@@ -125,11 +224,6 @@ ngrok-seed:
 		docker exec $(CONTAINER_PHP_PROD) php artisan db:seed --force || \
 		docker exec $(CONTAINER_PHP_PROD) php artisan db:seed --class=$(filter-out ngrok-seed,$(MAKECMDGOALS)) --force
 	@echo "✅ Seeder produksi selesai dijalankan!"
-
-# Target catch-all: menyerap argumen tambahan (mis. nama seeder) agar
-# "make ngrok-seed UserSeeder" tidak dianggap target tak dikenal.
-%:
-	@:
 
 ngrok-build:
 	@echo "📦 Compile asset Vite (public/build/manifest.json) di container produksi..."
@@ -156,5 +250,7 @@ ngrok-user:
 ngrok:
 	@./ngrok-start.sh
 
+# Target catch-all: menyerap argumen tambahan (mis. nama seeder) agar
+# "make ngrok-seed UserSeeder" atau "make local-seed UserSeeder" tidak dianggap target tak dikenal.
 %:
 	@:
