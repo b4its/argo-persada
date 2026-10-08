@@ -220,7 +220,7 @@
                 <tr>
                     <td>Tanggal</td>
                     <td>:</td>
-                    <td>{{ $pesanan->created_at ? $pesanan->created_at->format('d-m-Y') : date('d-m-Y') }}</td>
+                    <td>{{ $pesanan->tanggal_po ? \Carbon\Carbon::parse($pesanan->tanggal_po)->format('d-m-Y') : ($pesanan->created_at ? $pesanan->created_at->format('d-m-Y') : date('d-m-Y')) }}</td>
                 </tr>
                 <tr>
                     <td>DEPARTMENT</td>

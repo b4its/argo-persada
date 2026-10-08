@@ -46,6 +46,12 @@ class MarketingPemesanansTable
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('tanggal_po')
+                    ->label('Tanggal PO')
+                    ->date('d/m/Y')
+                    ->default(fn (Pesanan $record) => $record->created_at?->format('d/m/Y'))
+                    ->sortable(),
+
                 TextColumn::make('tipe_pesanan')
                     ->label('Tipe')
                     ->badge()

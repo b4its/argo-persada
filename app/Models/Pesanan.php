@@ -16,6 +16,7 @@ class Pesanan extends Model
         'keranjang_id', 
         'company_internal_id', 
         'saldo_id', 
+        'tanggal_po',
         'code', 
         'tipe_pesanan',
         'group_name', 
@@ -46,6 +47,33 @@ class Pesanan extends Model
         'file_do',
         'keterangan_logistik'
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'tanggal_po' => 'date',
+            'tanggal_rilis_dana' => 'date',
+            'tanggal_terbit_surat_jalan' => 'date',
+            'tanggal_terbit_invoice' => 'date',
+            'tanggal_jatuh_tempo' => 'date',
+            'tanggal_surat_kembali' => 'date',
+            'tanggal_lunas' => 'date',
+            'validasi_tanggal_lunas' => 'date',
+        ];
+    }
+
+    public function getEffectiveTanggalPoAttribute(): string
+    {
+        if ($this->tanggal_po) {
+            return $this->tanggal_po instanceof \Carbon\Carbon ? $this->tanggal_po->format('d-m-Y') : \Carbon\Carbon::parse($this->tanggal_po)->format('d-m-Y');
+        }
+        return $this->created_at ? $this->created_at->format('d-m-Y') : date('d-m-Y');
+    }
+
+    public function getTanggalPemesananAttribute()
+    {
+        return $this->tanggal_po ?? $this->created_at;
+    }
 
     public function user(): BelongsTo
     {

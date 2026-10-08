@@ -46,7 +46,7 @@ class SuratPesananExport implements FromView, ShouldAutoSize, WithStyles
     private function formatRow($pesanan, $item)
     {
         return [
-            'tgl_po'      => $pesanan->created_at ? Carbon::parse($pesanan->created_at)->format('d/m/y') : '-',
+            'tgl_po'      => $pesanan->tanggal_po ? Carbon::parse($pesanan->tanggal_po)->format('d/m/y') : ($pesanan->created_at ? Carbon::parse($pesanan->created_at)->format('d/m/y') : '-'),
             'group'       => $pesanan->group_name ?? '-',
             'company'     => $pesanan->company_name ?? '-',
             'no_po'       => $pesanan->code ?? '-',

@@ -41,9 +41,10 @@ class DetailPesananViewAction extends ViewAction
                 Placeholder::make('durasi_po_do')
                     ->label('Durasi PO ke DO')
                     ->content(fn ($record): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString(
-                        $record->created_at && $record->tanggal_terbit_surat_jalan
+                        ($record->tanggal_po ?? $record->created_at) && $record->tanggal_terbit_surat_jalan
                             ? (function () use ($record) {
-                                $totalMinutes = abs((int) $record->created_at->diffInMinutes(\Carbon\Carbon::parse($record->tanggal_terbit_surat_jalan)));
+                                $poDate = $record->tanggal_po ? \Carbon\Carbon::parse($record->tanggal_po) : $record->created_at;
+                                $totalMinutes = abs((int) $poDate->diffInMinutes(\Carbon\Carbon::parse($record->tanggal_terbit_surat_jalan)));
 
                                 if ($totalMinutes >= 1440) {
                                     $days = (int) ($totalMinutes / 1440);
@@ -243,7 +244,8 @@ class DetailPesananViewAction extends ViewAction
                     ]
                 ];
 
-                $data['tanggal_pemesanan'] = $record->created_at;
+                $data['tanggal_pemesanan'] = $record->tanggal_po ?? $record->created_at;
+                $data['tanggal_po'] = $record->tanggal_po ?? $record->created_at;
                 $data['tanggal_terbit_surat_jalan'] = $record->tanggal_terbit_surat_jalan;
 
                 return $data;

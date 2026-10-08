@@ -21,34 +21,7 @@ class SuratPesanan extends Controller
         $query = Pesanan::query();
 
         // Filter berdasarkan periode yang dikirim dari Filament
-        if ($request->has('periode')) {
-            switch ($request->periode) {
-                case 'minggu':
-                    $query->whereBetween('created_at', [
-                        now()->startOfWeek(), 
-                        now()->endOfWeek()
-                    ]);
-                    break;
-
-                case 'bulan':
-                    $query->whereMonth('created_at', now()->month)
-                        ->whereYear('created_at', now()->year);
-                    break;
-
-                case 'tahun':
-                    $query->whereYear('created_at', now()->year);
-                    break;
-
-                case 'custom':
-                    if ($request->start_date && $request->end_date) {
-                        $query->whereBetween('created_at', [
-                            Carbon::parse($request->start_date)->startOfDay(),
-                            Carbon::parse($request->end_date)->endOfDay(),
-                        ]);
-                    }
-                    break;
-            }
-        }
+        $this->applyPeriodeFilter($query, $request);
 
         $pesananAll = $query->get();
 
@@ -63,32 +36,7 @@ class SuratPesanan extends Controller
     {
         $query = Pesanan::query();
 
-        // Filter yang sama persis dengan index
-        if ($request->has('periode')) {
-            switch ($request->periode) {
-                case 'minggu':
-                    $query->whereBetween('created_at', [
-                        now()->startOfWeek(), 
-                        now()->endOfWeek()
-                    ]);
-                    break;
-                case 'bulan':
-                    $query->whereMonth('created_at', now()->month)
-                        ->whereYear('created_at', now()->year);
-                    break;
-                case 'tahun':
-                    $query->whereYear('created_at', now()->year);
-                    break;
-                case 'custom':
-                    if ($request->start_date && $request->end_date) {
-                        $query->whereBetween('created_at', [
-                            Carbon::parse($request->start_date)->startOfDay(),
-                            Carbon::parse($request->end_date)->endOfDay(),
-                        ]);
-                    }
-                    break;
-            }
-        }
+        $this->applyPeriodeFilter($query, $request);
 
         $pesananAll = $query->get();
 
@@ -96,4 +44,44 @@ class SuratPesanan extends Controller
         return Excel::download(new SuratPesananExport($pesananAll), 'Monitoring_PO_Masuk_2026.xlsx');
     }
 
+    private function applyPeriodeFilter($query, Request $request): void
+    {
+        if (!$request->has('periode')) {
+            return;
+        }
+
+        $dateExpr = \Illuminate\Support\Facades\DB::raw('COALESCE(tanggal_po, date(created_at))');
+
+        switch ($request->periode) {
+            case 'minggu':
+                $query->whereBetween($dateExpr, [
+                    now()->startOfWeek()->toDateString(),
+                    now()->endOfWeek()->toDateString(),
+                ]);
+                break;
+
+            case 'bulan':
+                $query->whereBetween($dateExpr, [
+                    now()->startOfMonth()->toDateString(),
+                    now()->endOfMonth()->toDateString(),
+                ]);
+                break;
+
+            case 'tahun':
+                $query->whereBetween($dateExpr, [
+                    now()->startOfYear()->toDateString(),
+                    now()->endOfYear()->toDateString(),
+                ]);
+                break;
+
+            case 'custom':
+                if ($request->start_date && $request->end_date) {
+                    $query->whereBetween($dateExpr, [
+                        Carbon::parse($request->start_date)->toDateString(),
+                        Carbon::parse($request->end_date)->toDateString(),
+                    ]);
+                }
+                break;
+        }
+    }
 }

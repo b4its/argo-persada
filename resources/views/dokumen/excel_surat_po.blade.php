@@ -18,7 +18,7 @@
         <tr>
             <td colspan="3" style="font-weight: bold;">Tanggal Supply</td>
             <td style="font-weight: bold;">:</td>
-            <td colspan="7" style="text-align: left;">{{ $pesanan->created_at ? $pesanan->created_at->format('d-m-Y') : date('d-m-Y') }}</td>
+            <td colspan="7" style="text-align: left;">{{ $pesanan->tanggal_po ? \Carbon\Carbon::parse($pesanan->tanggal_po)->format('d-m-Y') : ($pesanan->created_at ? $pesanan->created_at->format('d-m-Y') : date('d-m-Y')) }}</td>
         </tr>
         <tr>
             <td colspan="3" style="font-weight: bold;">DEPARTMENT</td>

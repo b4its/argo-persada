@@ -261,7 +261,7 @@
             foreach($items as $item) {
                 $dataFromDB[] = [
                     'pic' => $picName, 
-                    'tgl_po' => $pesanan->created_at ? \Carbon\Carbon::parse($pesanan->created_at)->format('d/m/y') : '-',
+                    'tgl_po' => $pesanan->tanggal_po ? \Carbon\Carbon::parse($pesanan->tanggal_po)->format('d/m/y') : ($pesanan->created_at ? \Carbon\Carbon::parse($pesanan->created_at)->format('d/m/y') : '-'),
                     'group' => $pesanan->group_name ?? '-',
                     'company' => $pesanan->company_name ?? '-',
                     'no_po' => $pesanan->code ?? '-',
@@ -286,7 +286,7 @@
             // Fallback jika pesanan belum memiliki antrian item
             $dataFromDB[] = [
                 'pic' => $picName,
-                'tgl_po' => $pesanan->created_at ? \Carbon\Carbon::parse($pesanan->created_at)->format('d/m/y') : '-',
+                'tgl_po' => $pesanan->tanggal_po ? \Carbon\Carbon::parse($pesanan->tanggal_po)->format('d/m/y') : ($pesanan->created_at ? \Carbon\Carbon::parse($pesanan->created_at)->format('d/m/y') : '-'),
                 'group' => $pesanan->group_name ?? '-',
                 'company' => $pesanan->company_name ?? '-',
                 'no_po' => $pesanan->code ?? '-',

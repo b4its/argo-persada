@@ -87,6 +87,8 @@ class ListMarketingPemesanans extends ListRecords
                             'keranjang_id'        => $keranjang->id,
                             'company_internal_id' => $data['company_internal_id'] ?? null, 
                             'saldo_id'            => $data['saldo_id'] ?? null,
+                            'tanggal_po'          => $data['tanggal_po'] ?? $data['tanggal_pemesanan'] ?? now(),
+                            'tipe_pesanan'        => $data['tipe_pesanan'] ?? 0,
                             'no_po'               => $no_po,
                             'code'                => $no_po,
                             'ppn'                 => $tax_amount,

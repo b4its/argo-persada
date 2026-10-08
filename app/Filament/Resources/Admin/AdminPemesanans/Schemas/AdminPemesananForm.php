@@ -15,11 +15,12 @@ class AdminPemesananForm
     {
         return $schema
             ->components([
-                DatePicker::make('tanggal_pemesanan')
-                    ->label('Tanggal Pemesanan*')
+                DatePicker::make('tanggal_po')
+                    ->label('Tanggal PO / Pemesanan*')
+                    ->helperText('Dapat diatur tanggal mundur (backdate) atau manual.')
+                    ->default(now())
                     ->required()
-                    ->native(false)
-                    ->dehydrated(false),
+                    ->native(false),
 
                 TextInput::make('no_po')
                     ->label('No PO (Custom)')
