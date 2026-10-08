@@ -140,6 +140,75 @@ class Pesanan extends Model
         return $noRequisition;
     }
 
+    /**
+     * Memperbaiki dan memperbarui record requisition number lama di database
+     * agar memiliki format tanggal (ymd) + kode unik alfanumerik acak (contoh: 261008-AC7X).
+     *
+     * @return array{total_scanned: int, updated: int, skipped: int}
+     */
+    public static function fixExistingRequisitionNumbers(): array
+    {
+        $stats = [
+            'total_scanned' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+        ];
+
+        $records = static::whereNotNull('no_requisition')
+            ->where('no_requisition', '!=', '')
+            ->where('no_requisition', '!=', '---:---')
+            ->get();
+
+        $stats['total_scanned'] = $records->count();
+
+        foreach ($records as $pesanan) {
+            $oldReq = trim($pesanan->no_requisition);
+
+            // Jika formatnya sudah sesuai standard unik baru: 6 digit tanggal + '-' + 4 karakter alfanumerik
+            if (preg_match('/^\d{6}-[A-Z0-9]{4}$/', $oldReq)) {
+                $stats['skipped']++;
+                continue;
+            }
+
+            // Ekstrak atau tentukan bagian tanggal (ymd)
+            if (preg_match('/^(\d{6})/', $oldReq, $matches)) {
+                // Jika format lama diawali 6 digit tanggal (misal 261006 atau 261007)
+                $datePart = $matches[1];
+            } elseif (!empty($pesanan->tanggal_po) && ($ts = strtotime((string) $pesanan->tanggal_po)) !== false) {
+                $datePart = date('ymd', $ts);
+            } elseif (!empty($pesanan->created_at)) {
+                $datePart = $pesanan->created_at->format('ymd');
+            } else {
+                $datePart = date('ymd');
+            }
+
+            do {
+                $uniqueCode = static::generateRandomAlphaNumericCode(4);
+                $newReq = "{$datePart}-{$uniqueCode}";
+            } while (static::where('no_requisition', $newReq)->where('id', '!=', $pesanan->id)->exists());
+
+            $pesanan->no_requisition = $newReq;
+            $pesanan->saveQuietly();
+
+            // Sinkronkan akun keuangan jika ada akun yang merujuk nomor requisition lama
+            \Illuminate\Support\Facades\DB::table('akun_keuangan')
+                ->where('name', 'Pesanan Barang No ' . $oldReq)
+                ->update(['name' => 'Pesanan Barang No ' . $newReq]);
+
+            // Sinkronkan task title jika ada yang merujuk nomor requisition lama
+            \Illuminate\Support\Facades\DB::table('task')
+                ->where('pesanan_id', $pesanan->id)
+                ->where('title', 'like', "%dengan No Requisition {$oldReq}%")
+                ->update([
+                    'title' => \Illuminate\Support\Facades\DB::raw("REPLACE(title, 'dengan No Requisition {$oldReq}', 'dengan No Requisition {$newReq}')")
+                ]);
+
+            $stats['updated']++;
+        }
+
+        return $stats;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
