@@ -61,6 +61,26 @@ services:
     networks:
       - argo-network
 
+  # PHPMYADMIN (Database GUI)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: argo-phpmyadmin
+    profiles: ["phpmyadmin", "tools"]
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ""
+      MYSQL_ROOT_PASSWORD: ""
+      UPLOAD_LIMIT: 256M
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - argo-network
+
 networks:
   argo-network:
     driver: bridge

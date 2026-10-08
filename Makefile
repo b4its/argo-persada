@@ -2,13 +2,15 @@
 CONTAINER_PHP=argo-php-fpm
 CONTAINER_DB=argo-db
 CONTAINER_NGINX=argo-nginx
+CONTAINER_PMA=argo-phpmyadmin
 LOCAL_PORT?=8000
+PMA_PORT?=8080
 
 CONTAINER_PHP_PROD=argo-prod-php-fpm
 CONTAINER_NGROK=argo-prod-ngrok
 CONTAINER_DB_PROD=argo-prod-db
 
-.PHONY: perm fix-cache clear local local-up local-down local-restart local-ip local-env local-clear local-migrate local-seed local-logs local-perm local-php local-db dev env-local ngrok-up ngrok-down ngrok-env ngrok-url ngrok-logs ngrok-perm ngrok-install ngrok-clear ngrok-migrate ngrok-seed ngrok-build ngrok-filament ngrok-db ngrok-php ngrok-user ngrok
+.PHONY: perm fix-cache clear local local-up local-down local-restart local-ip local-env local-clear local-migrate local-seed local-logs local-perm local-php local-db dev env-local phpmyadmin phpmyadmin-down pma pma-down ngrok-up ngrok-down ngrok-env ngrok-url ngrok-logs ngrok-perm ngrok-install ngrok-clear ngrok-migrate ngrok-seed ngrok-build ngrok-filament ngrok-db ngrok-php ngrok-user ngrok
 
 # ============================================================
 # 1. DEVELOPMENT LOKAL & AKSES JARINGAN (LAN / WI-FI)
@@ -39,7 +41,7 @@ local-up:
 # Menghentikan container lokal
 local-down:
 	@echo "🛑 Menghentikan container lokal..."
-	docker compose --profile nginx down
+	docker compose --profile nginx --profile phpmyadmin down
 	@echo "✅ Container lokal telah dimatikan."
 
 # Restart container lokal dengan refresh IP LAN
@@ -142,6 +144,40 @@ clear:
 	docker exec -it $(CONTAINER_PHP) chown -R www-data:www-data /var/www/html/public/
 	docker exec -it $(CONTAINER_PHP) chmod -R 775 /var/www/html/public/
 	@echo "✅ Cache cleared & permission selesai!"
+
+# ============================================================
+# PHPMYADMIN (Database GUI)
+# ============================================================
+pma: phpmyadmin
+pma-down: phpmyadmin-down
+
+# Menjalankan phpMyAdmin di web browser
+phpmyadmin:
+	@echo "🚀 Menjalankan phpMyAdmin container..."
+	@docker compose --profile phpmyadmin up -d
+	@ip=$$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($$i=="src") print $$(i+1)}'); \
+	if [ -z "$$ip" ]; then \
+		ip=$$(ip -4 addr show scope global 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^172\.' | head -n 1); \
+	fi; \
+	if [ -z "$$ip" ]; then ip="localhost"; fi; \
+	echo ""; \
+	echo "============================================================"; \
+	echo "  🐬 PHPMYADMIN SIAP DIGUNAKAN DI WEB BROWSER"; \
+	echo "============================================================"; \
+	echo "  💻 Akses di Komputer ini (Host) : http://localhost:$(PMA_PORT)"; \
+	echo "                                   http://$$ip:$(PMA_PORT)"; \
+	echo "  📱 Akses di HP / Device Lain    : http://$$ip:$(PMA_PORT)"; \
+	echo "------------------------------------------------------------"; \
+	echo "  🔑 User: root  |  Password: (kosong / tanpa password)"; \
+	echo "  🗄️ Database: argopersada"; \
+	echo "============================================================"; \
+	echo ""
+
+# Menghentikan phpMyAdmin container
+phpmyadmin-down:
+	@echo "🛑 Menghentikan phpMyAdmin container..."
+	docker compose --profile phpmyadmin stop phpmyadmin
+	@echo "✅ phpMyAdmin telah dinonaktifkan."
 
 # ============================================================
 # 2. DEPLOY PRODUCTION VIA NGROK (hosting, domain default ngrok)

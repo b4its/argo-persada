@@ -74,6 +74,8 @@ Perintah di atas secara otomatis:
 | `make local-perm` | Atur permission writable storage, cache, public |
 | `make local-php` | Masuk shell bash ke container PHP lokal |
 | `make local-db` | Masuk console MySQL ke container DB lokal |
+| `make phpmyadmin` / `make pma` | Jalankan GUI database phpMyAdmin di web browser (port 8080) |
+| `make phpmyadmin-down` | Hentikan container phpMyAdmin |
 
 ---
 
