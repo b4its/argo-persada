@@ -65,6 +65,22 @@ class AdminDashboard extends Page
     public ?string $filterStartDate = null;
     public ?string $filterEndDate = null;
 
+    public array $outstandingDeliveries = [];
+    public int $outstandingDeliveriesPage = 1;
+    public int $outstandingDeliveriesLastPage = 1;
+    public int $totalOutstandingDeliveriesCount = 0;
+    public int $totalOutstandingItemsCount = 0;
+
+    public array $outstandingInvoices = [];
+    public int $outstandingInvoicesPage = 1;
+    public int $outstandingInvoicesLastPage = 1;
+    public int $totalOutstandingInvoicesCount = 0;
+    public float $totalOutstandingInvoicesNominal = 0;
+    public int $totalOverdueInvoicesCount = 0;
+
+    public array $orderStatusMetrics = [];
+    public string $activeOperationalTab = 'all';
+
     public function mount(): void
     {
         $this->filterPreset = session('dashboard_filter_preset', '');
@@ -75,6 +91,7 @@ class AdminDashboard extends Page
         $this->loadRecentActivities();
         $this->loadRoleTables();
         $this->loadUnparticipatedUsers();
+        $this->loadOperationalMetrics();
     }
 
     public function getRenderHookScopes(): array
@@ -137,6 +154,7 @@ class AdminDashboard extends Page
         $this->loadRecentActivities();
         $this->loadRoleTables();
         $this->loadUnparticipatedUsers();
+        $this->loadOperationalMetrics();
         $this->dispatch('dashboard-filter-changed');
     }
 
@@ -1126,6 +1144,193 @@ class AdminDashboard extends Page
     public static function getNavigationIcon(): string
     {
         return 'heroicon-o-home';
+    }
+
+    public function setOperationalTab(string $tab): void
+    {
+        $this->activeOperationalTab = $tab;
+    }
+
+    public function setOutstandingDeliveriesPage(int $page): void
+    {
+        $this->outstandingDeliveriesPage = max(1, min($page, $this->outstandingDeliveriesLastPage));
+        $this->loadOutstandingDeliveries();
+    }
+
+    public function setOutstandingInvoicesPage(int $page): void
+    {
+        $this->outstandingInvoicesPage = max(1, min($page, $this->outstandingInvoicesLastPage));
+        $this->loadOutstandingInvoices();
+    }
+
+    public function loadOperationalMetrics(): void
+    {
+        $this->loadOutstandingDeliveries();
+        $this->loadOutstandingInvoices();
+        $this->loadOrderStatusMetrics();
+    }
+
+    protected function loadOutstandingDeliveries(): void
+    {
+        $dateRange = $this->getFilteredDateRange();
+
+        $baseQuery = Pesanan::query()
+            ->whereNull('tanggal_surat_kembali')
+            ->when($dateRange, fn ($q) => $q->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(tanggal_po, date(created_at))'), $dateRange));
+
+        $this->totalOutstandingDeliveriesCount = (clone $baseQuery)->count();
+
+        $keranjangIds = (clone $baseQuery)->pluck('keranjang_id')->filter();
+        $this->totalOutstandingItemsCount = (int) \App\Models\QueueKeranjang::whereIn('keranjang_id', $keranjangIds)->sum('quantity');
+
+        $paginator = (clone $baseQuery)
+            ->with(['companyInternal', 'keranjang.queueKeranjang', 'user'])
+            ->latest()
+            ->paginate(5, page: $this->outstandingDeliveriesPage);
+
+        $items = [];
+        foreach ($paginator->items() as $p) {
+            $goods = [];
+            foreach ($p->keranjang?->queueKeranjang ?? [] as $item) {
+                $goods[] = [
+                    'nama' => $item->item_name,
+                    'qty' => $item->quantity,
+                    'satuan' => $item->satuan ?? '-',
+                    'supplier' => $item->supplier_name ?? '-',
+                ];
+            }
+
+            $isShipped = !empty($p->tanggal_terbit_surat_jalan);
+
+            $items[] = [
+                'pesanan_id' => $p->id,
+                'code' => $p->code,
+                'no_po' => $p->no_po ?: $p->code,
+                'company_name' => $p->company_name ?? '-',
+                'address' => $p->address ?? '-',
+                'tanggal_po' => $p->effective_tanggal_po,
+                'no_delivery_order' => $p->no_delivery_order ?: '-',
+                'status_pengiriman' => $isShipped ? 'Dalam Pengiriman' : 'Belum Terbit Surat Jalan',
+                'status_badge' => $isShipped ? 'warning' : 'danger',
+                'total_qty' => collect($goods)->sum('qty'),
+                'goods' => $goods,
+            ];
+        }
+
+        $this->outstandingDeliveries = $items;
+        $this->outstandingDeliveriesPage = $paginator->currentPage();
+        $this->outstandingDeliveriesLastPage = $paginator->lastPage();
+    }
+
+    protected function loadOutstandingInvoices(): void
+    {
+        $dateRange = $this->getFilteredDateRange();
+
+        $baseQuery = Pesanan::query()
+            ->whereNull('tanggal_lunas')
+            ->where(function ($q) {
+                $q->whereNotNull('no_invoice')
+                  ->orWhere('status_pesanan', '>=', 3);
+            })
+            ->when($dateRange, fn ($q) => $q->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(tanggal_po, date(created_at))'), $dateRange));
+
+        $this->totalOutstandingInvoicesCount = (clone $baseQuery)->count();
+        $this->totalOutstandingInvoicesNominal = (float) (clone $baseQuery)->sum('total_harga');
+
+        $now = Carbon::now()->startOfDay();
+        $this->totalOverdueInvoicesCount = (clone $baseQuery)
+            ->whereNotNull('tanggal_jatuh_tempo')
+            ->where('tanggal_jatuh_tempo', '<', $now->toDateString())
+            ->count();
+
+        $paginator = (clone $baseQuery)
+            ->with(['companyInternal', 'user'])
+            ->latest()
+            ->paginate(5, page: $this->outstandingInvoicesPage);
+
+        $items = [];
+        foreach ($paginator->items() as $p) {
+            $tempoLabel = 'Belum Ditetapkan';
+            $tempoColor = 'gray';
+
+            if ($p->tanggal_jatuh_tempo) {
+                $tempoDate = Carbon::parse($p->tanggal_jatuh_tempo)->startOfDay();
+                if ($now->gt($tempoDate)) {
+                    $diff = $now->diffInDays($tempoDate);
+                    $tempoLabel = "Terlambat {$diff} hari";
+                    $tempoColor = "danger";
+                } elseif ($now->eq($tempoDate)) {
+                    $tempoLabel = "Jatuh Tempo Hari Ini";
+                    $tempoColor = "warning";
+                } else {
+                    $diff = $now->diffInDays($tempoDate);
+                    $tempoLabel = "Sisa {$diff} hari";
+                    $tempoColor = "success";
+                }
+            }
+
+            $items[] = [
+                'pesanan_id' => $p->id,
+                'no_invoice' => $p->no_invoice ?: 'Menunggu Terbit',
+                'code' => $p->code,
+                'company_name' => $p->company_name ?? '-',
+                'total_harga' => $p->total_harga,
+                'total_formatted' => 'Rp ' . number_format($p->total_harga ?? 0, 0, ',', '.'),
+                'tanggal_terbit_invoice' => $p->tanggal_terbit_invoice ? Carbon::parse($p->tanggal_terbit_invoice)->format('d/m/Y') : '-',
+                'tanggal_jatuh_tempo' => $p->tanggal_jatuh_tempo ? Carbon::parse($p->tanggal_jatuh_tempo)->format('d/m/Y') : '-',
+                'tempo_label' => $tempoLabel,
+                'tempo_color' => $tempoColor,
+            ];
+        }
+
+        $this->outstandingInvoices = $items;
+        $this->outstandingInvoicesPage = $paginator->currentPage();
+        $this->outstandingInvoicesLastPage = $paginator->lastPage();
+    }
+
+    protected function loadOrderStatusMetrics(): void
+    {
+        $dateRange = $this->getFilteredDateRange();
+
+        $statuses = [
+            0 => ['label' => 'Dibuat', 'color' => 'gray', 'desc' => 'Pesanan baru dibuat'],
+            1 => ['label' => 'Pending', 'color' => 'info', 'desc' => 'Menunggu pemrosesan'],
+            2 => ['label' => 'Perlu Rilis Dana', 'color' => 'warning', 'desc' => 'Menunggu pencairan kas'],
+            3 => ['label' => 'Perlu Cetak Invoice', 'color' => 'primary', 'desc' => 'Menunggu penerbitan invoice'],
+            4 => ['label' => 'Perlu Penagihan', 'color' => 'danger', 'desc' => 'Invoice terbit, dalam masa tagih'],
+            5 => ['label' => 'Ditandai Lunas', 'color' => 'success', 'desc' => 'Pembayaran telah diterima'],
+            6 => ['label' => 'Cetak Surat Jalan', 'color' => 'warning', 'desc' => 'Menunggu pengiriman'],
+            7 => ['label' => 'Selesai Dikirim', 'color' => 'info', 'desc' => 'Barang telah diterima'],
+            8 => ['label' => 'Selesai', 'color' => 'success', 'desc' => 'Seluruh tahapan rampung'],
+        ];
+
+        $totalAll = Pesanan::query()
+            ->when($dateRange, fn ($q) => $q->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(tanggal_po, date(created_at))'), $dateRange))
+            ->count();
+
+        $metrics = [];
+        foreach ($statuses as $code => $meta) {
+            $count = Pesanan::query()
+                ->where('status_pesanan', $code)
+                ->when($dateRange, fn ($q) => $q->whereBetween(\Illuminate\Support\Facades\DB::raw('COALESCE(tanggal_po, date(created_at))'), $dateRange))
+                ->count();
+
+            $percentage = $totalAll > 0 ? round(($count / $totalAll) * 100, 1) : 0;
+
+            $metrics[] = [
+                'code' => $code,
+                'label' => $meta['label'],
+                'color' => $meta['color'],
+                'desc' => $meta['desc'],
+                'count' => $count,
+                'percentage' => $percentage,
+            ];
+        }
+
+        $this->orderStatusMetrics = [
+            'total_all' => $totalAll,
+            'items' => $metrics,
+        ];
     }
 
 }

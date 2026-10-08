@@ -20,6 +20,378 @@
             </div>
         </div>
 
+        {{-- ── OPERASIONAL & MONITORING DETAIL ── --}}
+        <div class="space-y-4">
+            {{-- Summary Cards --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {{-- Card Outstanding Delivery --}}
+                <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-5 cursor-pointer hover:ring-primary-500 transition"
+                     wire:click="setOperationalTab('delivery')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding Pengiriman</p>
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                                {{ $totalOutstandingDeliveriesCount }} <span class="text-sm font-normal text-gray-500">Pesanan</span>
+                            </h3>
+                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                {{ number_format($totalOutstandingItemsCount) }} unit barang belum terkirim
+                            </p>
+                        </div>
+                        <div class="p-3 bg-amber-50 rounded-xl dark:bg-amber-950/30 text-amber-600 dark:text-amber-400">
+                            <x-heroicon-m-truck class="w-8 h-8" />
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Card Outstanding Invoice --}}
+                <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-5 cursor-pointer hover:ring-primary-500 transition"
+                     wire:click="setOperationalTab('invoice')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding Tagihan</p>
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                                Rp {{ number_format($totalOutstandingInvoicesNominal, 0, ',', '.') }}
+                            </h3>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $totalOutstandingInvoicesCount }} invoice aktif
+                                @if($totalOverdueInvoicesCount > 0)
+                                    <span class="text-danger-600 font-semibold">({{ $totalOverdueInvoicesCount }} jatuh tempo)</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="p-3 bg-rose-50 rounded-xl dark:bg-rose-950/30 text-rose-600 dark:text-rose-400">
+                            <x-heroicon-m-banknotes class="w-8 h-8" />
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Card Status Pemesanan Detail --}}
+                <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-5 cursor-pointer hover:ring-primary-500 transition"
+                     wire:click="setOperationalTab('status')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Status Pemesanan</p>
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                                {{ $orderStatusMetrics['total_all'] ?? 0 }} <span class="text-sm font-normal text-gray-500">Pesanan</span>
+                            </h3>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                9 tahapan siklus alur pemesanan
+                            </p>
+                        </div>
+                        <div class="p-3 bg-blue-50 rounded-xl dark:bg-blue-950/30 text-blue-600 dark:text-blue-400">
+                            <x-heroicon-m-clipboard-document-check class="w-8 h-8" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Operational Tabs Navigation --}}
+            <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-2">
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        wire:click="setOperationalTab('all')"
+                        type="button"
+                        class="px-4 py-2 text-xs font-medium rounded-lg transition {{ $activeOperationalTab === 'all' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5' }}"
+                    >
+                        Semua Ringkasan
+                    </button>
+                    <button
+                        wire:click="setOperationalTab('delivery')"
+                        type="button"
+                        class="px-4 py-2 text-xs font-medium rounded-lg transition flex items-center gap-2 {{ $activeOperationalTab === 'delivery' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5' }}"
+                    >
+                        <span>Outstanding Barang Belum Terkirim</span>
+                        <x-filament::badge color="warning" size="xs">
+                            {{ $totalOutstandingDeliveriesCount }}
+                        </x-filament::badge>
+                    </button>
+                    <button
+                        wire:click="setOperationalTab('invoice')"
+                        type="button"
+                        class="px-4 py-2 text-xs font-medium rounded-lg transition flex items-center gap-2 {{ $activeOperationalTab === 'invoice' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5' }}"
+                    >
+                        <span>Outstanding Tagihan & Piutang</span>
+                        <x-filament::badge color="danger" size="xs">
+                            {{ $totalOutstandingInvoicesCount }}
+                        </x-filament::badge>
+                    </button>
+                    <button
+                        wire:click="setOperationalTab('status')"
+                        type="button"
+                        class="px-4 py-2 text-xs font-medium rounded-lg transition {{ $activeOperationalTab === 'status' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5' }}"
+                    >
+                        Rincian Status Pemesanan
+                    </button>
+                </div>
+            </div>
+
+            {{-- Tab Content: Outstanding Delivery --}}
+            @if($activeOperationalTab === 'all' || $activeOperationalTab === 'delivery')
+                <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <x-heroicon-m-truck class="w-5 h-5 text-amber-500" />
+                                Outstanding Pengiriman (Barang Belum Terkirim)
+                            </h3>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                Pesanan dengan surat jalan belum kembali / pengiriman belum tuntas
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <x-filament::badge color="warning" size="md">
+                                {{ $totalOutstandingDeliveriesCount }} Pesanan Aktif
+                            </x-filament::badge>
+                            <x-filament::badge color="gray" size="md">
+                                {{ number_format($totalOutstandingItemsCount) }} Total Qty
+                            </x-filament::badge>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">No. PO / Kode</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Perusahaan & Alamat</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Tanggal PO</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Barang Belum Terkirim</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Status Logistik</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                                @forelse($outstandingDeliveries as $deliv)
+                                    <tr class="hover:bg-gray-50/80 dark:hover:bg-white/5 transition">
+                                        <td class="px-4 py-3 align-top whitespace-nowrap">
+                                            <div class="font-bold text-gray-900 dark:text-white">{{ $deliv['no_po'] }}</div>
+                                            <div class="text-xs text-gray-500">{{ $deliv['code'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 align-top">
+                                            <div class="font-medium text-gray-900 dark:text-white">{{ $deliv['company_name'] }}</div>
+                                            <div class="text-xs text-gray-500 line-clamp-2 max-w-xs">{{ $deliv['address'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 align-top whitespace-nowrap text-gray-700 dark:text-gray-300">
+                                            {{ $deliv['tanggal_po'] ? \Carbon\Carbon::parse($deliv['tanggal_po'])->format('d/m/Y') : '-' }}
+                                        </td>
+                                        <td class="px-4 py-3 align-top">
+                                            @if(!empty($deliv['goods']))
+                                                <div class="space-y-1">
+                                                    @foreach($deliv['goods'] as $g)
+                                                        <div class="text-xs flex items-center justify-between gap-3 bg-gray-50 dark:bg-white/5 px-2 py-1 rounded">
+                                                            <span class="font-medium text-gray-800 dark:text-gray-200">{{ $g['nama'] }}</span>
+                                                            <span class="text-gray-600 dark:text-gray-400 whitespace-nowrap font-semibold">{{ $g['qty'] }} {{ $g['satuan'] }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="text-xs text-gray-400">Tidak ada item tercatat</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 align-top whitespace-nowrap">
+                                            <x-filament::badge color="{{ $deliv['status_badge'] }}" size="sm">
+                                                {{ $deliv['status_pengiriman'] }}
+                                            </x-filament::badge>
+                                            @if($deliv['no_delivery_order'] !== '-')
+                                                <div class="text-xs text-gray-500 mt-1">DO: {{ $deliv['no_delivery_order'] }}</div>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 align-top text-center whitespace-nowrap">
+                                            <x-filament::button
+                                                color="info"
+                                                size="xs"
+                                                icon="heroicon-m-eye"
+                                                wire:click="showDetail({{ $deliv['pesanan_id'] }})"
+                                            >
+                                                Detail
+                                            </x-filament::button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-6 text-center text-sm text-gray-500">
+                                            Tidak ada outstanding pengiriman saat ini.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($outstandingDeliveriesLastPage > 1)
+                        <div class="flex items-center justify-between px-6 py-3 border-t border-gray-200 dark:border-white/10">
+                            <x-filament::button
+                                color="gray" size="xs"
+                                wire:click="setOutstandingDeliveriesPage({{ $outstandingDeliveriesPage - 1 }})"
+                                :disabled="$outstandingDeliveriesPage <= 1"
+                            >
+                                &laquo; Sebelumnya
+                            </x-filament::button>
+                            <span class="text-xs text-gray-500">
+                                Halaman {{ $outstandingDeliveriesPage }} dari {{ $outstandingDeliveriesLastPage }}
+                            </span>
+                            <x-filament::button
+                                color="gray" size="xs"
+                                wire:click="setOutstandingDeliveriesPage({{ $outstandingDeliveriesPage + 1 }})"
+                                :disabled="$outstandingDeliveriesPage >= $outstandingDeliveriesLastPage"
+                            >
+                                Selanjutnya &raquo;
+                            </x-filament::button>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            {{-- Tab Content: Outstanding Tagihan --}}
+            @if($activeOperationalTab === 'all' || $activeOperationalTab === 'invoice')
+                <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <x-heroicon-m-banknotes class="w-5 h-5 text-rose-500" />
+                                Outstanding Tagihan (Piutang Belum Lunas)
+                            </h3>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                Invoice & pesanan dalam masa penagihan yang belum ditandai lunas
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <x-filament::badge color="danger" size="md">
+                                {{ $totalOutstandingInvoicesCount }} Belum Lunas
+                            </x-filament::badge>
+                            <x-filament::badge color="warning" size="md">
+                                Rp {{ number_format($totalOutstandingInvoicesNominal, 0, ',', '.') }}
+                            </x-filament::badge>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">No. Invoice & PO</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Perusahaan (Pelanggan)</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Total Tagihan</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Tgl Terbit</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Jatuh Tempo</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Status Jatuh Tempo</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                                @forelse($outstandingInvoices as $inv)
+                                    <tr class="hover:bg-gray-50/80 dark:hover:bg-white/5 transition">
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <div class="font-bold text-gray-900 dark:text-white">{{ $inv['no_invoice'] }}</div>
+                                            <div class="text-xs text-gray-500">{{ $inv['code'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div class="font-medium text-gray-900 dark:text-white">{{ $inv['company_name'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap font-bold text-gray-900 dark:text-white">
+                                            {{ $inv['total_formatted'] }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400 text-xs">
+                                            {{ $inv['tanggal_terbit_invoice'] }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400 text-xs">
+                                            {{ $inv['tanggal_jatuh_tempo'] }}
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <x-filament::badge color="{{ $inv['tempo_color'] }}" size="sm">
+                                                {{ $inv['tempo_label'] }}
+                                            </x-filament::badge>
+                                        </td>
+                                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                                            <x-filament::button
+                                                color="info"
+                                                size="xs"
+                                                icon="heroicon-m-eye"
+                                                wire:click="showDetail({{ $inv['pesanan_id'] }})"
+                                            >
+                                                Detail
+                                            </x-filament::button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="px-4 py-6 text-center text-sm text-gray-500">
+                                            Tidak ada outstanding tagihan saat ini.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($outstandingInvoicesLastPage > 1)
+                        <div class="flex items-center justify-between px-6 py-3 border-t border-gray-200 dark:border-white/10">
+                            <x-filament::button
+                                color="gray" size="xs"
+                                wire:click="setOutstandingInvoicesPage({{ $outstandingInvoicesPage - 1 }})"
+                                :disabled="$outstandingInvoicesPage <= 1"
+                            >
+                                &laquo; Sebelumnya
+                            </x-filament::button>
+                            <span class="text-xs text-gray-500">
+                                Halaman {{ $outstandingInvoicesPage }} dari {{ $outstandingInvoicesLastPage }}
+                            </span>
+                            <x-filament::button
+                                color="gray" size="xs"
+                                wire:click="setOutstandingInvoicesPage({{ $outstandingInvoicesPage + 1 }})"
+                                :disabled="$outstandingInvoicesPage >= $outstandingInvoicesLastPage"
+                            >
+                                Selanjutnya &raquo;
+                            </x-filament::button>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            {{-- Tab Content: Status Pemesanan Detail --}}
+            @if($activeOperationalTab === 'all' || $activeOperationalTab === 'status')
+                <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <x-heroicon-m-clipboard-document-check class="w-5 h-5 text-blue-500" />
+                                Status Pemesanan Detail
+                            </h3>
+                            <p class="text-xs text-gray-500 mt-0.5">
+                                Distribusi status seluruh pesanan berdasarkan alur operasional
+                            </p>
+                        </div>
+                        <x-filament::badge color="info" size="md">
+                            Total {{ $orderStatusMetrics['total_all'] ?? 0 }} Pesanan
+                        </x-filament::badge>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        @foreach($orderStatusMetrics['items'] ?? [] as $st)
+                            <div class="p-3 rounded-lg border border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/5 hover:border-primary-500 transition">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                                        {{ $st['label'] }}
+                                    </span>
+                                    <x-filament::badge color="{{ $st['color'] }}" size="xs">
+                                        {{ $st['count'] }} Pesanan ({{ $st['percentage'] }}%)
+                                    </x-filament::badge>
+                                </div>
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-2">
+                                    {{ $st['desc'] }}
+                                </p>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                                    <div class="bg-primary-500 h-1.5 rounded-full transition-all duration-300"
+                                         style="width: {{ $st['percentage'] }}%">
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </div>
+
         {{-- ── ROLE PROGRESS SECTION ── --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             @foreach($roleProgressData as $data)

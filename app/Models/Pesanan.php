@@ -41,6 +41,7 @@ class Pesanan extends Model
         'nama_bank_lunas',
         'no_rekening_lunas',
         'metode_pembayaran_lunas',
+        'status_pesanan',
         'pesanan_status',
         'status_perilisan_dana',
         'file_invoice',
