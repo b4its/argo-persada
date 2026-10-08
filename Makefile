@@ -33,9 +33,7 @@ local-up:
 	@echo "✅ Database lokal siap!"
 	@echo "🔄 Menjalankan migrasi database..."
 	docker exec $(CONTAINER_PHP) php artisan migrate --force
-	@echo "🧹 Membersihkan cache aplikasi..."
-	docker exec $(CONTAINER_PHP) php artisan optimize:clear
-	@$(MAKE) local-perm
+	@$(MAKE) clear
 	@$(MAKE) local-ip
 
 # Menghentikan container lokal
@@ -83,10 +81,7 @@ local-ip:
 	echo ""
 
 # Bersihkan cache di container lokal
-local-clear:
-	@echo "🧹 Membersihkan cache lokal..."
-	docker exec $(CONTAINER_PHP) php artisan optimize:clear
-	@echo "✅ Cache lokal cleared!"
+local-clear: clear
 
 # Jalankan migrasi di container lokal
 local-migrate:
@@ -129,8 +124,24 @@ perm:
 	@$(MAKE) local-perm
 	@echo "✅ Selesai! Kamu bisa hapus folder dan PHP bisa nulis file."
 
-# Membersihkan cache Laravel yang sering bikin error di Docker
-clear: local-clear
+# Membersihkan cache, optimasi, dan reset permission (host & container)
+clear:
+	@echo "🧹 Menjalankan pembersihan cache & optimasi..."
+	docker exec -it $(CONTAINER_PHP) php artisan config:clear
+	docker exec -it $(CONTAINER_PHP) php artisan view:clear
+	docker exec -it $(CONTAINER_PHP) php artisan cache:clear
+	docker exec -it $(CONTAINER_PHP) php artisan route:clear
+	docker exec -it $(CONTAINER_PHP) php artisan optimize:clear
+	docker exec -it $(CONTAINER_PHP) php artisan optimize
+	@echo "🟢 Mengatur kepemilikan file ke user host ($$USER)..."
+	@docker exec $(CONTAINER_PHP) chown -R $$(id -u):$$(id -g) /var/www/html 2>/dev/null || true
+	@if sudo -n true 2>/dev/null; then sudo chown -R $$USER:$$USER .; elif [ -z "$$ANTIGRAVITY_AGENT" ] && [ -t 0 ]; then sudo chown -R $$USER:$$USER .; else sudo -n chown -R $$USER:$$USER . 2>/dev/null || true; fi
+	@echo "🔵 Mengatur permission folder di dalam container..."
+	docker exec -it $(CONTAINER_PHP) chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+	docker exec -it $(CONTAINER_PHP) chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+	docker exec -it $(CONTAINER_PHP) chown -R www-data:www-data /var/www/html/public/
+	docker exec -it $(CONTAINER_PHP) chmod -R 775 /var/www/html/public/
+	@echo "✅ Cache cleared & permission selesai!"
 
 # ============================================================
 # 2. DEPLOY PRODUCTION VIA NGROK (hosting, domain default ngrok)
