@@ -72,8 +72,8 @@ Perintah di atas secara otomatis:
 | `make local-seed` | Jalankan seeder database lokal (`make local-seed [NamaSeeder]`) |
 | `make local-logs` | Lihat log realtime container lokal |
 | `make local-perm` | Atur permission writable storage, cache, public |
-| `make local-php` | Masuk shell bash ke container PHP lokal |
-| `make local-db` | Masuk console MySQL ke container DB lokal |
+| `make shell` / `make local-php` | Masuk shell bash ke container PHP lokal (`argo-php-fpm`) |
+| `make local-db` | Masuk console MySQL ke container DB lokal (`argo-db`) |
 | `make phpmyadmin` / `make pma` | Jalankan GUI database phpMyAdmin di web browser (port 8080) |
 | `make phpmyadmin-down` | Hentikan container phpMyAdmin |
 

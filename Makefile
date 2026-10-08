@@ -10,7 +10,7 @@ CONTAINER_PHP_PROD=argo-prod-php-fpm
 CONTAINER_NGROK=argo-prod-ngrok
 CONTAINER_DB_PROD=argo-prod-db
 
-.PHONY: perm fix-cache clear local local-up local-down local-restart local-ip local-env local-clear local-migrate local-seed local-logs local-perm local-php local-db dev env-local phpmyadmin phpmyadmin-down pma pma-down ngrok-up ngrok-down ngrok-env ngrok-url ngrok-logs ngrok-perm ngrok-install ngrok-clear ngrok-migrate ngrok-seed ngrok-build ngrok-filament ngrok-db ngrok-php ngrok-user ngrok
+.PHONY: perm fix-cache clear local local-up local-down local-restart local-ip local-env local-clear local-migrate local-seed local-logs local-perm shell php local-php local-db dev env-local phpmyadmin phpmyadmin-down pma pma-down ngrok-up ngrok-down ngrok-env ngrok-url ngrok-logs ngrok-perm ngrok-install ngrok-clear ngrok-migrate ngrok-seed ngrok-build ngrok-filament ngrok-db ngrok-php ngrok-user ngrok
 
 # ============================================================
 # 1. DEVELOPMENT LOKAL & AKSES JARINGAN (LAN / WI-FI)
@@ -109,6 +109,8 @@ local-perm:
 	@echo "✅ Permission lokal siap!"
 
 # Masuk shell bash ke container PHP lokal
+shell: local-php
+php: local-php
 local-php:
 	docker exec -it $(CONTAINER_PHP) bash
 
