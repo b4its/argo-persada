@@ -6,7 +6,6 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
-use App\Models\Pesanan;
 
 class DatabaseSeeder extends Seeder
 {
@@ -283,7 +282,7 @@ class DatabaseSeeder extends Seeder
                 'ppn' => $ppn,
                 'total_harga' => $totalHarga,
                 'no_po' => $status >= 1 ? 'PO-' . fake()->bothify('####/??/###') : null,
-                'no_requisition' => $status >= 1 ? Pesanan::generateRequisitionNumber($tglRequisisi ?? $createdAt) : null,
+                'no_requisition' => $status >= 1 ? 'REQ-' . fake()->bothify('####/??/###') : null,
                 'no_invoice' => $status >= 3 ? 'INV-' . fake()->bothify('####/??/###') : null,
                 'no_delivery_order' => $status >= 6 ? 'DO-' . fake()->bothify('####/??/###') : null,
                 'tanggal_rilis_dana' => $tglRilis?->toDateString(),
