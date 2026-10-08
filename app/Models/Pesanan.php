@@ -100,6 +100,46 @@ class Pesanan extends Model
         return "{$prefix}/{$companyCode}-{$divisi}/{$monthRoman}/{$year}/{$seq}";
     }
 
+    /**
+     * Menghasilkan kode acak kombinasi huruf kapital dan angka (contoh: AC7X).
+     */
+    public static function generateRandomAlphaNumericCode(int $length = 4): string
+    {
+        $chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charsLength = strlen($chars);
+
+        do {
+            $code = '';
+            for ($i = 0; $i < $length; $i++) {
+                $code .= $chars[random_int(0, $charsLength - 1)];
+            }
+        } while (!preg_match('/[A-Z]/', $code) || !preg_match('/[0-9]/', $code));
+
+        return $code;
+    }
+
+    /**
+     * Menghasilkan nomor requisition unik dengan rumus tahun, bulan, hari + kode unik acak huruf & angka.
+     * Contoh: 261008-AC7X
+     */
+    public static function generateRequisitionNumber(\DateTimeInterface|string|null $date = null, bool $withSeparator = true): string
+    {
+        if ($date instanceof \DateTimeInterface) {
+            $datePart = $date->format('ymd');
+        } elseif (!empty($date) && ($timestamp = strtotime((string) $date)) !== false) {
+            $datePart = date('ymd', $timestamp);
+        } else {
+            $datePart = date('ymd');
+        }
+
+        do {
+            $uniqueCode = static::generateRandomAlphaNumericCode(4);
+            $noRequisition = $withSeparator ? "{$datePart}-{$uniqueCode}" : "{$datePart}{$uniqueCode}";
+        } while (static::where('no_requisition', $noRequisition)->exists());
+
+        return $noRequisition;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

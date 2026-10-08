@@ -225,7 +225,7 @@ class MarketingPemesanansTable
                             ->where('role', 'marketing')
                             ->latest()
                             ->first();
-                        $noRequisition = date('ymd'); // Generate No Requisition unik
+                        $noRequisition = Pesanan::generateRequisitionNumber($record->tanggal_po); // Generate No Requisition unik dengan tanggal & random alphanumeric
                         // Update No Requisition
                         Pesanan::updateOrCreate(
                             ['id' => $record->id],
