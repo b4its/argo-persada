@@ -75,6 +75,30 @@ class Pesanan extends Model
         return $this->tanggal_po ?? $this->created_at;
     }
 
+    public function generateCombinationInvoiceNumber(): string
+    {
+        $prefix = 'INV';
+
+        // Kode Perusahaan / Divisi
+        $companyCode = $this->companyInternal?->singkatan 
+            ?: ($this->company_internal_id ? CompanyInternal::find($this->company_internal_id)?->singkatan : null)
+            ?: ($this->tipe_pesanan == 1 ? 'PRJ' : 'AAP');
+
+        $divisi = 'FIN';
+
+        $bulanRomawi = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
+        ];
+        $month = (int) date('n');
+        $monthRoman = $bulanRomawi[$month] ?? date('m');
+        $year = date('Y');
+
+        $seq = sprintf('%04d', $this->id ?: (static::max('id') + 1));
+
+        return "{$prefix}/{$companyCode}-{$divisi}/{$monthRoman}/{$year}/{$seq}";
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -522,11 +522,19 @@ class FinancePemesanansTable
                     ->modalDescription(fn (Pesanan $record) => new HtmlString(
                         "No Pemesanan:<br><strong>{$record->code}</strong><br><br>Apakah Anda yakin ingin menerbitkan Invoice untuk pesanan ini?"
                     ))
-                    ->form([
-                        \Filament\Forms\Components\DatePicker::make('tanggal_jatuh_tempo')
-                            ->label('Tenggat Waktu')
+                    ->form(fn (Pesanan $record) => [
+                        TextInput::make('no_invoice')
+                            ->label('Nomor Invoice (Kombinasi)')
+                            ->default(fn () => $record->generateCombinationInvoiceNumber())
+                            ->helperText('Format kombinasi otomatis: INV/{PERUSAHAAN-DIVISI}/{BULAN_ROMAWI}/{TAHUN}/{NO_URUT}.')
+                            ->required()
+                            ->maxLength(255),
+
+                        DatePicker::make('tanggal_jatuh_tempo')
+                            ->label('Tenggat Waktu / Jatuh Tempo')
                             ->required()
                             ->native(false)
+                            ->default(now()->addDays(30)),
                     ])
                     ->modalSubmitActionLabel('Terbitkan Invoice') 
                     ->modalCancelActionLabel('Batal')
@@ -604,8 +612,10 @@ class FinancePemesanansTable
                             ->orderBy('created_at', 'asc')
                             ->value('created_user_id') ?? $currentUserId;
 
-                        // Generate nomor invoice
-                        $generatedInvoiceNumber = 'INV-' . date('ymd') . '-' . strtoupper(Str::random(5));
+                        // Generate / gunakan nomor invoice kombinasi
+                        $generatedInvoiceNumber = !empty($data['no_invoice']) 
+                            ? $data['no_invoice'] 
+                            : $record->generateCombinationInvoiceNumber();
                         $oldPesananData = $record->toArray();
 
                         // Update tabel pesanan
